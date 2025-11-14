@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   console.log('[Middleware] Hostname:', hostname, 'Subdomain:', subdomain);
   
   // 2. Gérer sous-domaines réservés
-  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+  if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
     return NextResponse.next();
   }
   
@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // 4. Vérifier que le sous-domaine correspond à une école active
-  const school = await getSchoolBySubdomain(subdomain);
+  const school = await getSchoolBySubdomain(subdomain as string);
   
   if (!school) {
     // Rediriger vers page d'erreur si école introuvable

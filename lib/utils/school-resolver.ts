@@ -1,27 +1,32 @@
 import { createClient } from '@/lib/supabase/server';
 import { cache } from 'react';
 
+interface School {
+  id: string;
+  name: string;
+  subdomain: string | null;
+}
+
 /**
  * Récupère une école par son sous-domaine
  * Mise en cache pour éviter des appels répétés
  */
-export const getSchoolBySubdomain = cache(async (subdomain: string) => {
+export const getSchoolBySubdomain = cache(async (subdomain: string): Promise<School | null> => {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     
-    const { data: school, error } = await supabase
+    const { data: schools, error } = await supabase
       .from('schools')
       .select('*')
       .eq('subdomain', subdomain)
-      .eq('is_active', true)
-      .single();
+      .eq('is_active', true);
     
-    if (error) {
+    if (error || !schools || schools.length === 0) {
       console.error('Error fetching school:', error);
       return null;
     }
     
-    return school;
+    return schools[0] as School;
   } catch (error) {
     console.error('Exception in getSchoolBySubdomain:', error);
     return null;
@@ -31,11 +36,10 @@ export const getSchoolBySubdomain = cache(async (subdomain: string) => {
 /**
  * Récupère l'école depuis les headers dans un Server Component
  */
-export async function getSchoolFromHeaders(headers: Headers) {
-  const schoolId = headers.get('x-school-id');
-  const schoolName = headers.get('x-school-name');
-  const schoolSubdomain = headers.get('x-school-subdomain');
-  const schoolColor = headers.get('x-school-color');
+export async function getSchoolFromHeaders(headers: Record<string, string | null>): Promise<School | null> {
+  const schoolId = headers['x-school-id'];
+  const schoolName = headers['x-school-name'];
+  const schoolSubdomain = headers['x-school-subdomain'];
   
   if (!schoolId || !schoolName) {
     return null;
@@ -45,32 +49,32 @@ export async function getSchoolFromHeaders(headers: Headers) {
     id: schoolId,
     name: schoolName,
     subdomain: schoolSubdomain,
-    primary_color: schoolColor,
   };
 }
 
 /**
  * Découvre l'école d'un utilisateur par email
  */
-export async function detectSchoolByEmail(email: string) {
-  const supabase = createClient();
+export async function detectSchoolByEmail(email: string): Promise<{ id: string; subdomain: string | null; name: string } | null> {
+  const supabase = await createClient();
   
-  const { data: user, error } = await supabase
+  const { data: users, error } = await supabase
     .from('users')
     .select('school_id, schools(subdomain, name)')
-    .eq('email', email)
-    .single();
+    .eq('email', email);
   
-  if (error || !user) {
+  if (error || !users || users.length === 0) {
     return null;
   }
   
-  // @ts-ignore
+  const user = users[0] as unknown as { school_id: string; schools: { subdomain: string; name: string } };
+  if (!user) return null;
+  
   const school = user.schools;
   
   return {
     id: user.school_id,
-    subdomain: school.subdomain,
-    name: school.name,
+    subdomain: school?.subdomain || null,
+    name: school?.name || '',
   };
 }

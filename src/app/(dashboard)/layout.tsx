@@ -11,7 +11,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Vérifier session
   const { data: { session } } = await supabase.auth.getSession();
@@ -32,8 +32,8 @@ export default async function DashboardLayout({
   }
 
   // Récupérer école depuis headers
-  const headersList = headers();
-  const school = getSchoolFromHeaders(headersList);
+  const headersList = await headers();
+  const school = await getSchoolFromHeaders(headersList);
 
   if (!school) {
     redirect('/school-not-found');
@@ -43,16 +43,13 @@ export default async function DashboardLayout({
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <div className="hidden md:flex h-full w-64 flex-col fixed inset-y-0 z-50">
-        <Sidebar school={school} userRole={user.role} />
+        <Sidebar />
       </div>
       
       {/* Main content */}
       <div className="flex-1 md:pl-64 flex flex-col">
         {/* Header */}
-        <Header 
-          user={user} 
-          school={school}
-        />
+        <Header />
         
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">

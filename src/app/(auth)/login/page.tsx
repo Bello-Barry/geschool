@@ -7,10 +7,11 @@ import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { email?: string; returnUrl?: string };
+  searchParams: Promise<{ email?: string; returnUrl?: string }>;
 }) {
-  const supabase = createClient();
-  const headersList = headers();
+  const supabase = await createClient();
+  const headersList = await headers();
+  const params = await searchParams;
   
   // Vérifier si déjà connecté
   const { data: { session } } = await supabase.auth.getSession();
@@ -20,7 +21,8 @@ export default async function LoginPage({
   }
 
   // Récupérer école depuis headers
-  const school = getSchoolFromHeaders(headersList);
+  const schoolData = await getSchoolFromHeaders(headersList);
+  const school = schoolData;
 
   if (!school) {
     redirect('/school-not-found');
@@ -51,8 +53,8 @@ export default async function LoginPage({
 
         <LoginForm 
           school={school}
-          prefilledEmail={searchParams.email}
-          returnUrl={searchParams.returnUrl}
+          prefilledEmail={params.email}
+          returnUrl={params.returnUrl}
         />
       </div>
     </div>

@@ -11,21 +11,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email } = detectSchema.parse(body);
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Rechercher l'utilisateur par email
-    const { data: user, error } = await supabase
+    const { data: users, error } = await supabase
       .from('users')
       .select('school_id, schools(subdomain, name)')
-      .eq('email', email)
-      .single();
+      .eq('email', email);
 
-    if (error || !user) {
+    if (error || !users || users.length === 0) {
       return NextResponse.json(
         { error: 'Aucun utilisateur trouvé avec cet email' },
         { status: 404 }
       );
     }
+
+    const user = users[0];
 
     // @ts-ignore
     const school = user.schools;
