@@ -65,7 +65,7 @@ export async function middleware(request: NextRequest) {
   // Injecter headers pour les Server Components
   response.headers.set('x-school-id', school.id);
   response.headers.set('x-school-name', school.name);
-  response.headers.set('x-school-subdomain', school.subdomain);
+  response.headers.set('x-school-subdomain', school.subdomain || '');
   response.headers.set('x-school-color', school.primary_color || '#3B82F6');
   
   // 6. Vérifier authentification pour routes protégées
@@ -116,10 +116,10 @@ function extractSubdomain(hostname: string): string | null {
   
   // En production: lycee-sassou.ecole-congo.com -> lycee-sassou
   // En dev: lycee-sassou.localhost:3000 -> lycee-sassou
-  const subdomain = parts[0];
+  const subdomain = parts[0] || null;
   
   // Ignorer www et autres sous-domaines réservés
-  if (RESERVED_SUBDOMAINS.includes(subdomain)) {
+  if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
     return null;
   }
   

@@ -85,7 +85,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
             <FormField
               control={form.control}
               name="email"
-              render={({ field }: { field: any }) => (
+              render={({ field }: { field: Record<string, unknown> }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
@@ -104,7 +104,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
             <FormField
               control={form.control}
               name="password"
-              render={({ field }: { field: any }) => (
+              render={({ field }: { field: Record<string, unknown> }) => (
                 <FormItem>
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>

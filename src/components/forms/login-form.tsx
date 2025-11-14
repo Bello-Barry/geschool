@@ -22,11 +22,11 @@ interface LoginFormProps {
   school: {
     id: string;
     name: string;
-    subdomain: string;
-    primary_color?: string;
+    subdomain: string | null;
+    primary_color?: string | null;
   };
-  prefilledEmail?: string;
-  returnUrl?: string;
+  prefilledEmail?: string | undefined;
+  returnUrl?: string | undefined;
 }
 
 export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps) {
@@ -85,7 +85,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
             <FormField
               control={form.control}
               name="email"
-              render={({ field }: { field: any }) => (
+              render={({ field }: { field: Record<string, unknown> }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
@@ -104,7 +104,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
             <FormField
               control={form.control}
               name="password"
-              render={({ field }: { field: any }) => (
+              render={({ field }: { field: Record<string, unknown> }) => (
                 <FormItem>
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>
@@ -135,7 +135,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
               type="submit" 
               className="w-full" 
               disabled={loading}
-              style={{ backgroundColor: school.primary_color }}
+              style={{ backgroundColor: school.primary_color || '#3B82F6' } as React.CSSProperties}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </Button>

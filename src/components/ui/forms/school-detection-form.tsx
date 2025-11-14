@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -63,7 +62,7 @@ export function SchoolDetectionForm() {
         <FormField
           control={form.control}
           name="email"
-          render={({ field }: { field: any }) => (
+          render={({ field }: { field: Record<string, unknown> }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>

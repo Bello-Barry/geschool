@@ -17,7 +17,6 @@ export function StatsShowcase() {
     <section id="stats" className="container mx-auto px-4 py-24 bg-muted/50">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold mb-4">Statistiques</h2>
-        {/* eslint-disable-next-line react/no-unescaped-entities */}
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Visualisez les performances de votre établissement
         </p>
@@ -26,7 +25,7 @@ export function StatsShowcase() {
       <Card>
         <CardHeader>
           <CardTitle>Évolution Scolaire</CardTitle>
-          <CardDescription>Nombre d'élèves, enseignants et revenus</CardDescription>
+          <CardDescription>Nombre d&apos;élèves, enseignants et revenus</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

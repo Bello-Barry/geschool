@@ -5,6 +5,7 @@ interface School {
   id: string;
   name: string;
   subdomain: string | null;
+  primary_color?: string | null;
 }
 
 /**
@@ -36,10 +37,13 @@ export const getSchoolBySubdomain = cache(async (subdomain: string): Promise<Sch
 /**
  * Récupère l'école depuis les headers dans un Server Component
  */
-export async function getSchoolFromHeaders(headers: Record<string, string | null>): Promise<School | null> {
-  const schoolId = headers['x-school-id'];
-  const schoolName = headers['x-school-name'];
-  const schoolSubdomain = headers['x-school-subdomain'];
+export async function getSchoolFromHeaders(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  headers: any
+): Promise<School | null> {
+  const schoolId = headers.get?.('x-school-id') || headers['x-school-id'];
+  const schoolName = headers.get?.('x-school-name') || headers['x-school-name'];
+  const schoolSubdomain = headers.get?.('x-school-subdomain') || headers['x-school-subdomain'] || undefined;
   
   if (!schoolId || !schoolName) {
     return null;
@@ -48,7 +52,7 @@ export async function getSchoolFromHeaders(headers: Record<string, string | null
   return {
     id: schoolId,
     name: schoolName,
-    subdomain: schoolSubdomain,
+    subdomain: schoolSubdomain ?? null,
   };
 }
 

@@ -26,9 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = users[0];
+    const user = users[0] as unknown as { schools: { subdomain: string; name: string } };
 
-    // @ts-ignore
     const school = user.schools;
 
     if (!school) {

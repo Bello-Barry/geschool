@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = loginSchema.parse(body);
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
