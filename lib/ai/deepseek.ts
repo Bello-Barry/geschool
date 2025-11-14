@@ -1,8 +1,38 @@
-import Anthropic from "@anthropic-ai/sdk";
+// DeepSeek API Client - HTTP-based implementation
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "",
-});
+export async function callDeepSeek(prompt: string, systemPrompt?: string): Promise<string> {
+  try {
+    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`DeepSeek API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || "Réponse indisponible";
+  } catch (error) {
+    console.error("Error calling DeepSeek:", error);
+    throw error;
+  }
+}
 
 interface StudentData {
   name: string;
@@ -14,39 +44,26 @@ interface StudentData {
 
 export async function generateBulletinComment(studentData: StudentData): Promise<string> {
   try {
-    const message = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 300,
-      system: `Tu es un directeur d'école expérimenté au Congo-Brazzaville. 
+    const systemPrompt = `Tu es un directeur d'école expérimenté au Congo-Brazzaville. 
 Génère un commentaire de bulletin scolaire constructif et encourageant (50-100 mots).
 Mentionne les points forts et les axes d'amélioration.
 Ton formel et bienveillant.
-En français.`,
-      messages: [
-        {
-          role: "user",
-          content: `Génère un commentaire pour ${studentData.name}:
+En français.`;
+
+    const prompt = `Génère un commentaire pour ${studentData.name}:
 - Moyenne générale: ${studentData.average}/20
 - Meilleures matières: ${studentData.subjectAverages
-            .sort((a, b) => b.average - a.average)
-            .slice(0, 2)
-            .map((s) => `${s.subject} (${s.average})`)
-            .join(", ")}
+      .sort((a, b) => b.average - a.average)
+      .slice(0, 2)
+      .map((s) => `${s.subject} (${s.average})`)
+      .join(", ")}
 - Présences: ${studentData.attendance.present} jours, ${studentData.attendance.absent} absences
-${studentData.previousAverage ? `- Évolution: ${studentData.previousAverage} → ${studentData.average}` : ""}`,
-        },
-      ],
-    });
+${studentData.previousAverage ? `- Évolution: ${studentData.previousAverage} → ${studentData.average}` : ""}`;
 
-    const content = message.content[0];
-    if (content.type === "text") {
-      return content.text;
-    }
-
-    return "Commentaire indisponible";
+    return await callDeepSeek(prompt, systemPrompt);
   } catch (error) {
     console.error("Error generating comment:", error);
-    throw error;
+    return "Commentaire indisponible";
   }
 }
 
@@ -58,31 +75,18 @@ export async function analyzeSchoolPerformance(grades: Array<{
     const avgPerformance =
       grades.reduce((sum, g) => sum + g.average, 0) / grades.length;
 
-    const message = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 400,
-      system: `Tu es un expert en analyse académique. 
+    const systemPrompt = `Tu es un expert en analyse académique. 
 Fournis une analyse brève (100-150 mots) de la performance scolaire.
 Identifie les tendances et les recommandations.
-En français.`,
-      messages: [
-        {
-          role: "user",
-          content: `Analyse la performance: moyenne générale ${avgPerformance.toFixed(2)}/20, 
-${grades.length} classes suivies. Recommande des actions d'amélioration.`,
-        },
-      ],
-    });
+En français.`;
 
-    const content = message.content[0];
-    if (content.type === "text") {
-      return content.text;
-    }
+    const prompt = `Analyse la performance: moyenne générale ${avgPerformance.toFixed(2)}/20, 
+${grades.length} classes suivies. Recommande des actions d'amélioration.`;
 
-    return "Analyse indisponible";
+    return await callDeepSeek(prompt, systemPrompt);
   } catch (error) {
     console.error("Error analyzing performance:", error);
-    throw error;
+    return "Analyse indisponible";
   }
 }
 
@@ -105,24 +109,14 @@ export async function detectAtRiskStudents(students: Array<{
 
   for (const student of atRisk) {
     try {
-      const message = await client.messages.create({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 150,
-        system: `Tu es un conseiller pédagogique. 
+      const systemPrompt = `Tu es un conseiller pédagogique. 
 Fournis une recommandation brève (1-2 phrases) pour aider cet élève en difficulté.
-En français.`,
-        messages: [
-          {
-            role: "user",
-            content: `${student.name}: moyenne ${student.average}/20, ${student.absent_days} absences. 
-Quelle recommandation pédagogique?`,
-          },
-        ],
-      });
+En français.`;
 
-      const content = message.content[0];
-      const recommendation =
-        content.type === "text" ? content.text : "Suivi pédagogique recommandé";
+      const prompt = `${student.name}: moyenne ${student.average}/20, ${student.absent_days} absences. 
+Quelle recommandation pédagogique?`;
+
+      const recommendation = await callDeepSeek(prompt, systemPrompt);
 
       recommendations.push({
         name: student.name,
@@ -134,6 +128,11 @@ Quelle recommandation pédagogique?`,
       });
     } catch (error) {
       console.error(`Error for student ${student.name}:`, error);
+      recommendations.push({
+        name: student.name,
+        reason: "Erreur d'analyse",
+        recommendation: "Suivi pédagogique recommandé",
+      });
     }
   }
 
