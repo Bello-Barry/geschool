@@ -19,7 +19,7 @@ export default function HomePage() {
             paiements et intelligence artificielle.
           </p>
           
-          <div className="max-w-md mx-auto">
+          <div id="detect-school" className="max-w-md mx-auto">
             <SchoolDetectionForm />
           </div>
         </section>

@@ -21,7 +21,7 @@ export function Header() {
             <Link href="/login">Connexion</Link>
           </Button>
           <Button asChild>
-            <Link href="/api/detect-school">Créer une école</Link>
+            <Link href="#detect-school">Créer une école</Link>
           </Button>
         </nav>
       </div>

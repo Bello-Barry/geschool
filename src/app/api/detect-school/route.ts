@@ -51,3 +51,11 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  // Si quelqu'un navigue directement à l'URL dans le navigateur,
+  // rediriger vers la page d'accueil où se trouve le formulaire de détection.
+  const url = new URL('/', request.url);
+  url.hash = 'detect-school';
+  return NextResponse.redirect(url);
+}
