@@ -73,7 +73,7 @@ export default async function TeachersPage() {
                         </CardDescription>
                       </div>
                       <Link href={`/admin/teachers/${teacher.id}`}>
-                        <Button variant="sm" size="sm">
+                        <Button variant="ghost" size="sm">
                           Éditer
                         </Button>
                       </Link>

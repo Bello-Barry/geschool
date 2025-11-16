@@ -44,13 +44,10 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
   });
-
-  const classId = watch("classId");
 
   const onSubmit = async (data: StudentFormData) => {
     setLoading(true);

@@ -109,7 +109,7 @@ export default async function ParentDashboard() {
                         {item.student.user?.first_name} {item.student.user?.last_name}
                       </p>
                       <p className="text-sm text-gray-600">{item.student.class?.name}</p>
-                      <Button variant="sm" size="sm" className="mt-3 w-full">
+                      <Button variant="outline" size="sm" className="mt-3 w-full">
                         Voir détails
                       </Button>
                     </CardContent>

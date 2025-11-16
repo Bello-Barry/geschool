@@ -28,7 +28,6 @@ export default async function TeacherGradesPage() {
   // Grouper par classe
   const classesBySubject = (teacherSubjects || []).reduce(
     (acc: any, ts: any) => {
-      const key = `${ts.class.id}-${ts.subject.id}`;
       if (!acc[ts.class.id]) {
         acc[ts.class.id] = [];
       }

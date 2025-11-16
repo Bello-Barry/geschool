@@ -115,7 +115,7 @@ export default async function PaymentsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <Button variant="sm" size="sm">
+                        <Button variant="outline" size="sm">
                           Reçu
                         </Button>
                       </td>

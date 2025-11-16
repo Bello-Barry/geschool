@@ -1,11 +1,3 @@
-// MCP Server - Model Context Protocol Integration for Geschool
-// This file is designed to be run as a standalone server process
-// and is not imported in the Next.js app itself
-
-// NOTE: To use this MCP server, install dependencies:
-// pnpm add @modelcontextprotocol/sdk
-// Then run: node --loader ts-node/esm lib/mcp/server.ts
-
 import { z } from "zod";
 
 // Schémas de validation pour les outils
@@ -30,16 +22,16 @@ const sendNotificationSchema = z.object({
   type: z.enum(["info", "warning", "success", "error"]),
 });
 
-// Export tool schemas for external integration
-export const TOOL_SCHEMAS = {
-  calculateAverageSchema,
-  getStudentInfoSchema,
-  checkPromotionSchema,
-  sendNotificationSchema,
-};
-
-// Tool definitions
-export const AVAILABLE_TOOLS = [
+// Outils disponibles
+const tools: Array<{
+  name: string;
+  description: string;
+  inputSchema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required: string[];
+  };
+}> = [
   {
     name: "calculate_student_average",
     description: "Calcule la moyenne générale d'un élève pour un trimestre",
@@ -119,86 +111,113 @@ export const AVAILABLE_TOOLS = [
   },
 ];
 
-// Handler function to process tool calls (for external MCP servers)
-export async function processMCPToolCall(
-  toolName: string,
-  args: Record<string, any>
-): Promise<{
-  content: Array<{ type: string; text: string }>;
+// Tipos para handlers
+interface ToolResponse {
+  content: Array<{
+    type: "text" | "resource";
+    text?: string;
+    isError?: boolean;
+  }>;
   isError?: boolean;
-}> {
+}
+
+// Handlers para herramientas
+export async function handleCalculateAverage(args: unknown): Promise<ToolResponse> {
   try {
-    switch (toolName) {
-      case "calculate_student_average": {
-        const validated = calculateAverageSchema.parse(args);
-        // Implementation would connect to Supabase
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Moyenne générale calculée pour l'élève ${validated.student_id}`,
-            },
-          ],
-        };
-      }
-
-      case "get_student_info": {
-        const validated = getStudentInfoSchema.parse(args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Informations récupérées pour l'élève ${validated.student_id}`,
-            },
-          ],
-        };
-      }
-
-      case "check_promotion_status": {
-        const validated = checkPromotionSchema.parse(args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Statut de promotion vérifié pour l'élève ${validated.student_id}`,
-            },
-          ],
-        };
-      }
-
-      case "send_notification": {
-        const validated = sendNotificationSchema.parse(args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Notification envoyée à l'utilisateur ${validated.user_id}`,
-            },
-          ],
-        };
-      }
-
-      default:
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Outil inconnu: ${toolName}`,
-            },
-          ],
-          isError: true,
-        };
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    const validated = calculateAverageSchema.parse(args);
+    // Aquí iría la lógica de Supabase
     return {
       content: [
         {
           type: "text",
-          text: `Erreur: ${errorMessage}`,
+          text: `Promedio general: ${validated.student_id}`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
         },
       ],
       isError: true,
     };
   }
 }
+
+export async function handleGetStudentInfo(args: unknown): Promise<ToolResponse> {
+  try {
+    const validated = getStudentInfoSchema.parse(args);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Student info for: ${validated.student_id}`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+export async function handleCheckPromotion(args: unknown): Promise<ToolResponse> {
+  try {
+    const validated = checkPromotionSchema.parse(args);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Promotion check for: ${validated.student_id}`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+export async function handleSendNotification(args: unknown): Promise<ToolResponse> {
+  try {
+    const validated = sendNotificationSchema.parse(args);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Notification sent to: ${validated.user_id}`,
+        },
+      ],
+    };
+  } catch (error) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+// Exportar tools y schemas para uso en otras partes de la app
+export { tools, calculateAverageSchema, getStudentInfoSchema, checkPromotionSchema, sendNotificationSchema };

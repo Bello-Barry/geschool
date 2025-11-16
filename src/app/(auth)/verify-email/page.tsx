@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { AlertCircle, CheckCircle, Loader2, Mail } from "lucide-react";
 
-export default function VerifyEmailPage() {
-  const router = useRouter();
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
   const [status, setStatus] = useState<"pending" | "verifying" | "success" | "error">("pending");
@@ -94,5 +93,13 @@ export default function VerifyEmailPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

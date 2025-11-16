@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Plus, Download, Upload } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 
 export default async function StudentsPage() {
   const supabase = await createClient();
@@ -88,7 +88,7 @@ export default async function StudentsPage() {
                       <td className="py-3 px-4">{student.class?.name || "-"}</td>
                       <td className="py-3 px-4">
                         <Link href={`/admin/students/${student.id}`}>
-                          <Button variant="sm" size="sm">
+                          <Button variant="outline" size="sm">
                             Voir
                           </Button>
                         </Link>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,6 @@ const resetSchema = z.object({
 type ResetFormData = z.infer<typeof resetSchema>;
 
 export default function ResetPasswordPage() {
-  const router = useRouter();
   const supabase = createClientComponentClient();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

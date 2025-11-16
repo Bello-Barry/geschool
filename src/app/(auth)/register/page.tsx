@@ -42,7 +42,7 @@ export default function RegisterPage() {
 
     try {
       // Créer l'utilisateur Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
