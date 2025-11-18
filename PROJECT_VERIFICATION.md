@@ -1,3 +1,5 @@
+SDans ce projet il y'a des pages api et fichier qui manque j'ai des problèmes pour crée une école ou un compte peut tu analyse Debugger créé tous ce qui manque et crée aussi un fichier md pour que une autre ia puis Debugger et crée aussi les choses qui manque s'assurer que tous fonctionner normalement d'ailleurs vous pouvez le déploie ici juste pour tester si vos modifications on réussi 
+
 # 🔍 VÉRIFICATION COMPLÈTE - CONFORMITÉ AU SPEC
 
 ## 📋 RÉSUMÉ EXÉCUTIF
