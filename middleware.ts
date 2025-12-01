@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { getSchoolBySubdomain } from '@/lib/utils';
+import { getSchoolBySubdomain } from '@/lib/server-utils';
 
 // Routes publiques (n'ont pas besoin d'authentification)
 const PUBLIC_ROUTES = [
