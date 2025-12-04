@@ -60,12 +60,12 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       if (data.user) {
         toast.success(`Bienvenue ${school.name} !`);
         
-        // Rediriger vers le dashboard approprié
+        // Rediriger vers la racine, le middleware s'occupera du reste
         setTimeout(() => {
           if (returnUrl) {
             router.push(returnUrl);
           } else {
-            router.push('/dashboard');
+            router.push('/');
           }
         }, 1000);
       }

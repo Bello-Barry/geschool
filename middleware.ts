@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { getSchoolBySubdomain } from '@/lib/utils';
+import { getSchoolBySubdomain } from '@/lib/school';
+import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
 // Routes publiques (n'ont pas besoin d'authentification)
 const PUBLIC_ROUTES = [
@@ -96,6 +97,27 @@ export async function middleware(request: NextRequest) {
     // Injecter user_id dans les headers pour RLS
     response.headers.set('x-user-id', session.user.id);
     response.headers.set('x-user-role', user.role);
+
+    // Redirection en fonction du rôle
+    const { pathname } = request.nextUrl;
+    const userRole = user.role;
+    const dashboardPath = getDashboardPath(userRole);
+
+    // Si à la racine après login, rediriger vers le bon dashboard
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+
+    // Sécuriser les dashboards
+    if (pathname.startsWith('/admin') && userRole !== 'admin_school' && userRole !== 'super_admin') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+    if (pathname.startsWith('/teacher') && userRole !== 'teacher') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+    if (pathname.startsWith('/parent') && userRole !== 'parent') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
   }
   
   return response;
