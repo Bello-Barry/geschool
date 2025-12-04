@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Create the school
     const { data: newSchool, error: createSchoolError } = await supabase
       .from('schools')
-      .insert({ name: schoolName, subdomain })
+      .insert({ name: schoolName, subdomain, code: subdomain.toUpperCase() })
       .select('id')
       .single();
 
