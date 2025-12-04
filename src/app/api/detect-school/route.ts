@@ -9,7 +9,16 @@ const detectSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email } = detectSchema.parse(body);
+    const validation = detectSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { email } = validation.data;
 
     const supabase = await createClient();
 
