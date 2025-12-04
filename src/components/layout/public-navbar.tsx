@@ -18,10 +18,10 @@ export function Header() {
             Statistiques
           </Link>
           <Button asChild variant="outline" className="mr-2">
-            <Link href="/login">Connexion</Link>
+            <Link href="#detect-school">Connexion</Link>
           </Button>
           <Button asChild>
-            <Link href="#detect-school">Créer une école</Link>
+            <Link href="/contact">Contact</Link>
           </Button>
         </nav>
       </div>
