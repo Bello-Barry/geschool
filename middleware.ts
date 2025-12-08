@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { getSchoolBySubdomain } from '@/lib/utils/school-resolver';
+import { getSchoolBySubdomain } from '@/lib/school';
+import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
 // Routes publiques (n'ont pas besoin d'authentification)
 const PUBLIC_ROUTES = [
@@ -22,7 +23,7 @@ const PUBLIC_ROUTES = [
 const RESERVED_SUBDOMAINS = ['www', 'api', 'admin', 'cdn', 'static', 'app'];
 
 export async function middleware(request: NextRequest) {
-  const { supabase } = createClient(request);
+  const { supabase, response } = createClient(request);
   
   // 1. Extraire hostname et sous-domaine
   const hostname = request.headers.get('host') || '';
@@ -32,13 +33,11 @@ export async function middleware(request: NextRequest) {
   
   // 2. Gérer sous-domaines réservés
   if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
-    return NextResponse.next();
+    return response;
   }
   
   // 3. Si domaine racine (ecole-congo.com) - routes publiques
   if (!subdomain || subdomain === hostname.split('.')[0]) {
-    const response = NextResponse.next();
-    
     // Si route détection école, pas besoin de vérifier
     if (request.nextUrl.pathname === '/api/detect-school') {
       return response;
@@ -59,10 +58,7 @@ export async function middleware(request: NextRequest) {
   
   console.log('[Middleware] School found:', school.name);
   
-  // 5. Créer réponse avec headers de l'école
-  const response = NextResponse.next();
-  
-  // Injecter headers pour les Server Components
+  // 5. Injecter headers pour les Server Components
   response.headers.set('x-school-id', school.id);
   response.headers.set('x-school-name', school.name);
   response.headers.set('x-school-subdomain', school.subdomain || '');
@@ -101,6 +97,27 @@ export async function middleware(request: NextRequest) {
     // Injecter user_id dans les headers pour RLS
     response.headers.set('x-user-id', session.user.id);
     response.headers.set('x-user-role', user.role);
+
+    // Redirection en fonction du rôle
+    const { pathname } = request.nextUrl;
+    const userRole = user.role;
+    const dashboardPath = getDashboardPath(userRole);
+
+    // Si à la racine après login, rediriger vers le bon dashboard
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+
+    // Sécuriser les dashboards
+    if (pathname.startsWith('/admin') && userRole !== 'admin_school' && userRole !== 'super_admin') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+    if (pathname.startsWith('/teacher') && userRole !== 'teacher') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
+    if (pathname.startsWith('/parent') && userRole !== 'parent') {
+      return NextResponse.redirect(new URL(dashboardPath, request.url));
+    }
   }
   
   return response;
