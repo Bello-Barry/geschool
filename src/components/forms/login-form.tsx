@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email invalide' }),
@@ -60,12 +61,12 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       if (data.user) {
         toast.success(`Bienvenue ${school.name} !`);
         
-        // Rediriger vers le dashboard approprié
+        // Rediriger vers la racine, le middleware s'occupera du reste
         setTimeout(() => {
           if (returnUrl) {
             router.push(returnUrl);
           } else {
-            router.push('/dashboard');
+            router.push('/');
           }
         }, 1000);
       }
@@ -141,6 +142,12 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
             </Button>
           </form>
         </Form>
+        <div className="mt-4 text-center text-sm">
+          Vous n'avez pas de compte?{' '}
+          <Link href="/register" className="underline">
+            S'inscrire
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
