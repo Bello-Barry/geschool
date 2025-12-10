@@ -74,8 +74,14 @@ Le dernier script a créé une école de test ("Lycée Denis Sassou Nguesso"), m
 
 ```sql
 -- Crée un utilisateur dans le système d'authentification de Supabase
-INSERT INTO auth.users (email, password, email_confirmed_at, raw_app_meta_data)
-VALUES ('admin@lycee-sassou.test', 'Motdepasse123!', NOW(), '{"provider":"email","providers":["email"]}');
+INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, raw_app_meta_data)
+VALUES (
+  'admin@lycee-sassou.test',
+  -- Ceci est le mot de passe 'Motdepasse123!' haché de manière sécurisée
+  crypt('Motdepasse123!', gen_salt('bf')),
+  NOW(),
+  '{"provider":"email","providers":["email"]}'
+);
 
 -- Lie cet utilisateur à votre table "users" avec le rôle "admin_school"
 INSERT INTO public.users (id, school_id, email, role, first_name, last_name)
