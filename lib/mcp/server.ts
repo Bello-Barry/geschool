@@ -5,12 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const calculateAverageSchema = z.object({
   student_id: z.string().uuid(),
   term_id: z.string().uuid(),
-  school_id: z.string().optional(), // Facultatif pour la flexibilité, mais recommandé
+  school_id: z.string().uuid(), // Requis pour la sécurité multi-tenant
 });
 
 const getStudentInfoSchema = z.object({
   student_id: z.string().uuid(),
-  school_id: z.string().optional(),
+  school_id: z.string().uuid(),
 });
 
 const sendNotificationSchema = z.object({
@@ -18,39 +18,39 @@ const sendNotificationSchema = z.object({
   title: z.string(),
   message: z.string(),
   type: z.enum(["info", "warning", "success", "error"]),
-  school_id: z.string().optional(),
+  school_id: z.string().uuid(),
 });
 
 // Outils disponibles
 const tools = [
   {
     name: "calculate_student_average",
-    description: "Calcule la moyenne générale d'un élève pour un trimestre donné.",
+    description: "Calcule la moyenne générale d'un élève pour un trimestre donné. Requiert l'ID de l'école.",
     inputSchema: {
       type: "object" as const,
       properties: {
         student_id: { type: "string", description: "UUID de l'élève" },
         term_id: { type: "string", description: "UUID du trimestre" },
-        school_id: { type: "string", description: "ID de l'école pour vérification" },
+        school_id: { type: "string", description: "ID de l'école (obligatoire)" },
       },
-      required: ["student_id", "term_id"],
+      required: ["student_id", "term_id", "school_id"],
     },
   },
   {
     name: "get_student_info",
-    description: "Récupère les informations complètes d'un élève (nom, classe, contact parents).",
+    description: "Récupère les informations complètes d'un élève. Requiert l'ID de l'école.",
     inputSchema: {
       type: "object" as const,
       properties: {
         student_id: { type: "string", description: "UUID de l'élève" },
-        school_id: { type: "string", description: "ID de l'école pour vérification" },
+        school_id: { type: "string", description: "ID de l'école (obligatoire)" },
       },
-      required: ["student_id"],
+      required: ["student_id", "school_id"],
     },
   },
   {
     name: "send_notification",
-    description: "Envoie une notification officielle à un parent ou un enseignant.",
+    description: "Envoie une notification officielle. Requiert l'ID de l'école.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -58,9 +58,9 @@ const tools = [
         title: { type: "string", description: "Titre du message" },
         message: { type: "string", description: "Contenu du message" },
         type: { type: "string", enum: ["info", "warning", "success", "error"] },
-        school_id: { type: "string", description: "ID de l'école expéditrice" },
+        school_id: { type: "string", description: "ID de l'école (obligatoire)" },
       },
-      required: ["user_id", "title", "message", "type"],
+      required: ["user_id", "title", "message", "type", "school_id"],
     },
   },
 ];
@@ -78,20 +78,15 @@ export async function handleCalculateAverage(args: unknown): Promise<ToolRespons
     const { student_id, term_id, school_id } = calculateAverageSchema.parse(args);
     const supabase = createAdminClient();
 
-    let query = supabase
+    const { data: grades, error } = await supabase
       .from('grades')
       .select('score')
       .eq('student_id', student_id)
-      .eq('term_id', term_id);
-
-    if (school_id) {
-      query = query.eq('school_id', school_id);
-    }
-
-    const { data: grades, error } = await query;
+      .eq('term_id', term_id)
+      .eq('school_id', school_id); // Enforce school isolation
 
     if (error) throw error;
-    if (!grades || grades.length === 0) return { content: [{ type: "text", text: "Aucune note trouvée pour ce trimestre." }] };
+    if (!grades || grades.length === 0) return { content: [{ type: "text", text: "Aucune note trouvée pour cet élève dans cette école/trimestre." }] };
 
     const average = grades.reduce((acc, g) => acc + (g.score || 0), 0) / grades.length;
     return {
@@ -107,18 +102,16 @@ export async function handleGetStudentInfo(args: unknown): Promise<ToolResponse>
     const { student_id, school_id } = getStudentInfoSchema.parse(args);
     const supabase = createAdminClient();
 
-    let query = supabase
+    const { data: student, error } = await supabase
       .from('students')
       .select('*, classes(name)')
-      .eq('id', student_id);
-
-    if (school_id) {
-      query = query.eq('school_id', school_id);
-    }
-
-    const { data: student, error } = await query.single();
+      .eq('id', student_id)
+      .eq('school_id', school_id) // Enforce school isolation
+      .single();
 
     if (error) throw error;
+    if (!student) throw new Error("Élève non trouvé dans cet établissement.");
+
     return {
       content: [{ type: "text", text: `Élève: ${student.first_name} ${student.last_name}, Classe: ${student.classes?.name || 'N/A'}. Statut: ${student.status}` }]
     };

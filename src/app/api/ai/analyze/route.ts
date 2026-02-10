@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeSchoolPerformance } from '@/lib/ai/deepseek';
 import { headers } from 'next/headers';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const headersList = await headers();
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       classStats[className].count += 1;
     });
 
-    const performanceData = Object.entries(classStats).map(([name, stats]) => ({
+    const performanceData = Object.entries(classStats).map(([, stats]) => ({
       average: stats.total / stats.count,
       classSize: stats.count
     }));
