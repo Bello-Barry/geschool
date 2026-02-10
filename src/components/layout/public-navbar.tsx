@@ -11,17 +11,17 @@ export function Header() {
           GESchool
         </Link>
         <nav className="flex gap-4 items-center">
-          <Link href="#features" className="text-sm hover:text-primary">
+          <Link href="/#features" className="text-sm hover:text-primary">
             Fonctionnalités
           </Link>
-          <Link href="#stats" className="text-sm hover:text-primary">
+          <Link href="/#stats" className="text-sm hover:text-primary">
             Statistiques
           </Link>
-          <Button asChild variant="outline" className="mr-2">
-            <Link href="#detect-school">Connexion</Link>
+          <Button asChild variant="outline" className="hidden sm:inline-flex">
+            <Link href="/#detect-school">Connexion</Link>
           </Button>
           <Button asChild>
-            <Link href="/contact">Contact</Link>
+            <Link href="/register">S'inscrire</Link>
           </Button>
         </nav>
       </div>
