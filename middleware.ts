@@ -23,7 +23,7 @@ const PUBLIC_ROUTES = [
 const RESERVED_SUBDOMAINS = ['www', 'api', 'admin', 'cdn', 'static', 'app'];
 
 export async function middleware(request: NextRequest) {
-  const { supabase, response } = createClient(request);
+  const { supabase, response: supabaseResponse } = createClient(request);
   
   // 1. Extraire hostname et sous-domaine
   const hostname = request.headers.get('host') || '';
@@ -33,17 +33,17 @@ export async function middleware(request: NextRequest) {
   
   // 2. Gérer sous-domaines réservés
   if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
-    return response;
+    return supabaseResponse;
   }
   
   // 3. Si domaine racine (ecole-congo.com) - routes publiques
   if (!subdomain || subdomain === hostname.split('.')[0]) {
     // Si route détection école, pas besoin de vérifier
     if (request.nextUrl.pathname === '/api/detect-school') {
-      return response;
+      return supabaseResponse;
     }
     
-    return response;
+    return supabaseResponse;
   }
   
   // 4. Vérifier que le sous-domaine correspond à une école active
@@ -58,11 +58,12 @@ export async function middleware(request: NextRequest) {
   
   console.log('[Middleware] School found:', school.name);
   
-  // 5. Injecter headers pour les Server Components
-  response.headers.set('x-school-id', school.id);
-  response.headers.set('x-school-name', school.name);
-  response.headers.set('x-school-subdomain', school.subdomain || '');
-  response.headers.set('x-school-color', school.primary_color || '#3B82F6');
+  // Préparez les nouveaux headers pour la requête
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-school-id', school.id);
+  requestHeaders.set('x-school-name', school.name);
+  requestHeaders.set('x-school-subdomain', school.subdomain || '');
+  requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
   
   // 6. Vérifier authentification pour routes protégées
   const isPublicRoute = PUBLIC_ROUTES.some(route => 
@@ -95,8 +96,8 @@ export async function middleware(request: NextRequest) {
     }
     
     // Injecter user_id dans les headers pour RLS
-    response.headers.set('x-user-id', session.user.id);
-    response.headers.set('x-user-role', user.role);
+    requestHeaders.set('x-user-id', session.user.id);
+    requestHeaders.set('x-user-role', user.role);
 
     // Redirection en fonction du rôle
     const { pathname } = request.nextUrl;
@@ -120,6 +121,22 @@ export async function middleware(request: NextRequest) {
     }
   }
   
+  // Créez une nouvelle réponse avec les headers de requête mis à jour
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Copiez les cookies de la réponse supabase (pour le rafraîchissement de session)
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value);
+  });
+
+  // Ajoutez également les headers à la réponse pour que le client puisse les voir si besoin
+  response.headers.set('x-school-id', school.id);
+  response.headers.set('x-school-name', school.name);
+
   return response;
 }
 
