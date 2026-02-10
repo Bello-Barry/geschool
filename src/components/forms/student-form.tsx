@@ -97,7 +97,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Matricule</label>
               <Input
@@ -147,7 +147,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
               )}
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium">Email</label>
               <Input
                 type="email"
@@ -160,7 +160,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
               )}
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium">Classe</label>
               <Select onValueChange={(value) => setValue("classId", value)}>
                 <SelectTrigger className="mt-1">

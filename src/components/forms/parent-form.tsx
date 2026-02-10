@@ -84,7 +84,7 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Prénom</label>
               <Input
@@ -109,7 +109,7 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
               )}
             </div>
 
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium">Email</label>
               <Input
                 type="email"
@@ -140,7 +140,7 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
               />
             </div>
 
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="text-sm font-medium">Profession</label>
               <Input
                 placeholder="Médecin"

@@ -55,7 +55,6 @@ export function RegisterForm() {
 
       toast.success('Établissement créé avec succès ! Redirection...');
 
-      // Construire l'URL du sous-domaine
       const hostname = window.location.hostname;
       const port = window.location.port;
       const protocol = window.location.protocol;
@@ -64,13 +63,11 @@ export function RegisterForm() {
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
       } else {
-        // En production, on suppose que le domaine est quelque chose comme geschool.com
         const domainParts = hostname.split('.');
         const baseDomain = domainParts.slice(-2).join('.');
         newUrl = `${protocol}//${values.subdomain}.${baseDomain}/admin`;
       }
 
-      // Petite pause pour laisser l'utilisateur voir le message de succès
       setTimeout(() => {
         window.location.href = newUrl;
       }, 1500);
@@ -87,8 +84,8 @@ export function RegisterForm() {
     <Card>
       <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="firstName"
@@ -164,8 +161,8 @@ export function RegisterForm() {
                   <FormLabel>Sous-domaine souhaité</FormLabel>
                   <FormControl>
                     <div className="flex items-center gap-2">
-                      <Input placeholder="lycee-brazza" {...field} disabled={loading} />
-                      <span className="text-muted-foreground text-sm">.geschool.cd</span>
+                      <Input placeholder="lycee-brazza" {...field} disabled={loading} className="flex-1 min-w-0" />
+                      <span className="text-muted-foreground text-sm shrink-0">.geschool.cd</span>
                     </div>
                   </FormControl>
                   <FormDescription className="text-xs">
