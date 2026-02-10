@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { getSchoolBySubdomain } from '@/lib/school';
 import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
 // Routes publiques (n'ont pas besoin d'authentification)
@@ -42,7 +41,11 @@ export async function middleware(request: NextRequest) {
   }
   
   // 4. Vérifier que le sous-domaine correspond à une école active
-  const school = await getSchoolBySubdomain(subdomain);
+  const { data: school } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('subdomain', subdomain)
+    .single();
   
   if (!school) {
     // Rediriger vers page d'erreur si école introuvable
@@ -140,15 +143,13 @@ function extractSubdomain(hostname: string): string | null {
   
   // localhost ou IP
   if (parts.length <= 1 || parts.includes('localhost') || parts.includes('127.0.0.1')) {
-    // Cas localhost: parts[0] est 'localhost' ou le sous-domaine
     if (parts.length > 1 && (parts.includes('localhost') || parts.includes('127.0.0.1'))) {
-       return parts[0];
+       return parts[0] || null;
     }
     return null;
   }
 
   // En production: lycee-sassou.ecole-congo.com (3 parts)
-  // ecole-congo.com (2 parts)
   if (parts.length <= 2) {
     return null;
   }

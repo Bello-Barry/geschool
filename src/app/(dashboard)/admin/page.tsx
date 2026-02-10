@@ -11,7 +11,6 @@ export default async function AdminDashboard() {
   const headersList = await headers();
   const schoolId = headersList.get("x-school-id");
   const schoolName = headersList.get("x-school-name");
-  const subdomain = headersList.get("x-school-subdomain");
 
   if (!schoolId) redirect("/login");
 
