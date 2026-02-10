@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, Copy, ExternalLink, UserPlus } from "lucide-react";
+import { AIInsights } from "@/components/dashboard/ai-insights";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -164,6 +165,8 @@ export default async function AdminDashboard() {
 
         {/* Access & Sharing */}
         <div className="space-y-6">
+          <AIInsights />
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

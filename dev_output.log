@@ -1,0 +1,27 @@
+
+> geschool@0.1.0 dev /app
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+   ▲ Next.js 15.0.7
+   - Local:        http://localhost:3001
+
+ ✓ Starting...
+ ✓ Ready in 4.8s
+ ○ Compiling / ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ Compiled / in 15.1s (2198 modules)
+ HEAD / 500 in 16167ms
+ ⨯ src/lib/supabase/client.ts (8:11) @ createClient
+ ⨯ Error: Missing Supabase environment variables
+    at createClient (./src/lib/supabase/client.ts:11:15)
+    at AuthProvider (./src/components/providers/auth-provider.tsx:21:88)
+digest: "3548730755"
+   6 |
+   7 |   if (!supabaseUrl || !supabaseAnonKey) {
+>  8 |     throw new Error('Missing Supabase environment variables');
+     |           ^
+   9 |   }
+  10 |
+  11 |   return createBrowserClient(
+ ✓ Compiled in 1288ms (1075 modules)
