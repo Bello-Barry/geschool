@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { toast } from 'react-toastify';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -32,6 +32,7 @@ interface LoginFormProps {
 
 export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -59,7 +60,10 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       }
 
       if (data.user) {
-        toast.success(`Bienvenue ${school.name} !`);
+        toast({
+          title: 'Connexion réussie',
+          description: `Bienvenue ${school.name} !`,
+        });
         
         // Rediriger vers la racine, le middleware s'occupera du reste
         setTimeout(() => {
@@ -72,7 +76,11 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Email ou mot de passe incorrect');
+      toast({
+        title: 'Erreur',
+        description: 'Email ou mot de passe incorrect',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

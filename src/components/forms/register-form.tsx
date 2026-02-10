@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { toast } from 'react-toastify';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -23,6 +23,7 @@ const registerSchema = z.object({
 
 export function RegisterForm() {
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -51,7 +52,10 @@ export function RegisterForm() {
         throw new Error(data.error || 'Erreur lors de la création du compte');
       }
 
-      toast.success('Établissement créé avec succès ! Redirection...');
+      toast({
+        title: 'Succès !',
+        description: 'Établissement créé avec succès ! Redirection...',
+      });
 
       const hostname = window.location.hostname;
       const port = window.location.port;
@@ -72,7 +76,11 @@ export function RegisterForm() {
 
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error instanceof Error ? error.message : 'Une erreur est survenue');
+      toast({
+        title: 'Erreur',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
