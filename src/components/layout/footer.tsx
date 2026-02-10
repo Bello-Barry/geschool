@@ -30,7 +30,7 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li><a href="mailto:info@geschool.cd" className="text-muted-foreground hover:text-primary">info@geschool.cd</a></li>
-              <li><a href="tel:+242" className="text-muted-foreground hover:text-primary">+242 (Congo)</a></li>
+              <li><span className="text-muted-foreground">+242 (Congo)</span></li>
             </ul>
           </div>
         </div>

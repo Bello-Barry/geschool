@@ -5,6 +5,13 @@ import { Sidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 import { Toaster } from '@/components/ui/toaster';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardLayout({
   children,
@@ -40,20 +47,45 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="hidden md:flex h-full w-64 flex-col fixed inset-y-0 z-50">
+    <div className="flex min-h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 z-50">
         <Sidebar />
-      </div>
+      </aside>
       
       {/* Main content */}
-      <div className="flex-1 md:pl-64 flex flex-col">
+      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
         {/* Header */}
-        <Header />
+        <header className="border-b bg-background sticky top-0 z-40 w-full">
+          <div className="px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              {/* Mobile Sidebar Toggle */}
+              <div className="md:hidden flex-shrink-0">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-6 w-6" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-64">
+                    <Sidebar />
+                  </SheetContent>
+                </Sheet>
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold truncate">
+                Tableau de Bord
+              </h1>
+            </div>
+
+            <Header />
+          </div>
+        </header>
         
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
 

@@ -2,45 +2,76 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  School,
+  FileText,
+  Calendar,
+  Settings,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export function Sidebar() {
-  const [open, setOpen] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+
+  const menuItems = [
+    { icon: LayoutDashboard, label: "Tableau de Bord", href: "/admin" },
+    { icon: GraduationCap, label: "Élèves", href: "/admin/students" },
+    { icon: Users, label: "Enseignants", href: "/admin/teachers" },
+    { icon: School, label: "Classes", href: "/admin/classes" },
+    { icon: FileText, label: "Notes", href: "/admin/grades" },
+    { icon: Calendar, label: "Présences", href: "/admin/attendance" },
+    { icon: Settings, label: "Paramètres", href: "/admin/settings" },
+  ];
 
   return (
-    <aside className={`bg-background border-r transition-all duration-300 ${open ? 'w-64' : 'w-20'}`}>
-      <div className="p-4 flex items-center justify-between">
-        {open && <h2 className="text-lg font-bold">GESchool</h2>}
+    <aside className={`h-full bg-card border-r flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
+      <div className="p-6 flex items-center justify-between">
+        {!collapsed && <h2 className="text-xl font-bold text-primary truncate">GESchool</h2>}
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={() => setOpen(!open)}
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden md:flex"
         >
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
 
-      <nav className="space-y-2 p-4">
-        <Link href="/dashboard" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Tableau de Bord</span>}
-        </Link>
-        <Link href="/dashboard/students" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Élèves</span>}
-        </Link>
-        <Link href="/dashboard/teachers" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Enseignants</span>}
-        </Link>
-        <Link href="/dashboard/classes" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Classes</span>}
-        </Link>
-        <Link href="/dashboard/grades" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Notes</span>}
-        </Link>
-        <Link href="/dashboard/attendance" className="block px-4 py-2 rounded-lg hover:bg-muted">
-          {open && <span>Présences</span>}
-        </Link>
+      <nav className="flex-1 px-4 space-y-2">
+        {menuItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-4 px-3 py-2 rounded-lg transition-colors ${
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span className="truncate">{item.label}</span>}
+            </Link>
+          );
+        })}
       </nav>
+
+      {!collapsed && (
+        <div className="p-4 border-t">
+          <div className="bg-primary/5 p-4 rounded-lg">
+            <p className="text-xs font-semibold text-primary uppercase mb-1">Besoin d'aide ?</p>
+            <p className="text-xs text-muted-foreground">Consultez notre guide d'utilisation.</p>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

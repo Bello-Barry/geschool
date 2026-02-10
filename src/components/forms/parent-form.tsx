@@ -7,65 +7,52 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 
-const studentSchema = z.object({
-  matricule: z.string().min(1, "Matricule requis"),
+const parentSchema = z.object({
   firstName: z.string().min(2, "Prénom requis"),
   lastName: z.string().min(2, "Nom requis"),
   email: z.string().email("Email invalide"),
-  classId: z.string().uuid("Classe requise"),
-  dateOfBirth: z.string().optional(),
-  placeOfBirth: z.string().optional(),
-  gender: z.enum(["M", "F"]).optional(),
+  phone: z.string().optional(),
+  relationship: z.string().optional(),
+  profession: z.string().optional(),
 });
 
-type StudentFormData = z.infer<typeof studentSchema>;
+type ParentFormData = z.infer<typeof parentSchema>;
 
-interface StudentFormProps {
-  classes: Array<{ id: string; name: string }>;
+interface ParentFormProps {
   onSuccess?: () => void;
   isLoading?: boolean;
 }
 
-export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: StudentFormProps) {
+export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
-  } = useForm<StudentFormData>({
-    resolver: zodResolver(studentSchema),
+  } = useForm<ParentFormData>({
+    resolver: zodResolver(parentSchema),
   });
 
-  const onSubmit = async (data: StudentFormData) => {
+  const onSubmit = async (data: ParentFormData) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/students", {
+      const response = await fetch("/api/parents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          matricule: data.matricule,
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
-          class_id: data.classId,
-          date_of_birth: data.dateOfBirth,
-          place_of_birth: data.placeOfBirth,
-          gender: data.gender,
+          phone: data.phone,
+          relationship: data.relationship,
+          profession: data.profession,
         }),
       });
 
@@ -85,8 +72,8 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouvel élève</CardTitle>
-        <CardDescription>Remplissez les informations de l'élève</CardDescription>
+        <CardTitle>Nouveau parent</CardTitle>
+        <CardDescription>Remplissez les informations du parent</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -99,34 +86,9 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Matricule</label>
-              <Input
-                placeholder="MAT-2025-001"
-                {...register("matricule")}
-                className="mt-1"
-              />
-              {errors.matricule && (
-                <p className="text-sm text-red-500 mt-1">{errors.matricule.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Genre</label>
-              <Select onValueChange={(value) => setValue("gender", value as "M" | "F")}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Masculin</SelectItem>
-                  <SelectItem value="F">Féminin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <label className="text-sm font-medium">Prénom</label>
               <Input
-                placeholder="Jean"
+                placeholder="Samuel"
                 {...register("firstName")}
                 className="mt-1"
               />
@@ -138,7 +100,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
             <div>
               <label className="text-sm font-medium">Nom</label>
               <Input
-                placeholder="Dupont"
+                placeholder="Mvouba"
                 {...register("lastName")}
                 className="mt-1"
               />
@@ -151,7 +113,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
               <label className="text-sm font-medium">Email</label>
               <Input
                 type="email"
-                placeholder="jean@example.com"
+                placeholder="parent@example.com"
                 {...register("email")}
                 className="mt-1"
               />
@@ -160,39 +122,29 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
               )}
             </div>
 
-            <div className="sm:col-span-2">
-              <label className="text-sm font-medium">Classe</label>
-              <Select onValueChange={(value) => setValue("classId", value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Sélectionner une classe" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.classId && (
-                <p className="text-sm text-red-500 mt-1">{errors.classId.message}</p>
-              )}
-            </div>
-
             <div>
-              <label className="text-sm font-medium">Date de naissance</label>
+              <label className="text-sm font-medium">Téléphone</label>
               <Input
-                type="date"
-                {...register("dateOfBirth")}
+                placeholder="+242 06 123 4567"
+                {...register("phone")}
                 className="mt-1"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Lieu de naissance</label>
+              <label className="text-sm font-medium">Lien de parenté</label>
               <Input
-                placeholder="Brazzaville"
-                {...register("placeOfBirth")}
+                placeholder="Père / Mère"
+                {...register("relationship")}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="text-sm font-medium">Profession</label>
+              <Input
+                placeholder="Médecin"
+                {...register("profession")}
                 className="mt-1"
               />
             </div>
@@ -205,7 +157,7 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
                 Création en cours...
               </>
             ) : (
-              "Créer l'élève"
+              "Créer le parent"
             )}
           </Button>
         </form>

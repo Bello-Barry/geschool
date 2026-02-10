@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -23,7 +22,6 @@ const registerSchema = z.object({
 });
 
 export function RegisterForm() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof registerSchema>>({
@@ -53,8 +51,24 @@ export function RegisterForm() {
         throw new Error(data.error || 'Erreur lors de la création du compte');
       }
 
-      toast.success('Compte créé avec succès !');
-      router.push('/login');
+      toast.success('Établissement créé avec succès ! Redirection...');
+
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+      const protocol = window.location.protocol;
+
+      let newUrl = '';
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
+      } else {
+        const domainParts = hostname.split('.');
+        const baseDomain = domainParts.slice(-2).join('.');
+        newUrl = `${protocol}//${values.subdomain}.${baseDomain}/admin`;
+      }
+
+      setTimeout(() => {
+        window.location.href = newUrl;
+      }, 1500);
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -68,41 +82,43 @@ export function RegisterForm() {
     <Card>
       <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Prénom</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Votre prénom" {...field} disabled={loading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Votre nom" {...field} disabled={loading} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prénom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jean" {...field} disabled={loading} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Dupont" {...field} disabled={loading} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email professionnel</FormLabel>
                   <FormControl>
-                    <Input placeholder="votre@email.com" {...field} disabled={loading} type="email" />
+                    <Input placeholder="directeur@ecole.com" {...field} disabled={loading} type="email" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,14 +137,15 @@ export function RegisterForm() {
                 </FormItem>
               )}
             />
+            <hr className="my-4" />
             <FormField
               control={form.control}
               name="schoolName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nom de l'école</FormLabel>
+                  <FormLabel>Nom de l'établissement</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nom de votre école" {...field} disabled={loading} />
+                    <Input placeholder="Lycée de Brazzaville" {...field} disabled={loading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,26 +156,36 @@ export function RegisterForm() {
               name="subdomain"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sous-domaine</FormLabel>
+                  <FormLabel>Sous-domaine souhaité</FormLabel>
                   <FormControl>
-                    <Input placeholder="sous-domaine" {...field} disabled={loading} />
+                    <div className="flex items-center gap-2">
+                      <Input placeholder="lycee-brazza" {...field} disabled={loading} className="flex-1 min-w-0" />
+                      <span className="text-muted-foreground text-sm shrink-0">.geschool.cd</span>
+                    </div>
                   </FormControl>
+                  <FormDescription className="text-xs">
+                    C'est l'adresse web unique de votre école.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Création en cours...' : 'Créer un compte'}
+            <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
+              {loading ? 'Création de l\'espace...' : 'Créer mon établissement'}
             </Button>
           </form>
         </Form>
         <div className="mt-4 text-center text-sm">
-            Vous avez déjà un compte?{' '}
-            <Link href="/login" className="underline">
+            Vous avez déjà un établissement ?{' '}
+            <Link href="/#detect-school" className="font-semibold text-primary hover:underline">
                 Se connecter
             </Link>
         </div>
       </CardContent>
     </Card>
   );
+}
+
+function FormDescription({ children, className }: { children: React.ReactNode, className?: string }) {
+    return <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>
 }

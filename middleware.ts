@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { getSchoolBySubdomain } from '@/lib/school';
 import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
 // Routes publiques (n'ont pas besoin d'authentification)
@@ -36,18 +35,17 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
   
-  // 3. Si domaine racine (ecole-congo.com) - routes publiques
-  if (!subdomain || subdomain === hostname.split('.')[0]) {
-    // Si route détection école, pas besoin de vérifier
-    if (request.nextUrl.pathname === '/api/detect-school') {
-      return supabaseResponse;
-    }
-    
+  // 3. Si pas de sous-domaine (domaine racine)
+  if (!subdomain) {
     return supabaseResponse;
   }
   
   // 4. Vérifier que le sous-domaine correspond à une école active
-  const school = await getSchoolBySubdomain(subdomain as string);
+  const { data: school } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('subdomain', subdomain)
+    .single();
   
   if (!school) {
     // Rediriger vers page d'erreur si école introuvable
@@ -144,12 +142,18 @@ function extractSubdomain(hostname: string): string | null {
   const parts = hostname.split('.');
   
   // localhost ou IP
-  if (parts.length <= 1 || parts.includes('localhost')) {
+  if (parts.length <= 1 || parts.includes('localhost') || parts.includes('127.0.0.1')) {
+    if (parts.length > 1 && (parts.includes('localhost') || parts.includes('127.0.0.1'))) {
+       return parts[0] || null;
+    }
+    return null;
+  }
+
+  // En production: lycee-sassou.ecole-congo.com (3 parts)
+  if (parts.length <= 2) {
     return null;
   }
   
-  // En production: lycee-sassou.ecole-congo.com -> lycee-sassou
-  // En dev: lycee-sassou.localhost:3000 -> lycee-sassou
   const subdomain = parts[0] || null;
   
   // Ignorer www et autres sous-domaines réservés
