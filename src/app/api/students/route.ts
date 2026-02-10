@@ -1,7 +1,8 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import crypto from "crypto";
 
 const studentSchema = z.object({
   matricule: z.string().min(1),
@@ -15,7 +16,7 @@ const studentSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const schoolId = request.headers.get("x-school-id");
 
   if (!schoolId) {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const schoolId = request.headers.get("x-school-id");
 
   if (!schoolId) {
@@ -59,14 +60,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Vérifier que c'est un admin
+  // Vérifier que c'est un admin et qu'il appartient à cette école
   const { data: user } = await supabase
     .from("users")
-    .select("role")
+    .select("role, school_id")
     .eq("id", session.user.id)
     .single();
 
-  if (user?.role !== "admin_school" && user?.role !== "super_admin") {
+  if (!user || (user.role !== "admin_school" && user.role !== "super_admin") || user.school_id !== schoolId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -74,11 +75,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = studentSchema.parse(body);
 
+    const adminClient = createAdminClient();
+
+    // Générer un mot de passe temporaire sécurisé
+    const tempPassword = crypto.randomBytes(12).toString('hex');
+
     // Créer l'utilisateur dans auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email: validated.email,
-      password: Math.random().toString(36).slice(-12),
+      password: tempPassword,
       email_confirm: true,
+      user_metadata: {
+        first_name: validated.first_name,
+        last_name: validated.last_name,
+        role: "student"
+      }
     });
 
     if (authError) throw new Error(authError.message);
@@ -95,7 +106,11 @@ export async function POST(request: NextRequest) {
         last_name: validated.last_name,
       });
 
-    if (userError) throw userError;
+    if (userError) {
+      // Rollback auth user
+      await adminClient.auth.admin.deleteUser(authData.user.id);
+      throw userError;
+    }
 
     // Créer le record student
     const { data: student, error: studentError } = await supabase
@@ -112,7 +127,11 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (studentError) throw studentError;
+    if (studentError) {
+      // Rollback auth user (user profile will be deleted by cascade if FK is set)
+      await adminClient.auth.admin.deleteUser(authData.user.id);
+      throw studentError;
+    }
 
     return NextResponse.json(student, { status: 201 });
   } catch (error) {
@@ -120,6 +139,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.flatten() }, { status: 400 });
     }
-    return NextResponse.json({ error: "Failed to create student" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to create student" }, { status: 500 });
   }
 }
