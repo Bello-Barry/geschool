@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // Check if school with subdomain already exists
-    const { data: existingSchool, error: schoolError } = await supabase
+    const { data: existingSchool } = await supabase
       .from('schools')
       .select('id')
       .eq('subdomain', subdomain)
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Create the school
     const { data: newSchool, error: createSchoolError } = await supabase
       .from('schools')
-      .insert({ name: schoolName, subdomain })
+      .insert({ name: schoolName, subdomain, code: subdomain.toUpperCase() })
       .select('id')
       .single();
 
