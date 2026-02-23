@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -71,7 +71,7 @@ export default async function AssignmentsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {assignments?.map((assignment) => (
+                            {assignments?.map((assignment: any) => (
                                 <TableRow key={assignment.id}>
                                     <TableCell className="font-medium">
                                         {assignment.teacher?.user?.first_name} {assignment.teacher?.user?.last_name}

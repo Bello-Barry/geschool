@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Save, ArrowLeft, Loader2 } from "lucide-react";
+import { Save, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 interface PageProps {

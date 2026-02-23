@@ -12,7 +12,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Plus, Receipt, TrendingUp, Users } from "lucide-react";
+import { DollarSign, Plus, Receipt, Settings2, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
 import { formatCFA, formatDate } from "@/lib/utils/formatters";
 
@@ -38,7 +38,7 @@ export default async function AdminPaymentsPage() {
     .limit(10);
 
   // Calculer statistiques (simulé pour l'instant)
-  const totalCollected = recentPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const totalCollected = recentPayments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -116,7 +116,7 @@ export default async function AdminPaymentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentPayments?.map((payment) => (
+              {recentPayments?.map((payment: any) => (
                 <TableRow key={payment.id}>
                   <TableCell className="font-medium">
                     {payment.student?.user?.first_name} {payment.student?.user?.last_name}
@@ -151,5 +151,3 @@ export default async function AdminPaymentsPage() {
   );
 }
 
-// Stub for Settings2 which was missing in imports
-import { Settings2 } from "lucide-react";

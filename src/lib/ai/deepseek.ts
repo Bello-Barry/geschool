@@ -21,6 +21,7 @@ export async function generateBulletinComment(data: StudentAcademicData): Promis
     // Simulation d'appel API pour l'instant (à remplacer par un vrai fetch)
     // En production, on utiliserait un stream ou une attente de réponse
     try {
+        /*
         const prompt = `
       Tu es un directeur d'école expérimenté au Congo-Brazzaville.
       Génère un commentaire constructif et encourageant pour le bulletin de l'élève ${data.name}.
@@ -30,6 +31,7 @@ export async function generateBulletinComment(data: StudentAcademicData): Promis
       Ton : Formel et bienveillant.
       Langue : Français.
     `;
+        */
 
         // const response = await fetch('https://api.deepseek.com/v1/chat/completions', { ... });
         // return response.choices[0].message.content;
