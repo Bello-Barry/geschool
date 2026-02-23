@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { Bot, User, Send, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default async function ParentChatbotPage() {
-  const supabase = await createClient();
   const headersList = await headers();
   const schoolId = headersList.get("x-school-id");
   const schoolName = headersList.get("x-school-name") || "l'école";

@@ -44,7 +44,7 @@ export default async function ParentPaymentsPage() {
     .in("student_id", childrenIds)
     .order("payment_date", { ascending: false });
 
-  const totalPaid = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalPaid = (payments || []).reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
   const amountDue = 1500000 - totalPaid; // Exemple
 
   return (
