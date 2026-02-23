@@ -81,7 +81,7 @@ export default async function AttendancePage({ params }: PageProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {students.data?.map((student) => (
+                                {students.data?.map((student: any) => (
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">
                                             {student.user?.last_name} {student.user?.first_name}

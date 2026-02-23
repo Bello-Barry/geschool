@@ -82,7 +82,7 @@ export default async function GradeEntryPage({ params }: PageProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {students.data?.map((student) => (
+                                {students.data?.map((student: any) => (
                                     <TableRow key={student.id}>
                                         <TableCell className="font-medium">
                                             <div className="flex flex-col">
