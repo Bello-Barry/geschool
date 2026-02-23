@@ -1,157 +1,155 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, Plus, Receipt, TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
-import { DollarSign, TrendingUp, AlertCircle } from "lucide-react";
+import { formatCFA, formatDate } from "@/lib/utils/formatters";
 
-export default async function PaymentsPage() {
+export default async function AdminPaymentsPage() {
   const supabase = await createClient();
   const headersList = await headers();
   const schoolId = headersList.get("x-school-id");
 
   if (!schoolId) redirect("/login");
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Récupérer les paiements récents
-  const { data: payments } = await supabase
+  // Récupérer les derniers paiements
+  const { data: recentPayments } = await supabase
     .from("payments")
     .select(`
       *,
       student:student_id(
-        matricule,
-        user:user_id(first_name, last_name)
-      ),
-      academic_year:academic_year_id(name)
+        user:user_id(first_name, last_name),
+        class:class_id(name)
+      )
     `)
     .eq("school_id", schoolId)
     .order("payment_date", { ascending: false })
     .limit(10);
 
-  // Calculer les statistiques
-  const totalCollected = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+  // Calculer statistiques (simulé pour l'instant)
+  const totalCollected = recentPayments?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gestion Financière</h1>
-          <p className="text-gray-600 mt-1">Suivi des paiements et revenus</p>
+          <h1 className="text-2xl font-bold tracking-tight">Gestion Financière</h1>
+          <p className="text-muted-foreground">Suivez les revenus et gérez les frais de scolarité.</p>
         </div>
-        <Link href="/admin/payments?action=new">
-          <Button>Enregistrer paiement</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/payments/fees">
+              <Settings2 className="mr-2 h-4 w-4" />
+              Paramétrer les frais
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/payments/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Saisir un paiement
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Collecté ce mois</CardTitle>
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCollected.toLocaleString()}₣</div>
-            <p className="text-xs text-gray-600">Total des paiements</p>
+            <div className="text-2xl font-bold">{formatCFA(totalCollected)}</div>
+            <p className="text-xs text-muted-foreground">+12% par rapport au mois dernier</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taux de recouvrement</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">75%</div>
-            <p className="text-xs text-gray-600">Élèves à jour</p>
+            <div className="text-2xl font-bold">68%</div>
+            <p className="text-xs text-muted-foreground">Objectif : 85% d'ici fin mars</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Arriérés</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">Arriérés totaux</CardTitle>
+            <Users className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12 élèves</div>
-            <p className="text-xs text-gray-600">En retard de paiement</p>
+            <div className="text-2xl font-bold">4.2M ₣</div>
+            <p className="text-xs text-muted-foreground">15 élèves en retard de paiement</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Paiements récents */}
       <Card>
         <CardHeader>
-          <CardTitle>Paiements récents</CardTitle>
-          <CardDescription>10 derniers paiements enregistrés</CardDescription>
+          <CardTitle>Dernières transactions</CardTitle>
+          <CardDescription>
+            Les 10 derniers paiements enregistrés.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold">Élève</th>
-                  <th className="text-left py-3 px-4 font-semibold">Montant</th>
-                  <th className="text-left py-3 px-4 font-semibold">Date</th>
-                  <th className="text-left py-3 px-4 font-semibold">Méthode</th>
-                  <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments && payments.length > 0 ? (
-                  payments.map((payment: any) => (
-                    <tr key={payment.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        {payment.student?.user?.first_name} {payment.student?.user?.last_name}
-                      </td>
-                      <td className="py-3 px-4 font-semibold">{payment.amount.toLocaleString()}₣</td>
-                      <td className="py-3 px-4">{new Date(payment.payment_date).toLocaleDateString("fr-FR")}</td>
-                      <td className="py-3 px-4">
-                        <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
-                          {payment.payment_method === "cash" ? "Espèces" : payment.payment_method}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Button variant="outline" size="sm">
-                          Reçu
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-500">
-                      Aucun paiement enregistré
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Élève</TableHead>
+                <TableHead>Classe</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Méthode</TableHead>
+                <TableHead className="text-right">Montant</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentPayments?.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-medium">
+                    {payment.student?.user?.first_name} {payment.student?.user?.last_name}
+                  </TableCell>
+                  <TableCell>{payment.student?.class?.name}</TableCell>
+                  <TableCell>{formatDate(payment.payment_date)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{payment.payment_method}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-green-700">
+                    {formatCFA(payment.amount)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" title="Voir le reçu">
+                      <Receipt className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {(!recentPayments || recentPayments.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                    Aucun paiement enregistré pour le moment.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/admin/payments/arrears">
-          <Button variant="outline" className="w-full">
-            Voir les arriérés
-          </Button>
-        </Link>
-        <Link href="/admin/payments/fees">
-          <Button variant="outline" className="w-full">
-            Gérer les frais
-          </Button>
-        </Link>
-        <Link href="/admin/payments/reports">
-          <Button variant="outline" className="w-full">
-            Rapports financiers
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }
+
+// Stub for Settings2 which was missing in imports
+import { Settings2 } from "lucide-react";

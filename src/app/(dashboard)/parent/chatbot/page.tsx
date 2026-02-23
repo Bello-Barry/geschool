@@ -1,193 +1,91 @@
-"use client";
-
-import { useState, useRef, useEffect } from "react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Sparkles, MessageSquare, History, Languages } from "lucide-react";
-import { chatbotResponse } from "@/lib/ai/gemini";
-import { Card } from "@/components/ui/card";
+import { Bot, User, Send, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+export default async function ParentChatbotPage() {
+  const supabase = await createClient();
+  const headersList = await headers();
+  const schoolId = headersList.get("x-school-id");
+  const schoolName = headersList.get("x-school-name") || "l'école";
 
-export default function ChatbotPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "Bonjour! Je suis votre assistant IA. Je peux répondre à vos questions sur la scolarité de vos enfants en Français ou en Lingala. Comment puis-je vous aider?",
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const suggestedQuestions = [
-    { label: "Moyenne générale", query: "Quelle est la moyenne générale de mon enfant ?", icon: Sparkles },
-    { label: "Absences", query: "Combien d'absences mon enfant a-t-il cette semaine ?", icon: History },
-    { label: "Paiements", query: "Quel est le solde restant à payer ?", icon: MessageSquare },
-    { label: "Traduction Lingala", query: "Peux-tu me donner le résumé en Lingala ?", icon: Languages },
-  ];
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const response = await chatbotResponse(input);
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        role: "assistant",
-        content: "Désolé, une erreur est survenue. Veuillez réessayer.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!schoolId) redirect("/login");
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex gap-6 p-6">
-      {/* Sidebar suggestions */}
-      <div className="hidden lg:flex flex-col w-72 gap-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          Suggestions
-        </h2>
-        <div className="space-y-2">
-          {suggestedQuestions.map((q, i) => (
-            <Button
-              key={i}
-              variant="outline"
-              className="w-full justify-start text-left h-auto py-3 px-4 break-words whitespace-normal"
-              onClick={() => setInput(q.query)}
-              disabled={loading}
-            >
-              <q.icon className="h-4 w-4 mr-2 shrink-0" />
-              <span className="text-sm">{q.label}</span>
-            </Button>
-          ))}
-        </div>
-
-        <Card className="mt-auto p-4 bg-muted/50 border-none">
-          <p className="text-xs text-muted-foreground">
-            L'assistant IA utilise vos données scolaires pour répondre précisément à vos besoins.
-          </p>
-        </Card>
-      </div>
-
-      {/* Main Chat Area */}
-      <Card className="flex-1 flex flex-col overflow-hidden border-primary/10">
-      <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
+    <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">Assistant IA</h1>
-          <p className="text-xs text-muted-foreground">En ligne | Support Multi-langue</p>
-        </div>
-        <div className="bg-green-500/10 text-green-600 text-[10px] px-2 py-1 rounded-full font-bold uppercase">
-          Actif
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-md p-4 rounded-lg ${
-                message.role === "user"
-                  ? "bg-blue-600 text-white rounded-br-none"
-                  : "bg-gray-200 text-gray-800 rounded-bl-none"
-              }`}
-            >
-              <p className="text-sm">{message.content}</p>
-              <span className="text-xs mt-1 block opacity-70">
-                {message.timestamp.toLocaleTimeString("fr-FR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-          </div>
-        ))}
-
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-200 text-gray-800 p-4 rounded-lg rounded-bl-none flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">L'assistant réfléchit...</span>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="p-4 border-t bg-muted/10">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Posez votre question en Français ou Lingala..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            disabled={loading}
-            className="bg-white"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            size="icon"
-            className="shrink-0"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-        <div className="flex items-center gap-4 mt-2">
-          <p className="text-[10px] text-gray-500">
-            💡 Conseil: Demandez "Donne moi le résumé en Lingala" pour une traduction.
+          <h1 className="text-3xl font-bold tracking-tight">Assistant IA</h1>
+          <p className="text-muted-foreground dark:text-gray-400">
+            Posez vos questions sur la scolarité de vos enfants à notre IA multilingue.
           </p>
         </div>
+        <Badge variant="outline" className="flex gap-1 items-center bg-blue-50 text-blue-700 border-blue-200 py-1">
+          <Sparkles className="h-3 w-3" /> Propulsé par Gemini
+        </Badge>
       </div>
+
+      <Card className="flex-1 flex flex-col overflow-hidden border-2 shadow-sm">
+        <CardHeader className="border-b bg-muted/30">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Bot className="h-5 w-5 text-blue-600" />
+            Assistant {schoolName} (Français / Lingala)
+          </CardTitle>
+          <CardDescription>
+            Exemple : "Quelle est la moyenne de mon fils en maths ?" ou "S'il vous plaît, traduisez en Lingala."
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Welcome Message */}
+          <div className="flex gap-3 max-w-[80%]">
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <Bot className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="bg-muted p-4 rounded-2xl rounded-tl-none">
+              <p className="text-sm">
+                Bonjour ! Je suis votre assistant scolaire intelligent. Comment puis-je vous aider aujourd'hui ?
+                <br /><br />
+                Ngai nazali lisungi na bino ya mayele mpona makambo ya kelasi. Ndenge nini nakoki kosunga bino lelo ?
+              </p>
+            </div>
+          </div>
+
+          {/* User Message Example */}
+          <div className="flex gap-3 max-w-[80%] ml-auto flex-row-reverse">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <User className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="bg-primary text-primary-foreground p-4 rounded-2xl rounded-tr-none">
+              <p className="text-sm text-white">
+                Quelles sont les dernières notes de Marie ?
+              </p>
+            </div>
+          </div>
+
+          <div className="italic text-xs text-muted-foreground text-center py-4">
+            Ceci est une démonstration. Les données réelles apparaîtront ici après connexion à l'API.
+          </div>
+        </CardContent>
+
+        <div className="p-4 border-t bg-white">
+          <form className="flex gap-2">
+            <Input
+              placeholder="Écrivez votre message ici..."
+              className="flex-1 rounded-full border-2 focus-visible:ring-blue-500"
+            />
+            <Button size="icon" className="rounded-full h-10 w-10 bg-blue-600 hover:bg-blue-700">
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+          <p className="text-[10px] text-center text-muted-foreground mt-2">
+            L'IA peut faire des erreurs. Vérifiez les informations importantes auprès de l'école.
+          </p>
+        </div>
       </Card>
     </div>
   );

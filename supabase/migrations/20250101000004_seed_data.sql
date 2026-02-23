@@ -16,7 +16,7 @@ INSERT INTO schools (name, subdomain, code, primary_color, phone, email, address
 
 -- Créer année scolaire 2024-2025
 INSERT INTO academic_years (school_id, name, start_date, end_date, is_current)
-SELECT id, '2024-2025', '2024-09-15', '2025-07-15', true
+SELECT id, '2024-2025', '2024-09-15'::DATE, '2025-07-15'::DATE, true
 FROM schools WHERE subdomain = 'lycee-sassou';
 
 -- Créer trimestres
@@ -31,9 +31,9 @@ SELECT
   term_data.is_current
 FROM academic_years ay
 CROSS JOIN (VALUES
-  ('1er Trimestre', 1, '2024-09-15', '2024-12-20', true),
-  ('2ème Trimestre', 2, '2025-01-06', '2025-03-31', false),
-  ('3ème Trimestre', 3, '2025-04-14', '2025-07-15', false)
+  ('1er Trimestre', 1, '2024-09-15'::DATE, '2024-12-20'::DATE, true),
+  ('2ème Trimestre', 2, '2025-01-06'::DATE, '2025-03-31'::DATE, false),
+  ('3ème Trimestre', 3, '2025-04-14'::DATE, '2025-07-15'::DATE, false)
 ) AS term_data(name, number, start_date, end_date, is_current)
 WHERE ay.name = '2024-2025' AND ay.school_id = (SELECT id FROM schools WHERE subdomain = 'lycee-sassou');
 

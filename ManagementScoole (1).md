@@ -1217,13 +1217,3 @@ C'est le fichier le PLUS CRITIQUE :
 - Ton formel et bienveillant
 - En français
 
-**Output** : Commentaire texte personnalisé
-
-**Utilisation** : Bouton "Générer
-NEXT_PUBLIC_SUPABASE_URL=https://apdozipxlpuuijzpiqfc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZG96aXB4bHB1dWlqenBpcWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTM0MTcsImV4cCI6MjA3ODM2OTQxN30.s47DGDrDo9cxBFKobn1oZ44uKvwQB3qYjS0NSnb2O2A
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwZG96aXB4bHB1dWlqenBpcWZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Mjc5MzQxNywiZXhwIjoyMDc4MzY5NDE3fQ.5wp3kqrJ5_t3JwQMkA6xd2jHQAfbjhDLv5MlU-lNtcI
-
-AIzaSyBz1pf-2hw5XTuKjaHM_cCZJ9DCZ_xZ504
-sk-082fbe5fcf80480b90fa3b942b8ed769
