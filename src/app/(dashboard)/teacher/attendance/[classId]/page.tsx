@@ -17,9 +17,9 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
 
 interface PageProps {
-    params: {
+    params: Promise<{
         classId: string;
-    };
+    }>;
 }
 
 export default async function AttendancePage({ params }: PageProps) {

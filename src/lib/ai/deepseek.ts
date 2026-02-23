@@ -50,3 +50,19 @@ export async function detectAtRiskStudents(students: Array<StudentAcademicData>)
         .filter(s => s.average < 10)
         .map(s => s.name);
 }
+/**
+ * Analyse les performances globales de l'école
+ */
+export async function analyzeSchoolPerformance(data: Array<{ average: number, classSize: number }>): Promise<string> {
+    if (data.length === 0) return "Pas assez de données pour l'analyse.";
+
+    const globalAverage = data.reduce((acc, curr) => acc + curr.average, 0) / data.length;
+
+    if (globalAverage >= 14) {
+        return "Les performances globales sont excellentes. L'accent peut être mis sur le perfectionnement et les activités parascolaires.";
+    } else if (globalAverage >= 10) {
+        return "Les performances sont satisfaisantes, mais des disparités subsistent entre les classes. Un suivi plus rapproché des classes en dessous de la moyenne est recommandé.";
+    } else {
+        return "Les performances globales sont préoccupantes. Un plan de remise à niveau et un renforcement pédagogique sont nécessaires.";
+    }
+}

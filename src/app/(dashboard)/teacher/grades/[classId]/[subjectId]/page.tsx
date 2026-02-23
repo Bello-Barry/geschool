@@ -17,10 +17,10 @@ import { Save, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface PageProps {
-    params: {
+    params: Promise<{
         classId: string;
         subjectId: string;
-    };
+    }>;
 }
 
 export default async function GradeEntryPage({ params }: PageProps) {
