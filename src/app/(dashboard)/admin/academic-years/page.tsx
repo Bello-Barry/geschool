@@ -12,7 +12,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plus, Settings2, Trash2 } from "lucide-react";
+import { Calendar, Plus, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
 
