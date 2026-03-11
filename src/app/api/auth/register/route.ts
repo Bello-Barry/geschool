@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 const registerSchema = z.object({
   firstName: z.string().min(1),
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { firstName, lastName, email, password, schoolName, subdomain } = validation.data;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Check if school with subdomain already exists
     const { data: existingSchool, error: schoolError } = await supabase
@@ -40,9 +40,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the school
+    const schoolCode = subdomain.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10);
     const { data: newSchool, error: createSchoolError } = await supabase
       .from('schools')
-      .insert({ name: schoolName, subdomain })
+      .insert({
+        name: schoolName,
+        subdomain,
+        code: `${schoolCode}-${Math.floor(1000 + Math.random() * 9000)}`
+      })
       .select('id')
       .single();
 
