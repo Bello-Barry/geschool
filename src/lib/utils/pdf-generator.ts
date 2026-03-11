@@ -1,11 +1,11 @@
-import { pdf } from '@react-pdf/renderer';
+import { pdf, DocumentProps } from '@react-pdf/renderer';
 // Note: Les templates React-PDF seront créés dans components/pdf
 // Ce fichier servira de point d'entrée pour la génération et le téléchargement
 
 /**
  * Génère un Blob PDF à partir d'un composant React-PDF
  */
-export async function generatePDFBlob(component: React.ReactElement): Promise<Blob> {
+export async function generatePDFBlob(component: React.ReactElement<DocumentProps>): Promise<Blob> {
     const instance = pdf(component);
     return await instance.toBlob();
 }

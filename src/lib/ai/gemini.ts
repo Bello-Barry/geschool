@@ -7,7 +7,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function getChatbotResponse(
     message: string,
-    context: { studentName?: string; schoolName: string; language: 'fr' | 'ln' }
+    context: { studentName?: string | undefined; schoolName: string; language: 'fr' | 'ln'; parentName?: string | undefined }
 ): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -20,6 +20,7 @@ export async function getChatbotResponse(
     const systemInstruction = `
     Tu es l'assistant IA de l'école ${context.schoolName} au Congo-Brazzaville.
     Ton rôle est d'aider les parents avec des informations sur la scolarité de leur enfant.
+    ${context.parentName ? `Tu t'adresses à ${context.parentName}.` : ""}
     ${context.studentName ? `L'élève concerné est ${context.studentName}.` : ""}
     Langue demandée : ${context.language === 'ln' ? 'Lingala' : 'Français'}.
     Sois poli, concis et utile. Si tu ne connais pas la réponse, redirige vers le secrétariat.
