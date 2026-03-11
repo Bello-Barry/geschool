@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { firstName, lastName, email, password, schoolName, subdomain } = validation.data;
+    const { firstName, lastName, email: rawEmail, password, schoolName, subdomain } = validation.data;
+    const email = rawEmail.toLowerCase();
     const supabase = createAdminClient();
 
     // Check if email already exists
@@ -90,23 +91,37 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert user profile
+    const userProfile = {
+      id: user.id,
+      school_id: newSchool.id,
+      email: email,
+      first_name: firstName,
+      last_name: lastName,
+      role: 'super_admin',
+      is_active: true
+    };
+
+    console.log('Tentative d\'insertion du profil utilisateur (upsert):', userProfile);
+
     const { error: insertUserError } = await supabase
       .from('users')
-      .insert({
-        id: user.id,
-        school_id: newSchool.id,
-        email: email,
-        first_name: firstName,
-        last_name: lastName,
-        role: 'super_admin',
-      });
+      .upsert(userProfile, { onConflict: 'id' });
 
     if (insertUserError) {
-      console.error('Erreur insertion profil utilisateur:', insertUserError);
+      console.error('Erreur détaillée insertion profil utilisateur:', {
+        error: insertUserError,
+        code: insertUserError.code,
+        message: insertUserError.message,
+        details: insertUserError.details,
+        hint: insertUserError.hint
+      });
       // If user profile insertion fails, we should delete the user and the school
       await supabase.auth.admin.deleteUser(user.id);
       await supabase.from('schools').delete().eq('id', newSchool.id);
-      return NextResponse.json({ error: 'Erreur lors de la création du profil utilisateur' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Erreur lors de la création du profil utilisateur',
+        details: insertUserError.message
+      }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Compte créé avec succès' }, { status: 201 });

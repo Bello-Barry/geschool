@@ -16,6 +16,7 @@ describe('POST /api/auth/register', () => {
     maybeSingle: vi.fn(),
     single: vi.fn(),
     insert: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     auth: {
       admin: {
@@ -71,15 +72,9 @@ describe('POST /api/auth/register', () => {
     mockSupabase.single.mockResolvedValue({ data: { id: 'school-id' }, error: null });
     // 4. Create user -> success
     mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: { id: 'user-id' } }, error: null });
-    // 5. Insert profile -> success
-    // We don't overwrite insert mock here because it needs to stay chainable for the first call
-    // and the second call just needs the resolved value which we can handle by letting single/maybeSingle not be called
-    // Wait, the second insert is NOT chained with select().single().
-    // So it will return mockSupabase, which is then awaited.
-    // If we want it to return { error: null }, we can use mockImplementationOnce
-    mockSupabase.insert
-      .mockReturnValueOnce(mockSupabase) // for school
-      .mockResolvedValueOnce({ error: null }); // for profile
+    // 5. Insert profile -> success (now using upsert)
+    mockSupabase.insert.mockReturnValueOnce(mockSupabase); // for school
+    mockSupabase.upsert.mockResolvedValueOnce({ error: null }); // for profile
 
     const request = new NextRequest('http://localhost', {
       method: 'POST',
@@ -103,5 +98,10 @@ describe('POST /api/auth/register', () => {
         subdomain: 'test-school',
         code: expect.stringContaining('TESTSCHOOL-')
     }));
+
+    expect(mockSupabase.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        email: 'john@example.com',
+        role: 'super_admin'
+    }), expect.any(Object));
   });
 });

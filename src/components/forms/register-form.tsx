@@ -49,7 +49,10 @@ export function RegisterForm() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la création du compte');
+        const errorMessage = data.details
+          ? `${data.error} : ${data.details}`
+          : (data.error || 'Erreur lors de la création du compte');
+        throw new Error(errorMessage);
       }
 
       toast({
