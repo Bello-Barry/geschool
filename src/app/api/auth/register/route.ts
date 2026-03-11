@@ -23,6 +23,22 @@ export async function POST(request: NextRequest) {
     const { firstName, lastName, email, password, schoolName, subdomain } = validation.data;
     const supabase = createAdminClient();
 
+    // Check if email already exists
+    const { data: existingUser, error: emailError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (emailError) {
+      console.error('Erreur lors de la vérification de l\'email:', emailError);
+      return NextResponse.json({ error: 'Erreur serveur lors de la vérification de l\'email' }, { status: 500 });
+    }
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 });
+    }
+
     // Check if school with subdomain already exists
     const { data: existingSchool, error: schoolError } = await supabase
       .from('schools')
@@ -55,19 +71,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur lors de la création de l\'école' }, { status: 500 });
     }
 
-    // Sign up the user
-    const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+    // Create the user in Auth
+    const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-        },
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName,
       },
     });
 
     if (signUpError || !user) {
+      console.error('Erreur création auth user:', signUpError);
       // If user creation fails, we should probably delete the school we just created
       await supabase.from('schools').delete().eq('id', newSchool.id);
       return NextResponse.json({ error: signUpError?.message || 'Erreur lors de la création de l\'utilisateur' }, { status: 500 });
@@ -86,6 +102,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (insertUserError) {
+      console.error('Erreur insertion profil utilisateur:', insertUserError);
       // If user profile insertion fails, we should delete the user and the school
       await supabase.auth.admin.deleteUser(user.id);
       await supabase.from('schools').delete().eq('id', newSchool.id);

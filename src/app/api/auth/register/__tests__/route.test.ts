@@ -18,8 +18,8 @@ describe('POST /api/auth/register', () => {
     insert: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     auth: {
-      signUp: vi.fn(),
       admin: {
+        createUser: vi.fn(),
         deleteUser: vi.fn(),
       },
     },
@@ -41,7 +41,11 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should return 409 if subdomain exists', async () => {
-    mockSupabase.maybeSingle.mockResolvedValue({ data: { id: '1' }, error: null });
+    // 1. email check -> null
+    // 2. subdomain check -> exists
+    mockSupabase.maybeSingle
+        .mockResolvedValueOnce({ data: null, error: null }) // email
+        .mockResolvedValueOnce({ data: { id: '1' }, error: null }); // subdomain
 
     const request = new NextRequest('http://localhost', {
       method: 'POST',
@@ -60,13 +64,14 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should successfully register a school and user', async () => {
-    // 1. Check subdomain exists -> null
+    // 1. Check email exists -> null
+    // 2. Check subdomain exists -> null
     mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
-    // 2. Insert school -> success (returns chainable)
+    // 3. Insert school -> success (returns chainable)
     mockSupabase.single.mockResolvedValue({ data: { id: 'school-id' }, error: null });
-    // 3. Sign up user -> success
-    mockSupabase.auth.signUp.mockResolvedValue({ data: { user: { id: 'user-id' } }, error: null });
-    // 4. Insert profile -> success
+    // 4. Create user -> success
+    mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: { id: 'user-id' } }, error: null });
+    // 5. Insert profile -> success
     // We don't overwrite insert mock here because it needs to stay chainable for the first call
     // and the second call just needs the resolved value which we can handle by letting single/maybeSingle not be called
     // Wait, the second insert is NOT chained with select().single().
