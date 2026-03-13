@@ -85,8 +85,6 @@ export async function POST(request: NextRequest) {
       console.error('Erreur lors de la création de l\'utilisateur Auth:', {
         message: createUserError?.message,
         code: createUserError?.code,
-        details: createUserError?.details,
-        hint: createUserError?.hint
       });
       // Cleanup: delete the school
       await supabase.from('schools').delete().eq('id', newSchool.id);
