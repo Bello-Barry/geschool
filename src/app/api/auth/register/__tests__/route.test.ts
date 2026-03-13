@@ -20,6 +20,7 @@ describe('POST /api/auth/register', () => {
     auth: {
       signUp: vi.fn(),
       admin: {
+        createUser: vi.fn(),
         deleteUser: vi.fn(),
       },
     },
@@ -64,8 +65,8 @@ describe('POST /api/auth/register', () => {
     mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
     // 2. Insert school -> success (returns chainable)
     mockSupabase.single.mockResolvedValue({ data: { id: 'school-id' }, error: null });
-    // 3. Sign up user -> success
-    mockSupabase.auth.signUp.mockResolvedValue({ data: { user: { id: 'user-id' } }, error: null });
+    // 3. Create user via admin -> success
+    mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: { id: 'user-id' } }, error: null });
     // 4. Insert profile -> success
     // We don't overwrite insert mock here because it needs to stay chainable for the first call
     // and the second call just needs the resolved value which we can handle by letting single/maybeSingle not be called

@@ -18,39 +18,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email } = validation.data;
+    const email = validation.data.email.trim().toLowerCase();
 
     const supabase = await createClient();
 
-    // Rechercher l'utilisateur par email
-    const { data: users, error } = await supabase
+    console.log('Recherche d\'établissement pour l\'email:', email);
+
+    // 1. Rechercher d'abord dans la table 'schools' (email de l'administrateur de l'école)
+    const { data: schoolByEmail, error: schoolError } = await supabase
+      .from('schools')
+      .select('subdomain, name')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (schoolError) {
+      console.error('Erreur technique lors de la recherche dans schools:', schoolError);
+    }
+
+    if (schoolByEmail) {
+      console.log('Établissement trouvé via la table schools:', schoolByEmail);
+      return NextResponse.json({
+        subdomain: schoolByEmail.subdomain,
+        schoolName: schoolByEmail.name,
+        email,
+      });
+    }
+
+    // 2. Si non trouvé, rechercher dans la table 'users' (profils utilisateurs)
+    const { data: userProfile, error: profileError } = await supabase
       .from('users')
       .select('school_id, schools(subdomain, name)')
-      .eq('email', email);
+      .eq('email', email)
+      .maybeSingle();
 
-    if (error || !users || users.length === 0) {
+    if (profileError) {
+      console.error('Erreur technique lors de la recherche dans users:', profileError);
       return NextResponse.json(
-        { error: 'Aucun utilisateur trouvé avec cet email' },
-        { status: 404 }
+        { error: 'Erreur technique lors de la recherche' },
+        { status: 500 }
       );
     }
 
-    const user = users[0] as unknown as { schools: { subdomain: string; name: string } };
+    console.log('Résultat brut de la recherche dans users:', userProfile);
 
-    const school = user.schools;
-
-    if (!school) {
-      return NextResponse.json(
-        { error: 'École non trouvée' },
-        { status: 404 }
-      );
+    if (userProfile && userProfile.schools) {
+      const school = userProfile.schools as unknown as { subdomain: string; name: string };
+      return NextResponse.json({
+        subdomain: school.subdomain,
+        schoolName: school.name,
+        email,
+      });
     }
 
-    return NextResponse.json({
-      subdomain: school.subdomain,
-      schoolName: school.name,
-      email,
-    });
+    // 3. Pas trouvé du tout
+    return NextResponse.json(
+      { error: 'Établissement non trouvé' },
+      { status: 404 }
+    );
 
   } catch (error) {
     console.error('Detection error:', error);
