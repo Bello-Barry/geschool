@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     console.log('Début de l\'inscription pour:', { email, schoolName, subdomain });
 
     // Check if school with subdomain already exists
-    const { data: existingSchool, error: schoolError } = await supabase
+    const { data: existingSchool } = await supabase
       .from('schools')
       .select('id')
       .eq('subdomain', subdomain)
