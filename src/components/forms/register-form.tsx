@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 const registerSchema = z.object({
   firstName: z.string().min(1, { message: 'Prénom requis' }),
@@ -39,36 +40,61 @@ export function RegisterForm() {
 
   async function onSubmit(values: z.infer<typeof registerSchema>) {
     setLoading(true);
+    console.log('Soumission du formulaire d\'inscription pour:', values.email);
 
     try {
+      // 1. Création de l'établissement et de l'utilisateur via l'API
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Erreur lors de la création du compte');
       }
 
-      toast({
-        title: 'Succès !',
-        description: 'Établissement créé avec succès ! Redirection...',
+      console.log('Compte créé avec succès. Tentative de connexion automatique...');
+
+      // 2. Connexion automatique (Option A)
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: values.email.trim().toLowerCase(),
+        password: values.password,
       });
 
+      if (signInError) {
+        console.error('Erreur de connexion automatique:', signInError);
+        // On ne bloque pas tout, on redirige quand même vers le login de l'établissement
+        toast({
+          title: 'Compte créé !',
+          description: 'Votre espace est prêt. Veuillez vous connecter.',
+        });
+      } else {
+        console.log('Connexion automatique réussie.');
+        toast({
+          title: 'Félicitations !',
+          description: 'Établissement créé et connexion réussie. Redirection...',
+        });
+      }
+
+      // 3. Redirection vers le sous-domaine
       const hostname = window.location.hostname;
       const port = window.location.port;
       const protocol = window.location.protocol;
 
       let newUrl = '';
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
+        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/dashboard`;
       } else {
         const domainParts = hostname.split('.');
-        const baseDomain = domainParts.slice(-2).join('.');
-        newUrl = `${protocol}//${values.subdomain}.${baseDomain}/admin`;
+        const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : hostname;
+        newUrl = `${protocol}//${values.subdomain}.${baseDomain}/dashboard`;
       }
+
+      console.log('Redirection vers:', newUrl);
 
       setTimeout(() => {
         window.location.href = newUrl;
