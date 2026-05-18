@@ -59,6 +59,25 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // If already logged in on root domain, always redirect to role dashboard.
+    if (pathname === '/' || pathname === '/login') {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        const { data: user } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (user?.role) {
+          return NextResponse.redirect(new URL(getDashboardPath(user.role), request.url));
+        }
+      }
+    }
+
     if (!isPublicRoute) {
       const {
         data: { session },
@@ -143,6 +162,25 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-school-name', school.name);
   requestHeaders.set('x-school-subdomain', school.subdomain || '');
   requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
+
+  // If already logged in on school host, do not stay on landing/login.
+  if (pathname === '/' || pathname === '/login') {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('school_id, role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (user && user.school_id === school.id) {
+        return NextResponse.redirect(new URL(getDashboardPath(user.role), request.url));
+      }
+    }
+  }
 
   if (!isPublicRoute) {
     const {
