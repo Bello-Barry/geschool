@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
 const PUBLIC_ROUTES = [
@@ -31,6 +32,7 @@ function withSupabaseCookies(target: NextResponse, source: NextResponse) {
 
 export async function middleware(request: NextRequest) {
   const { supabase, response: supabaseResponse } = createClient(request);
+  const admin = createAdminClient();
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);
   const pathname = request.nextUrl.pathname;
@@ -66,7 +68,7 @@ export async function middleware(request: NextRequest) {
       } = await supabase.auth.getSession();
 
       if (session) {
-        const { data: user } = await supabase
+        const { data: user } = await admin
           .from('users')
           .select('role')
           .eq('id', session.user.id)
@@ -83,53 +85,44 @@ export async function middleware(request: NextRequest) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('returnUrl', pathname);
-        return NextResponse.redirect(loginUrl);
-      }
+      if (session) {
+        const { data: user } = await admin
+          .from('users')
+          .select('school_id, role')
+          .eq('id', session.user.id)
+          .single();
 
-      const { data: user } = await supabase
-        .from('users')
-        .select('school_id, role')
-        .eq('id', session.user.id)
-        .single();
+        if (user) {
+          const { data: school } = await admin
+            .from('schools')
+            .select('id, name, subdomain, primary_color')
+            .eq('id', user.school_id)
+            .single();
 
-      if (!user) {
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('error', 'invalid_user');
-        return NextResponse.redirect(loginUrl);
-      }
+          if (school) {
+            requestHeaders.set('x-school-id', school.id);
+            requestHeaders.set('x-school-name', school.name);
+            requestHeaders.set('x-school-subdomain', school.subdomain || '');
+            requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
+          }
 
-      const { data: school } = await supabase
-        .from('schools')
-        .select('id, name, subdomain, primary_color')
-        .eq('id', user.school_id)
-        .single();
+          requestHeaders.set('x-user-id', session.user.id);
+          requestHeaders.set('x-user-role', user.role);
 
-      if (!school) {
-        return NextResponse.redirect(new URL('/school-not-found', request.url));
-      }
-
-      requestHeaders.set('x-school-id', school.id);
-      requestHeaders.set('x-school-name', school.name);
-      requestHeaders.set('x-school-subdomain', school.subdomain || '');
-      requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
-      requestHeaders.set('x-user-id', session.user.id);
-      requestHeaders.set('x-user-role', user.role);
-
-      const dashboardPath = getDashboardPath(user.role);
-      if (pathname === '/') {
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
-      }
-      if (pathname.startsWith('/admin') && user.role !== 'admin_school' && user.role !== 'super_admin') {
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
-      }
-      if (pathname.startsWith('/teacher') && user.role !== 'teacher') {
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
-      }
-      if (pathname.startsWith('/parent') && user.role !== 'parent') {
-        return NextResponse.redirect(new URL(dashboardPath, request.url));
+          const dashboardPath = getDashboardPath(user.role);
+          if (pathname === '/') {
+            return NextResponse.redirect(new URL(dashboardPath, request.url));
+          }
+          if (pathname.startsWith('/admin') && user.role !== 'admin_school' && user.role !== 'super_admin') {
+            return NextResponse.redirect(new URL(dashboardPath, request.url));
+          }
+          if (pathname.startsWith('/teacher') && user.role !== 'teacher') {
+            return NextResponse.redirect(new URL(dashboardPath, request.url));
+          }
+          if (pathname.startsWith('/parent') && user.role !== 'parent') {
+            return NextResponse.redirect(new URL(dashboardPath, request.url));
+          }
+        }
       }
     }
 
@@ -170,7 +163,7 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getSession();
 
     if (session) {
-      const { data: user } = await supabase
+      const { data: user } = await admin
         .from('users')
         .select('school_id, role')
         .eq('id', session.user.id)
@@ -193,7 +186,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await admin
       .from('users')
       .select('school_id, role')
       .eq('id', session.user.id)
