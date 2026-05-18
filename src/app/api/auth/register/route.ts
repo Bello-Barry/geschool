@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { firstName, lastName, schoolName, subdomain, password } = validation.data;
+    const { firstName, lastName, schoolName, password } = validation.data;
+    const subdomain = validation.data.subdomain.trim().toLowerCase();
     const email = validation.data.email.trim().toLowerCase();
     const supabase = createAdminClient();
 
@@ -123,6 +124,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Registration API error:', error);
+    if (error instanceof Error && error.message.includes('Missing Supabase environment variables')) {
+      return NextResponse.json(
+        { error: 'Configuration serveur incomplète: variables Supabase manquantes' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
-      }
+}

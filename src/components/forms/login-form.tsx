@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
@@ -46,39 +45,35 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setLoading(true);
-    
+
     try {
-      const supabase = createClient();
-      
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
       });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Email ou mot de passe incorrect');
       }
 
-      if (data.user) {
-        toast({
-          title: 'Connexion réussie',
-          description: `Bienvenue ${school.name} !`,
-        });
-        
-        // Rediriger vers la racine, le middleware s'occupera du reste
-        setTimeout(() => {
-          if (returnUrl) {
-            router.push(returnUrl);
-          } else {
-            router.push('/');
-          }
-        }, 1000);
-      }
+      toast({
+        title: 'Connexion reussie',
+        description: `Bienvenue ${school.name} !`,
+      });
+
+      setTimeout(() => {
+        router.push(returnUrl || '/');
+      }, 500);
     } catch (error) {
       console.error('Login error:', error);
       toast({
         title: 'Erreur',
-        description: 'Email ou mot de passe incorrect',
+        description: error instanceof Error ? error.message : 'Email ou mot de passe incorrect',
         variant: 'destructive',
       });
     } finally {
@@ -98,8 +93,8 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="votre@email.com" 
+                    <Input
+                      placeholder="votre@email.com"
                       {...field}
                       disabled={loading || !!prefilledEmail}
                       type="email"
@@ -118,8 +113,8 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input 
-                        placeholder="••••••••" 
+                      <Input
+                        placeholder="********"
                         {...field}
                         disabled={loading}
                         type={showPassword ? 'text' : 'password'}
@@ -140,9 +135,9 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
               )}
             />
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={loading}
               style={{ backgroundColor: school.primary_color || '#3B82F6' } as React.CSSProperties}
             >
@@ -151,10 +146,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
           </form>
         </Form>
         <div className="mt-4 text-center text-sm">
-          Vous n'avez pas de compte?{' '}
-          <Link href="/register" className="underline">
-            S'inscrire
-          </Link>
+          Vous n&apos;avez pas de compte? <Link href="/register" className="underline">S&apos;inscrire</Link>
         </div>
       </CardContent>
     </Card>

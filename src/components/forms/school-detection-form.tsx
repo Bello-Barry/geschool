@@ -45,9 +45,12 @@ export function SchoolDetectionForm() {
         const hostname = window.location.hostname;
         const port = window.location.port;
         const protocol = window.location.protocol;
+        const isVercelDefaultDomain = hostname.endsWith('.vercel.app');
 
         let redirectUrl = '';
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (isVercelDefaultDomain) {
+          redirectUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}&school=${encodeURIComponent(data.subdomain)}`;
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
           redirectUrl = `${protocol}//${data.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
         } else {
           const domainParts = hostname.split('.');

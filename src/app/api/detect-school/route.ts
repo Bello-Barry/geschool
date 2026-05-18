@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { z } from 'zod';
 
 const detectSchema = z.object({
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const email = validation.data.email.trim().toLowerCase();
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     console.log('Recherche d\'établissement pour l\'email:', email);
 
@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Detection error:', error);
+    if (error instanceof Error && error.message.includes('Missing Supabase environment variables')) {
+      return NextResponse.json(
+        { error: 'Configuration serveur incomplète: variables Supabase manquantes' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       { error: 'Erreur serveur' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -9,25 +10,36 @@ import { AIInsights } from "@/components/dashboard/ai-insights";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
-  const schoolName = headersList.get("x-school-name");
+  let schoolId = headersList.get("x-school-id");
+  let schoolName = headersList.get("x-school-name");
 
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
 
   // Récupérer l'utilisateur et vérifier le rôle
-  const { data: user } = await supabase
+  const { data: user } = await admin
     .from("users")
-    .select("role")
-    .eq("id", session.user.id)
+    .select("role, school_id")
+    .eq("id", authUser.id)
     .single();
 
   if (user?.role !== "admin_school" && user?.role !== "super_admin") {
     redirect("/teacher");
   }
+
+  if (!schoolId && user?.school_id) {
+    schoolId = user.school_id;
+    const { data: school } = await admin
+      .from("schools")
+      .select("name")
+      .eq("id", user.school_id)
+      .maybeSingle();
+    schoolName = school?.name || schoolName;
+  }
+
+  if (!schoolId) redirect("/school-not-found");
 
   // Récupérer statistiques
   const [students, teachers, classes, payments] = await Promise.all([
