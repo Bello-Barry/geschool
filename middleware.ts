@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
 import { getDashboardPath } from '@/lib/utils/dashboard-paths';
 
-// Routes publiques (n'ont pas besoin d'authentification)
 const PUBLIC_ROUTES = [
   '/',
   '/about',
@@ -18,161 +17,213 @@ const PUBLIC_ROUTES = [
   '/set-password',
 ];
 
-// Sous-domaines réservés
 const RESERVED_SUBDOMAINS = ['www', 'api', 'admin', 'cdn', 'static', 'app'];
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'));
+}
+
+function withSupabaseCookies(target: NextResponse, source: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie.name, cookie.value);
+  });
+}
 
 export async function middleware(request: NextRequest) {
   const { supabase, response: supabaseResponse } = createClient(request);
-  
-  // 1. Extraire hostname et sous-domaine
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);
-  
-  console.log('[Middleware] Hostname:', hostname, 'Subdomain:', subdomain);
-  
-  // 2. Gérer sous-domaines réservés
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute = isPublicPath(pathname);
+  const requestHeaders = new Headers(request.headers);
+
   if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
     return supabaseResponse;
   }
-  
-  // 3. Si pas de sous-domaine (domaine racine)
+
   if (!subdomain) {
-    return supabaseResponse;
+    const schoolFromQuery = request.nextUrl.searchParams.get('school');
+
+    if (isPublicRoute && pathname === '/login' && schoolFromQuery) {
+      const { data: school } = await supabase
+        .from('schools')
+        .select('id, name, subdomain, primary_color')
+        .eq('subdomain', schoolFromQuery)
+        .maybeSingle();
+
+      if (school) {
+        requestHeaders.set('x-school-id', school.id);
+        requestHeaders.set('x-school-name', school.name);
+        requestHeaders.set('x-school-subdomain', school.subdomain || '');
+        requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
+      }
+    }
+
+    if (!isPublicRoute) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('returnUrl', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('school_id, role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!user) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('error', 'invalid_user');
+        return NextResponse.redirect(loginUrl);
+      }
+
+      const { data: school } = await supabase
+        .from('schools')
+        .select('id, name, subdomain, primary_color')
+        .eq('id', user.school_id)
+        .single();
+
+      if (!school) {
+        return NextResponse.redirect(new URL('/school-not-found', request.url));
+      }
+
+      requestHeaders.set('x-school-id', school.id);
+      requestHeaders.set('x-school-name', school.name);
+      requestHeaders.set('x-school-subdomain', school.subdomain || '');
+      requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
+      requestHeaders.set('x-user-id', session.user.id);
+      requestHeaders.set('x-user-role', user.role);
+
+      const dashboardPath = getDashboardPath(user.role);
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+      if (pathname.startsWith('/admin') && user.role !== 'admin_school' && user.role !== 'super_admin') {
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+      if (pathname.startsWith('/teacher') && user.role !== 'teacher') {
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+      if (pathname.startsWith('/parent') && user.role !== 'parent') {
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+    }
+
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    withSupabaseCookies(response, supabaseResponse);
+    if (requestHeaders.get('x-school-id')) {
+      response.headers.set('x-school-id', requestHeaders.get('x-school-id') || '');
+      response.headers.set('x-school-name', requestHeaders.get('x-school-name') || '');
+    }
+    return response;
   }
-  
-  // 4. Vérifier que le sous-domaine correspond à une école active
+
   const { data: school } = await supabase
     .from('schools')
-    .select('*')
+    .select('id, name, subdomain, primary_color')
     .eq('subdomain', subdomain)
     .single();
-  
+
   if (!school) {
-    // Rediriger vers page d'erreur si école introuvable
     const url = new URL('/school-not-found', request.url);
     url.searchParams.set('subdomain', subdomain);
     return NextResponse.redirect(url);
   }
-  
-  console.log('[Middleware] School found:', school.name);
-  
-  // Préparez les nouveaux headers pour la requête
-  const requestHeaders = new Headers(request.headers);
+
   requestHeaders.set('x-school-id', school.id);
   requestHeaders.set('x-school-name', school.name);
   requestHeaders.set('x-school-subdomain', school.subdomain || '');
   requestHeaders.set('x-school-color', school.primary_color || '#3B82F6');
-  
-  // 6. Vérifier authentification pour routes protégées
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
-    request.nextUrl.pathname === route || 
-    request.nextUrl.pathname.startsWith(route + '/')
-  );
-  
+
   if (!isPublicRoute) {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
-      // Rediriger vers login avec retour à la page demandée
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('returnUrl', request.nextUrl.pathname);
+      loginUrl.searchParams.set('returnUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    
-    // Vérifier que l'utilisateur appartient bien à cette école
+
     const { data: user } = await supabase
       .from('users')
       .select('school_id, role')
       .eq('id', session.user.id)
       .single();
-    
+
     if (!user || user.school_id !== school.id) {
-      // Accès refusé - rediriger vers login
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'invalid_school');
       return NextResponse.redirect(loginUrl);
     }
-    
-    // Injecter user_id dans les headers pour RLS
+
     requestHeaders.set('x-user-id', session.user.id);
     requestHeaders.set('x-user-role', user.role);
 
-    // Redirection en fonction du rôle
-    const { pathname } = request.nextUrl;
-    const userRole = user.role;
-    const dashboardPath = getDashboardPath(userRole);
-
-    // Si à la racine après login, rediriger vers le bon dashboard
+    const dashboardPath = getDashboardPath(user.role);
     if (pathname === '/') {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
-
-    // Sécuriser les dashboards
-    if (pathname.startsWith('/admin') && userRole !== 'admin_school' && userRole !== 'super_admin') {
+    if (pathname.startsWith('/admin') && user.role !== 'admin_school' && user.role !== 'super_admin') {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
-    if (pathname.startsWith('/teacher') && userRole !== 'teacher') {
+    if (pathname.startsWith('/teacher') && user.role !== 'teacher') {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
-    if (pathname.startsWith('/parent') && userRole !== 'parent') {
+    if (pathname.startsWith('/parent') && user.role !== 'parent') {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
   }
-  
-  // Créez une nouvelle réponse avec les headers de requête mis à jour
+
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
-
-  // Copiez les cookies de la réponse supabase (pour le rafraîchissement de session)
-  supabaseResponse.cookies.getAll().forEach((cookie) => {
-    response.cookies.set(cookie.name, cookie.value);
-  });
-
-  // Ajoutez également les headers à la réponse pour que le client puisse les voir si besoin
+  withSupabaseCookies(response, supabaseResponse);
   response.headers.set('x-school-id', school.id);
   response.headers.set('x-school-name', school.name);
-
   return response;
 }
 
 function extractSubdomain(hostname: string): string | null {
-  const parts = hostname.split('.');
-  
-  // localhost ou IP
+  const hostWithoutPort = hostname.split(':')[0] || '';
+  const parts = hostWithoutPort.split('.');
+
   if (parts.length <= 1 || parts.includes('localhost') || parts.includes('127.0.0.1')) {
     if (parts.length > 1 && (parts.includes('localhost') || parts.includes('127.0.0.1'))) {
-       return parts[0] || null;
+      return parts[0] || null;
     }
     return null;
   }
 
-  // En production: lycee-sassou.ecole-congo.com (3 parts)
+  if (hostWithoutPort.endsWith('.vercel.app')) {
+    return null;
+  }
+
   if (parts.length <= 2) {
     return null;
   }
-  
+
   const subdomain = parts[0] || null;
-  
-  // Ignorer www et autres sous-domaines réservés
   if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
     return null;
   }
-  
   return subdomain;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

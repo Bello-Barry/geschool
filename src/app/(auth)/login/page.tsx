@@ -1,13 +1,14 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { LoginForm } from '@/components/forms/login-form';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; returnUrl?: string }>;
+  searchParams: Promise<{ email?: string; returnUrl?: string; school?: string }>;
 }) {
   const supabase = await createClient();
   const headersList = await headers();
@@ -17,12 +18,23 @@ export default async function LoginPage({
   const { data: { session } } = await supabase.auth.getSession();
   
   if (session) {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   // Récupérer école depuis headers
   const schoolData = await getSchoolFromHeaders(headersList);
-  const school = schoolData;
+  let school = schoolData;
+
+  // Fallback for hosts where wildcard subdomains are unavailable (e.g. *.vercel.app)
+  if (!school && params.school) {
+    const admin = createAdminClient();
+    const { data: fallbackSchool } = await admin
+      .from('schools')
+      .select('id, name, subdomain, primary_color')
+      .eq('subdomain', params.school)
+      .maybeSingle();
+    school = fallbackSchool;
+  }
 
   if (!school) {
     redirect('/school-not-found');

@@ -60,9 +60,12 @@ export function RegisterForm() {
       const hostname = window.location.hostname;
       const port = window.location.port;
       const protocol = window.location.protocol;
+      const isVercelDefaultDomain = hostname.endsWith('.vercel.app');
 
       let newUrl = '';
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      if (isVercelDefaultDomain) {
+        newUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}&school=${encodeURIComponent(values.subdomain)}`;
+      } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
         newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
       } else {
         const domainParts = hostname.split('.');
