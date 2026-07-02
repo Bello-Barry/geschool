@@ -1,23 +1,19 @@
-import { headers } from "next/headers";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 export default async function TeachersPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+  const auth = await getAuthUser();
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
-  if (!schoolId) redirect("/login");
+  const supabaseAdmin = createAdminClient();
+  const schoolId = auth.schoolId;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Récupérer les enseignants
-  const { data: teachers } = await supabase
+  const { data: teachers } = await supabaseAdmin
     .from("teachers")
     .select(`
       id,
@@ -51,7 +47,6 @@ export default async function TeachersPage() {
         </Link>
       </div>
 
-      {/* Liste des enseignants */}
       <Card>
         <CardHeader>
           <CardTitle>Enseignants ({teachers?.length || 0})</CardTitle>

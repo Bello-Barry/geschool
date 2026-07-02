@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -25,13 +25,12 @@ interface LoginFormProps {
     name: string;
     subdomain: string | null;
     primary_color?: string | null;
-  };
+  } | null;
   prefilledEmail?: string | undefined;
   returnUrl?: string | undefined;
 }
 
 export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps) {
-  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -62,16 +61,13 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       if (data.user) {
         toast({
           title: 'Connexion réussie',
-          description: `Bienvenue ${school.name} !`,
+          description: school ? `Bienvenue ${school.name} !` : 'Bienvenue !',
         });
         
-        // Rediriger vers la racine, le middleware s'occupera du reste
+        // window.location.href force un rechargement complet (hard navigation)
+        // nécessaire pour que le middleware relise le cookie Supabase fraîchement écrit
         setTimeout(() => {
-          if (returnUrl) {
-            router.push(returnUrl);
-          } else {
-            router.push('/');
-          }
+          window.location.href = returnUrl || '/';
         }, 1000);
       }
     } catch (error) {
@@ -144,7 +140,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
               type="submit" 
               className="w-full" 
               disabled={loading}
-              style={{ backgroundColor: school.primary_color || '#3B82F6' } as React.CSSProperties}
+              style={{ backgroundColor: school?.primary_color || '#3B82F6' } as React.CSSProperties}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </Button>

@@ -47,12 +47,12 @@ export function SchoolDetectionForm() {
         const protocol = window.location.protocol;
 
         let redirectUrl = '';
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
           redirectUrl = `${protocol}//${data.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
         } else {
           const domainParts = hostname.split('.');
           const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : hostname;
-          redirectUrl = `${protocol}//${data.subdomain}.${baseDomain}/login?email=${encodeURIComponent(values.email)}`;
+          redirectUrl = `${protocol}//${data.subdomain}.${baseDomain}${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
         }
 
         toast({

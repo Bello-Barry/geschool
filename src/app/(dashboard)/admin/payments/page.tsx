@@ -1,6 +1,6 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +17,13 @@ import Link from "next/link";
 import { formatCFA, formatDate } from "@/lib/utils/formatters";
 
 export default async function AdminPaymentsPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+  const auth = await getAuthUser();
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
-  if (!schoolId) redirect("/login");
+  const supabaseAdmin = createAdminClient();
+  const schoolId = auth.schoolId;
 
-  // Récupérer les derniers paiements
-  const { data: recentPayments } = await supabase
+  const { data: recentPayments } = await supabaseAdmin
     .from("payments")
     .select(`
       *,
@@ -37,7 +36,6 @@ export default async function AdminPaymentsPage() {
     .order("payment_date", { ascending: false })
     .limit(10);
 
-  // Calculer statistiques (simulé pour l'instant)
   const totalCollected = recentPayments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
 
   return (
@@ -150,4 +148,3 @@ export default async function AdminPaymentsPage() {
     </div>
   );
 }
-

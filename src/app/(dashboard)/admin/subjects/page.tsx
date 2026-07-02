@@ -1,6 +1,6 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +16,13 @@ import { BookMarked, Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 export default async function SubjectsPage() {
-    const supabase = await createClient();
-    const headersList = await headers();
-    const schoolId = headersList.get("x-school-id");
+    const auth = await getAuthUser();
+    if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
-    if (!schoolId) redirect("/login");
+    const supabaseAdmin = createAdminClient();
+    const schoolId = auth.schoolId;
 
-    // Charger les matières
-    const { data: subjects } = await supabase
+    const { data: subjects } = await supabaseAdmin
         .from("subjects")
         .select("*")
         .eq("school_id", schoolId)

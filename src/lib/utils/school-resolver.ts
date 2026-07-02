@@ -15,3 +15,8 @@ export async function getSchoolFromHeaders(headers: Headers | ReadonlyHeaders) {
     primary_color: schoolColor || "#3B82F6",
   };
 }
+
+export function getSchoolFromCookies() {
+  // Fallback: lire depuis les cookies si les headers ne sont pas disponibles
+  return null;
+}

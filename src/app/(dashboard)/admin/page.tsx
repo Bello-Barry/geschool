@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -8,33 +9,24 @@ import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, Copy, Ext
 import { AIInsights } from "@/components/dashboard/ai-insights";
 
 export default async function AdminDashboard() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
-  const schoolName = headersList.get("x-school-name");
-
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Récupérer l'utilisateur et vérifier le rôle
-  const { data: user } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (user?.role !== "admin_school" && user?.role !== "super_admin") {
-    redirect("/teacher");
+  const supabaseAdmin = createAdminClient();
+  const auth = await getAuthUser();
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) {
+    redirect(auth ? "/teacher" : "/login");
   }
 
-  // Récupérer statistiques
+  const schoolId = auth.schoolId;
+
+  // School name from headers
+  const headersList = await headers();
+  const schoolName = headersList.get("x-school-name") || "École";
+
+  // Récupérer statistiques (admin client pour bypass RLS)
   const [students, teachers, classes, payments] = await Promise.all([
-    supabase.from("students").select("id", { count: "exact" }).eq("school_id", schoolId),
-    supabase.from("teachers").select("id", { count: "exact" }).eq("school_id", schoolId),
-    supabase.from("classes").select("id", { count: "exact" }).eq("school_id", schoolId),
-    supabase.from("payments").select("amount").eq("school_id", schoolId),
+    supabaseAdmin.from("students").select("id", { count: "exact" }).eq("school_id", schoolId),
+    supabaseAdmin.from("teachers").select("id", { count: "exact" }).eq("school_id", schoolId),
+    supabaseAdmin.from("classes").select("id", { count: "exact" }).eq("school_id", schoolId),
+    supabaseAdmin.from("payments").select("amount").eq("school_id", schoolId),
   ]);
 
   const totalRevenue = (payments.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);

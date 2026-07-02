@@ -1,5 +1,19 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+
+/**
+ * Retourne le domaine de cookie côté serveur.
+ * En dev local (localhost), on ne force pas de domain pour laisser le navigateur gérer.
+ * En production, on renvoie ".geschool.cd" (ou le domaine racine configuré).
+ */
+function getServerCookieDomain(): string | undefined {
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || '';
+  const baseDomain = rootDomain.split(':')[0]; // retire le port
+  if (!baseDomain || baseDomain === 'localhost' || baseDomain === '127.0.0.1') {
+    return undefined; // pas de domain en local → le navigateur gère
+  }
+  return `.${baseDomain}`;
+}
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -11,28 +25,27 @@ export async function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
 
+  const cookieDomain = getServerCookieDomain();
+  const cookieOptions = cookieDomain
+    ? { domain: cookieDomain, sameSite: 'lax' as const, secure: process.env.NODE_ENV === 'production', path: '/' }
+    : undefined;
+
   return createServerClient(
     supabaseUrl,
     supabaseAnonKey,
     {
+      ...(cookieOptions ? { cookieOptions } : {}),
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set({ name, value, ...options, ...(cookieDomain ? { domain: cookieDomain } : {}) })
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
           }

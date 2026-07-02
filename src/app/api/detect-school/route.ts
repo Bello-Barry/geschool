@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { z } from 'zod';
 
 const detectSchema = z.object({
@@ -18,63 +18,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const email = validation.data.email.trim().toLowerCase();
+    const { email } = validation.data;
 
-    const supabase = await createClient();
+    // Utilisation du client admin pour contourner le RLS car l'utilisateur n'est pas encore connecté
+    const supabaseAdmin = createAdminClient();
 
-    console.log('Recherche d\'établissement pour l\'email:', email);
-
-    // 1. Rechercher d'abord dans la table 'schools' (email de l'administrateur de l'école)
-    const { data: schoolByEmail, error: schoolError } = await supabase
-      .from('schools')
-      .select('subdomain, name')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (schoolError) {
-      console.error('Erreur technique lors de la recherche dans schools:', schoolError);
-    }
-
-    if (schoolByEmail) {
-      console.log('Établissement trouvé via la table schools:', schoolByEmail);
-      return NextResponse.json({
-        subdomain: schoolByEmail.subdomain,
-        schoolName: schoolByEmail.name,
-        email,
-      });
-    }
-
-    // 2. Si non trouvé, rechercher dans la table 'users' (profils utilisateurs)
-    const { data: userProfile, error: profileError } = await supabase
+    // Rechercher l'utilisateur par email
+    const { data: users, error } = await supabaseAdmin
       .from('users')
       .select('school_id, schools(subdomain, name)')
-      .eq('email', email)
-      .maybeSingle();
+      .eq('email', email);
 
-    if (profileError) {
-      console.error('Erreur technique lors de la recherche dans users:', profileError);
+    if (error || !users || users.length === 0) {
       return NextResponse.json(
-        { error: 'Erreur technique lors de la recherche' },
-        { status: 500 }
+        { error: 'Aucun utilisateur trouvé avec cet email' },
+        { status: 404 }
       );
     }
 
-    console.log('Résultat brut de la recherche dans users:', userProfile);
+    const user = users[0] as unknown as { schools: { subdomain: string; name: string } };
 
-    if (userProfile && userProfile.schools) {
-      const school = userProfile.schools as unknown as { subdomain: string; name: string };
-      return NextResponse.json({
-        subdomain: school.subdomain,
-        schoolName: school.name,
-        email,
-      });
+    const school = user.schools;
+
+    if (!school) {
+      return NextResponse.json(
+        { error: 'École non trouvée' },
+        { status: 404 }
+      );
     }
 
-    // 3. Pas trouvé du tout
-    return NextResponse.json(
-      { error: 'Établissement non trouvé' },
-      { status: 404 }
-    );
+    return NextResponse.json({
+      subdomain: school.subdomain,
+      schoolName: school.name,
+      email,
+    });
 
   } catch (error) {
     console.error('Detection error:', error);

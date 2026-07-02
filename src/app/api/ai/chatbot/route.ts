@@ -28,15 +28,6 @@ export async function POST(request: NextRequest) {
 
         const { message, language } = validation.data;
 
-        // Récupérer le nom du parent pour personnaliser la réponse
-        const { data: userData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', session.user.id)
-            .single();
-
-        const userName = userData ? `${userData.first_name} ${userData.last_name}` : undefined;
-
         const response = await getChatbotResponse(message, {
             schoolName,
             language,

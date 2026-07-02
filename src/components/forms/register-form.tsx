@@ -62,12 +62,13 @@ export function RegisterForm() {
       const protocol = window.location.protocol;
 
       let newUrl = '';
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
+      const emailEncoded = encodeURIComponent(values.email);
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
+        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${emailEncoded}`;
       } else {
         const domainParts = hostname.split('.');
         const baseDomain = domainParts.slice(-2).join('.');
-        newUrl = `${protocol}//${values.subdomain}.${baseDomain}/admin`;
+        newUrl = `${protocol}//${values.subdomain}.${baseDomain}${port ? `:${port}` : ''}/login?email=${emailEncoded}`;
       }
 
       setTimeout(() => {

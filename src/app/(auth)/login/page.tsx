@@ -1,6 +1,5 @@
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { LoginForm } from '@/components/forms/login-form';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 
@@ -9,23 +8,26 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ email?: string; returnUrl?: string }>;
 }) {
-  const supabase = await createClient();
   const headersList = await headers();
   const params = await searchParams;
-  
-  // Vérifier si déjà connecté
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (session) {
-    redirect('/dashboard');
-  }
 
-  // Récupérer école depuis headers
-  const schoolData = await getSchoolFromHeaders(headersList);
-  const school = schoolData;
-
+  // Récupérer école depuis headers ou depuis la BD via le sous-domaine
+  let school = await getSchoolFromHeaders(headersList);
+  
   if (!school) {
-    redirect('/school-not-found');
+    const hostname = headersList.get('host') || '';
+    const subdomain = hostname.split('.')[0];
+    if (subdomain && !['www', 'api', 'admin', 'cdn', 'static', 'app', 'localhost', '127'].includes(subdomain)) {
+      const supabaseAdmin = createAdminClient();
+      const { data: schoolData } = await supabaseAdmin
+        .from('schools')
+        .select('id, name, subdomain, primary_color')
+        .eq('subdomain', subdomain)
+        .single();
+      if (schoolData) {
+        school = schoolData;
+      }
+    }
   }
 
   return (

@@ -1,23 +1,19 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 
 export default async function ClassesPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+  const auth = await getAuthUser();
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
-  if (!schoolId) redirect("/login");
+  const supabaseAdmin = createAdminClient();
+  const schoolId = auth.schoolId;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Récupérer les classes
-  const { data: classes } = await supabase
+  const { data: classes } = await supabaseAdmin
     .from("classes")
     .select(`
       id,
@@ -45,11 +41,10 @@ export default async function ClassesPage() {
         </Link>
       </div>
 
-      {/* Classes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {classes && classes.length > 0 ? (
           classes.map((cls: any) => (
-            <Link key={cls.id} href={`/admin/classes/${cls.id}`}>
+            <Link key={cls.id} href={`/admin/classes/${cls.id}`} className="block">
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const registerSchema = z.object({
@@ -20,26 +21,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error.flatten().fieldErrors }, { status: 400 });
     }
 
-    const { firstName, lastName, schoolName, subdomain, password } = validation.data;
-    const email = validation.data.email.trim().toLowerCase();
-    const supabase = createAdminClient();
-
-    console.log('Début de l\'inscription pour:', { email, schoolName, subdomain });
+    const { firstName, lastName, email, password, schoolName, subdomain } = validation.data;
+    const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
 
     // Check if school with subdomain already exists
-    const { data: existingSchool, error: schoolError } = await supabase
+    const { data: existingSchool, error: schoolError } = await supabaseAdmin
       .from('schools')
       .select('id')
       .eq('subdomain', subdomain)
-      .maybeSingle();
+      .maybeSingle(); // Utilise maybeSingle() au lieu de single()
 
     if (schoolError) {
-      console.error('Erreur lors de la vérification du sous-domaine:', {
-        message: schoolError.message,
-        code: schoolError.code,
-        details: schoolError.details,
-        hint: schoolError.hint
-      });
+      console.error('Erreur lors de la vérification du sous-domaine:', schoolError);
       return NextResponse.json({ error: 'Erreur serveur lors de la vérification du sous-domaine' }, { status: 500 });
     }
 
@@ -48,30 +42,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the school
-    const schoolCode = subdomain.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10);
-    const { data: newSchool, error: createSchoolError } = await supabase
+    const code = subdomain.toUpperCase();
+    const { data: newSchool, error: createSchoolError } = await supabaseAdmin
       .from('schools')
       .insert({
         name: schoolName,
         subdomain,
-        email, // Ajout de l'email de l'établissement
-        code: `${schoolCode}-${Math.floor(1000 + Math.random() * 9000)}`
+        code
       })
       .select('id')
       .single();
 
     if (createSchoolError || !newSchool) {
-      console.error('Erreur lors de la création de l\'école:', {
-        message: createSchoolError?.message,
-        code: createSchoolError?.code,
-        details: createSchoolError?.details,
-        hint: createSchoolError?.hint
-      });
+      console.error('Erreur création école:', createSchoolError);
       return NextResponse.json({ error: 'Erreur lors de la création de l\'école' }, { status: 500 });
     }
 
-    // Create the Auth user using admin client to ensure immediate confirmation
-    const { data: { user }, error: createUserError } = await supabase.auth.admin.createUser({
+    // Créer l'utilisateur via l'admin API (contourne la confirmation d'email)
+    const { data: { user }, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -81,18 +69,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (createUserError || !user) {
-      console.error('Erreur lors de la création de l\'utilisateur Auth:', {
-        message: createUserError?.message,
-        code: createUserError?.code,
-      });
-      // Cleanup: delete the school
-      await supabase.from('schools').delete().eq('id', newSchool.id);
-      return NextResponse.json({ error: createUserError?.message || 'Erreur lors de la création de l\'utilisateur' }, { status: 500 });
+    if (signUpError || !user) {
+      await supabaseAdmin.from('schools').delete().eq('id', newSchool.id);
+      return NextResponse.json({ error: signUpError?.message || 'Erreur lors de la création de l\'utilisateur' }, { status: 500 });
     }
 
-    // Insert user profile (table 'users')
-    const { error: insertUserError } = await supabase
+    // Insert user profile
+    const { error: insertUserError } = await supabaseAdmin
       .from('users')
       .insert({
         id: user.id,
@@ -104,19 +87,21 @@ export async function POST(request: NextRequest) {
       });
 
     if (insertUserError) {
-      console.error('Erreur lors de la création du profil utilisateur dans la table "users":', {
-        message: insertUserError.message,
-        code: insertUserError.code,
-        details: insertUserError.details,
-        hint: insertUserError.hint
-      });
-      // Cleanup: delete the user and the school
-      await supabase.auth.admin.deleteUser(user.id);
-      await supabase.from('schools').delete().eq('id', newSchool.id);
-      return NextResponse.json({
-        error: 'Erreur lors de la création du profil utilisateur',
-        details: insertUserError.message
-      }, { status: 500 });
+      await supabaseAdmin.auth.admin.deleteUser(user.id);
+      await supabaseAdmin.from('schools').delete().eq('id', newSchool.id);
+      return NextResponse.json({ error: 'Erreur lors de la création du profil utilisateur' }, { status: 500 });
+    }
+
+    // Connecter l'utilisateur automatiquement (crée la session dans les cookies)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error('Auto-login error:', signInError);
+      // L'utilisateur est créé, mais la session n'a pas pu être établie
+      // Il pourra se connecter manuellement
     }
 
     return NextResponse.json({ message: 'Compte créé avec succès' }, { status: 201 });
@@ -125,4 +110,4 @@ export async function POST(request: NextRequest) {
     console.error('Registration API error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
-      }
+}

@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getAuthUser } from '@/lib/utils/auth-utils';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
@@ -17,29 +18,26 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  
-  // Vérifier session
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) {
+  const supabaseAdmin = createAdminClient();
+  const auth = await getAuthUser();
+  if (!auth) {
     redirect('/login');
   }
 
-  // Récupérer info utilisateur
-  const { data: user } = await supabase
-    .from('users')
-    .select('role, first_name, last_name, avatar_url')
-    .eq('id', session.user.id)
-    .single();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  // Récupérer école depuis headers
+  // Récupérer école depuis headers ou BD
   const headersList = await headers();
-  const school = await getSchoolFromHeaders(headersList);
+  let school = await getSchoolFromHeaders(headersList);
+
+  if (!school) {
+    const { data: schoolData } = await supabaseAdmin
+      .from('schools')
+      .select('id, name, subdomain, primary_color')
+      .eq('id', auth.schoolId)
+      .single();
+    if (schoolData) {
+      school = schoolData;
+    }
+  }
 
   if (!school) {
     redirect('/school-not-found');
