@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
         const response = await getChatbotResponse(message, {
             schoolName,
             language,
-            studentName: "votre enfant", // On pourrait affiner en récupérant les noms des enfants
-            parentName: userName
+            studentName: "votre enfant",
         });
 
         return NextResponse.json({ response });
