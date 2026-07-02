@@ -139,29 +139,44 @@ export async function middleware(request: NextRequest) {
 }
 
 function extractSubdomain(hostname: string): string | null {
-  const parts = hostname.split('.');
+  // Enlever le port si présent
+  const host = hostname.split(':')[0];
+  const parts = host.split('.');
   
   // localhost ou IP
-  if (parts.length <= 1 || parts.includes('localhost') || parts.includes('127.0.0.1')) {
-    if (parts.length > 1 && (parts.includes('localhost') || parts.includes('127.0.0.1'))) {
-       return parts[0] || null;
-    }
+  if (host === 'localhost' || host === '127.0.0.1') {
     return null;
   }
 
-  // En production: lycee-sassou.ecole-congo.com (3 parts)
-  if (parts.length <= 2) {
-    return null;
+  // Sous-domaine local (ex: lycee-sassou.localhost)
+  if (host.endsWith('.localhost')) {
+    return parts[0];
+  }
+
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  
+  if (rootDomain) {
+    if (host === rootDomain) return null;
+    if (host.endsWith('.' + rootDomain)) {
+      return host.replace('.' + rootDomain, '');
+    }
   }
   
-  const subdomain = parts[0] || null;
-  
-  // Ignorer www et autres sous-domaines réservés
-  if (subdomain && RESERVED_SUBDOMAINS.includes(subdomain)) {
-    return null;
+  // Fallback intelligent pour Vercel ou domaines à 3 parties
+  // Si on a something.domain.com, parts.length est 3
+  // On considère que le domaine racine est les 2 dernières parties
+  if (parts.length >= 3) {
+    // Cas spécial pour vercel.app qui n'est pas le root domain de l'utilisateur mais du service
+    if (host.endsWith('.vercel.app')) {
+       // Si on est sur xxxx.vercel.app, xxxx est le root domain (ex: geschool.vercel.app)
+       // Si on est sur yyyy.xxxx.vercel.app, yyyy est le subdomain
+       if (parts.length > 3) return parts[0];
+       return null;
+    }
+    return parts[0];
   }
   
-  return subdomain;
+  return null;
 }
 
 export const config = {

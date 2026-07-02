@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -60,14 +59,14 @@ export function RegisterForm() {
       const hostname = window.location.hostname;
       const port = window.location.port;
       const protocol = window.location.protocol;
+      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'ecole-congo.com';
 
       let newUrl = '';
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/admin`;
       } else {
-        const domainParts = hostname.split('.');
-        const baseDomain = domainParts.slice(-2).join('.');
-        newUrl = `${protocol}//${values.subdomain}.${baseDomain}/admin`;
+        // En production, utiliser le root domain configuré
+        newUrl = `${protocol}//${values.subdomain}.${rootDomain}/admin`;
       }
 
       setTimeout(() => {
@@ -171,9 +170,9 @@ export function RegisterForm() {
                       <span className="text-muted-foreground text-sm shrink-0">.geschool.cd</span>
                     </div>
                   </FormControl>
-                  <FormDescription className="text-xs">
+                  <p className="text-xs text-muted-foreground">
                     C'est l'adresse web unique de votre école.
-                  </FormDescription>
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -192,8 +191,4 @@ export function RegisterForm() {
       </CardContent>
     </Card>
   );
-}
-
-function FormDescription({ children, className }: { children: React.ReactNode, className?: string }) {
-    return <p className={`text-sm text-muted-foreground ${className}`}>{children}</p>
 }

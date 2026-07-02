@@ -45,14 +45,14 @@ export function SchoolDetectionForm() {
         const hostname = window.location.hostname;
         const port = window.location.port;
         const protocol = window.location.protocol;
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'ecole-congo.com';
 
         let redirectUrl = '';
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
           redirectUrl = `${protocol}//${data.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
         } else {
-          const domainParts = hostname.split('.');
-          const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : hostname;
-          redirectUrl = `${protocol}//${data.subdomain}.${baseDomain}/login?email=${encodeURIComponent(values.email)}`;
+          // En production, utiliser le root domain configuré
+          redirectUrl = `${protocol}//${data.subdomain}.${rootDomain}/login?email=${encodeURIComponent(values.email)}`;
         }
 
         toast({

@@ -34,12 +34,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (schoolError) {
-      console.error('Erreur lors de la vérification du sous-domaine:', {
-        message: schoolError.message,
-        code: schoolError.code,
-        details: schoolError.details,
-        hint: schoolError.hint
-      });
+      console.error('Erreur lors de la vérification du sous-domaine:', schoolError);
       return NextResponse.json({ error: 'Erreur serveur lors de la vérification du sous-domaine' }, { status: 500 });
     }
 
@@ -54,23 +49,18 @@ export async function POST(request: NextRequest) {
       .insert({
         name: schoolName,
         subdomain,
-        email, // Ajout de l'email de l'établissement
+        email,
         code: `${schoolCode}-${Math.floor(1000 + Math.random() * 9000)}`
       })
       .select('id')
       .single();
 
     if (createSchoolError || !newSchool) {
-      console.error('Erreur lors de la création de l\'école:', {
-        message: createSchoolError?.message,
-        code: createSchoolError?.code,
-        details: createSchoolError?.details,
-        hint: createSchoolError?.hint
-      });
+      console.error('Erreur lors de la création de l\'école:', createSchoolError);
       return NextResponse.json({ error: 'Erreur lors de la création de l\'école' }, { status: 500 });
     }
 
-    // Create the Auth user using admin client to ensure immediate confirmation
+    // Create the Auth user
     const { data: { user }, error: createUserError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -82,16 +72,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (createUserError || !user) {
-      console.error('Erreur lors de la création de l\'utilisateur Auth:', {
-        message: createUserError?.message,
-        code: createUserError?.code,
-      });
-      // Cleanup: delete the school
+      console.error('Erreur lors de la création de l\'utilisateur Auth:', createUserError);
       await supabase.from('schools').delete().eq('id', newSchool.id);
       return NextResponse.json({ error: createUserError?.message || 'Erreur lors de la création de l\'utilisateur' }, { status: 500 });
     }
 
-    // Insert user profile (table 'users')
+    // Insert user profile
     const { error: insertUserError } = await supabase
       .from('users')
       .insert({
@@ -104,13 +90,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (insertUserError) {
-      console.error('Erreur lors de la création du profil utilisateur dans la table "users":', {
-        message: insertUserError.message,
-        code: insertUserError.code,
-        details: insertUserError.details,
-        hint: insertUserError.hint
-      });
-      // Cleanup: delete the user and the school
+      console.error('Erreur lors de la création du profil utilisateur:', insertUserError);
       await supabase.auth.admin.deleteUser(user.id);
       await supabase.from('schools').delete().eq('id', newSchool.id);
       return NextResponse.json({
@@ -125,4 +105,4 @@ export async function POST(request: NextRequest) {
     console.error('Registration API error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
-      }
+}
