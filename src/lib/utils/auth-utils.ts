@@ -30,11 +30,17 @@ export async function getAuthUser() {
 
   const { data: user } = await supabaseAdmin
     .from("users")
-    .select("role")
+    .select("role, school_id")
     .eq("id", userId)
     .single();
 
   if (!user) return null;
+
+  // Vérification de sécurité : si on est sur une route /[ecole]/...,
+  // s'assurer que l'utilisateur appartient bien à cette école
+  if (schoolId && user.school_id !== schoolId) {
+    return null;
+  }
 
   return { userId, schoolId, role: user.role };
 }

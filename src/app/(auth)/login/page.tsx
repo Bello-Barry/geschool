@@ -1,5 +1,4 @@
 import { headers } from 'next/headers';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { LoginForm } from '@/components/forms/login-form';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 
@@ -11,24 +10,8 @@ export default async function LoginPage({
   const headersList = await headers();
   const params = await searchParams;
 
-  // Récupérer école depuis headers ou depuis la BD via le sous-domaine
-  let school = await getSchoolFromHeaders(headersList);
-  
-  if (!school) {
-    const hostname = headersList.get('host') || '';
-    const subdomain = hostname.split('.')[0];
-    if (subdomain && !['www', 'api', 'admin', 'cdn', 'static', 'app', 'localhost', '127'].includes(subdomain)) {
-      const supabaseAdmin = createAdminClient();
-      const { data: schoolData } = await supabaseAdmin
-        .from('schools')
-        .select('id, name, subdomain, primary_color')
-        .eq('subdomain', subdomain)
-        .single();
-      if (schoolData) {
-        school = schoolData;
-      }
-    }
-  }
+  // L'école est résolue par le middleware depuis le slug dans le chemin
+  const school = await getSchoolFromHeaders(headersList);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-background p-4">

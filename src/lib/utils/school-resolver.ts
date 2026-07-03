@@ -1,4 +1,26 @@
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
+
+export interface SchoolInfo {
+  id: string;
+  name: string;
+  subdomain: string;
+  primary_color: string | null;
+}
+
+export async function getSchoolBySubdomain(subdomain: string): Promise<SchoolInfo | null> {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { data: school } = await supabaseAdmin
+      .from("schools")
+      .select("id, name, subdomain, primary_color")
+      .eq("subdomain", subdomain)
+      .single();
+    return school as SchoolInfo | null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getSchoolFromHeaders(headers: Headers | ReadonlyHeaders) {
   const schoolId = headers.get("x-school-id");
@@ -17,6 +39,5 @@ export async function getSchoolFromHeaders(headers: Headers | ReadonlyHeaders) {
 }
 
 export function getSchoolFromCookies() {
-  // Fallback: lire depuis les cookies si les headers ne sont pas disponibles
   return null;
 }

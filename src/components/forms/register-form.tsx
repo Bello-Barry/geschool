@@ -57,22 +57,9 @@ export function RegisterForm() {
         description: 'Établissement créé avec succès ! Redirection...',
       });
 
-      const hostname = window.location.hostname;
-      const port = window.location.port;
-      const protocol = window.location.protocol;
-
-      let newUrl = '';
       const emailEncoded = encodeURIComponent(values.email);
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
-        newUrl = `${protocol}//${values.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${emailEncoded}`;
-      } else {
-        const domainParts = hostname.split('.');
-        const baseDomain = domainParts.slice(-2).join('.');
-        newUrl = `${protocol}//${values.subdomain}.${baseDomain}${port ? `:${port}` : ''}/login?email=${emailEncoded}`;
-      }
-
       setTimeout(() => {
-        window.location.href = newUrl;
+        window.location.href = `/${values.subdomain}/login?email=${emailEncoded}`;
       }, 1500);
 
     } catch (error) {
@@ -169,11 +156,11 @@ export function RegisterForm() {
                   <FormControl>
                     <div className="flex items-center gap-2">
                       <Input placeholder="lycee-brazza" {...field} disabled={loading} className="flex-1 min-w-0" />
-                      <span className="text-muted-foreground text-sm shrink-0">.geschool.cd</span>
+                      <span className="text-muted-foreground text-sm shrink-0">.vercel.app</span>
                     </div>
                   </FormControl>
                   <FormDescription className="text-xs">
-                    C'est l'adresse web unique de votre école.
+                    L'URL de votre école sera : geschool.vercel.app/<strong>{field.value || "slug"}</strong>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

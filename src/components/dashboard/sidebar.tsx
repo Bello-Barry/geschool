@@ -20,14 +20,17 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
+  const schoolSlug = pathname.match(/^\/([^\/]+)\/(admin|teacher|parent|student)/)?.[1] || null;
+  const prefix = schoolSlug ? `/${schoolSlug}` : '';
+
   const menuItems = [
-    { icon: LayoutDashboard, label: "Tableau de Bord", href: "/admin" },
-    { icon: GraduationCap, label: "Élèves", href: "/admin/students" },
-    { icon: Users, label: "Enseignants", href: "/admin/teachers" },
-    { icon: School, label: "Classes", href: "/admin/classes" },
-    { icon: FileText, label: "Notes", href: "/admin/grades" },
-    { icon: Calendar, label: "Présences", href: "/admin/attendance" },
-    { icon: Settings, label: "Paramètres", href: "/admin/settings" },
+    { icon: LayoutDashboard, label: "Tableau de Bord", href: `${prefix}/admin` },
+    { icon: GraduationCap, label: "Élèves", href: `${prefix}/admin/students` },
+    { icon: Users, label: "Enseignants", href: `${prefix}/admin/teachers` },
+    { icon: School, label: "Classes", href: `${prefix}/admin/classes` },
+    { icon: FileText, label: "Notes", href: `${prefix}/admin/grades` },
+    { icon: Calendar, label: "Présences", href: `${prefix}/admin/attendance` },
+    { icon: Settings, label: "Paramètres", href: `${prefix}/admin/settings` },
   ];
 
   return (

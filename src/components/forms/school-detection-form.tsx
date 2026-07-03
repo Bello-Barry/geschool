@@ -41,26 +41,12 @@ export function SchoolDetectionForm() {
       }
 
       if (data.subdomain) {
-        // Rediriger vers le sous-domaine avec email pré-rempli
-        const hostname = window.location.hostname;
-        const port = window.location.port;
-        const protocol = window.location.protocol;
-
-        let redirectUrl = '';
-        if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
-          redirectUrl = `${protocol}//${data.subdomain}.localhost${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
-        } else {
-          const domainParts = hostname.split('.');
-          const baseDomain = domainParts.length > 2 ? domainParts.slice(-2).join('.') : hostname;
-          redirectUrl = `${protocol}//${data.subdomain}.${baseDomain}${port ? `:${port}` : ''}/login?email=${encodeURIComponent(values.email)}`;
-        }
-
         toast({
           title: 'École trouvée !',
           description: `Redirection vers ${data.schoolName}...`,
         });
         setTimeout(() => {
-          window.location.href = redirectUrl;
+          window.location.href = `/${data.subdomain}/login?email=${encodeURIComponent(values.email)}`;
         }, 1500);
       } else {
         throw new Error('École non associée');
