@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/forms/login-form';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 
 export default async function LoginPage({
@@ -11,24 +13,30 @@ export default async function LoginPage({
   const headersList = await headers();
   const params = await searchParams;
 
-  // Récupérer école depuis headers ou depuis la BD via le sous-domaine
-  let school = await getSchoolFromHeaders(headersList);
-  
-  if (!school) {
-    const hostname = headersList.get('host') || '';
-    const subdomain = hostname.split('.')[0];
-    if (subdomain && !['www', 'api', 'admin', 'cdn', 'static', 'app', 'localhost', '127'].includes(subdomain)) {
-      const supabaseAdmin = createAdminClient();
-      const { data: schoolData } = await supabaseAdmin
-        .from('schools')
-        .select('id, name, subdomain, primary_color')
-        .eq('subdomain', subdomain)
+  // Rediriger si déjà connecté
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.id) {
+    const adminClient = createAdminClient();
+    const { data: user } = await adminClient
+      .from("users")
+      .select("role, school_id")
+      .eq("id", session.user.id)
+      .single();
+    if (user) {
+      const { data: school } = await adminClient
+        .from("schools")
+        .select("subdomain")
+        .eq("id", user.school_id)
         .single();
-      if (schoolData) {
-        school = schoolData;
+      if (school) {
+        const rolePath = user.role === "super_admin" || user.role === "admin_school" ? "/admin" : `/${user.role}`;
+        redirect(`/${school.subdomain}${rolePath}`);
       }
     }
   }
+
+  const school = await getSchoolFromHeaders(headersList);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-background p-4">
