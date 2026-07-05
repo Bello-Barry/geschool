@@ -8,7 +8,7 @@ import Link from "next/link";
 export default async function TeacherGradesPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "teacher") redirect("/login");
+  if (!auth || auth.role !== "teacher") redirect(`/${slug}/login`);
 
   const supabaseAdmin = createAdminClient();
 

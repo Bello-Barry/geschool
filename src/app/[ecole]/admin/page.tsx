@@ -13,7 +13,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) {
-    redirect(auth ? "/teacher" : "/login");
+    redirect(auth ? `/${slug}/teacher` : `/${slug}/login`);
   }
 
   const schoolId = auth.schoolId;

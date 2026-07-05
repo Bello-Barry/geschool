@@ -56,8 +56,14 @@ export default function SetPasswordPage() {
 
       if (error) throw new Error(error.message);
 
-      // Rediriger vers le dashboard après succès
-      router.push("/admin");
+      // Rediriger vers le dashboard de l'école après succès
+      const res = await fetch('/api/user/school');
+      if (res.ok) {
+        const { slug, rolePath } = await res.json();
+        router.push(`/${slug}${rolePath}`);
+      } else {
+        router.push('/login');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {

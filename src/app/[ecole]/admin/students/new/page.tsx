@@ -6,7 +6,7 @@ import { StudentForm } from "@/components/forms/student-form";
 export default async function NewStudentPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect(`/${slug}/login`);
 
   const supabaseAdmin = createAdminClient();
   const { data: classes } = await supabaseAdmin
