@@ -9,7 +9,7 @@ import { FileText } from "lucide-react";
 export default async function ParentChildrenPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "parent") redirect("/login");
+  if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
 
   const supabaseAdmin = createAdminClient();
 

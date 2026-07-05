@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 export default async function ParentChatbotPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "parent") redirect("/login");
+  if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
 
   const headersList = await headers();
   const schoolName = headersList.get("x-school-name") || "l'école";

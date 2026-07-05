@@ -9,7 +9,7 @@ import { BarChart3, FileText, MessageSquare, DollarSign } from "lucide-react";
 export default async function ParentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "parent") redirect("/login");
+  if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
   const schoolId = auth.schoolId;
   const supabase = await createClient();
 
