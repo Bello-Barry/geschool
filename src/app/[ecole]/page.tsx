@@ -7,7 +7,7 @@ export default async function SchoolHomePage({
   params: Promise<{ ecole: string }>;
 }) {
   const { ecole } = await params;
-  const auth = await getAuthUser();
+  const auth = await getAuthUser(ecole);
 
   if (!auth) {
     redirect(`/login?school=${ecole}`);

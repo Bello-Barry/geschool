@@ -1,31 +1,18 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BookOpen, Users, BarChart3, MessageSquare } from "lucide-react";
 
-export default async function TeacherDashboard() {
+export default async function TeacherDashboard({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "teacher") redirect("/login");
+  const schoolId = auth.schoolId;
+
   const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
-
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Vérifier le rôle
-  const { data: user } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (user?.role !== "teacher") {
-    redirect("/admin");
-  }
 
   // Récupérer les classes de l'enseignant
   const { data: teacherData } = await supabase
@@ -36,7 +23,7 @@ export default async function TeacherDashboard() {
         class:class_id(id, name)
       )
     `)
-    .eq("user_id", session.user.id)
+    .eq("user_id", auth.userId)
     .eq("school_id", schoolId)
     .single();
 
@@ -92,16 +79,16 @@ export default async function TeacherDashboard() {
       <div>
         <h2 className="text-xl font-semibold mb-4">Actions rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/teacher/grades">
+          <Link href={`/${slug}/teacher/grades`}>
             <Button className="w-full">Saisir les notes</Button>
           </Link>
-          <Link href="/teacher/attendance">
+          <Link href={`/${slug}/teacher/attendance`}>
             <Button className="w-full" variant="outline">Absences</Button>
           </Link>
-          <Link href="/teacher/classes">
+          <Link href={`/${slug}/teacher/classes`}>
             <Button className="w-full" variant="outline">Mes classes</Button>
           </Link>
-          <Link href="/teacher/messages">
+          <Link href={`/${slug}/teacher/messages`}>
             <Button className="w-full" variant="outline">Messages</Button>
           </Link>
         </div>
@@ -117,7 +104,7 @@ export default async function TeacherDashboard() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {classes.map((cls: any) => (
-                <Link key={cls.id} href={`/teacher/classes/${cls.id}`}>
+                <Link key={cls.id} href={`/${slug}/teacher/classes/${cls.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow border">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">

@@ -16,8 +16,9 @@ import { Banknote, Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { formatCFA } from "@/lib/utils/formatters";
 
-export default async function TuitionFeesPage() {
-    const auth = await getAuthUser();
+export default async function TuitionFeesPage({ params }: { params: Promise<{ ecole: string }> }) {
+    const slug = (await params).ecole;
+    const auth = await getAuthUser(slug);
     if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
     const supabaseAdmin = createAdminClient();
@@ -41,7 +42,7 @@ export default async function TuitionFeesPage() {
                     <p className="text-muted-foreground">Configurez les frais applicables pour chaque classe et année.</p>
                 </div>
                 <Button asChild>
-                    <Link href="/admin/payments/fees/new">
+                    <Link href={`/${slug}/admin/payments/fees/new`}>
                         <Plus className="mr-2 h-4 w-4" />
                         Nouveau tarif
                     </Link>
@@ -99,7 +100,7 @@ export default async function TuitionFeesPage() {
                                                 <Banknote className="mx-auto h-12 w-12 text-muted-foreground/30" />
                                                 <p className="text-muted-foreground">Aucun tarif configuré.</p>
                                                 <Button variant="outline" size="sm" asChild>
-                                                    <Link href="/admin/payments/fees/new">Ajouter un tarif</Link>
+                                                    <Link href={`/${slug}/admin/payments/fees/new`}>Ajouter un tarif</Link>
                                                 </Button>
                                             </div>
                                         </TableCell>

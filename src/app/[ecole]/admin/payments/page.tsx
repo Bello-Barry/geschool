@@ -16,8 +16,9 @@ import { DollarSign, Plus, Receipt, Settings2, TrendingUp, Users } from "lucide-
 import Link from "next/link";
 import { formatCFA, formatDate } from "@/lib/utils/formatters";
 
-export default async function AdminPaymentsPage() {
-  const auth = await getAuthUser();
+export default async function AdminPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
   const supabaseAdmin = createAdminClient();
@@ -47,13 +48,13 @@ export default async function AdminPaymentsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/admin/payments/fees">
+            <Link href={`/${slug}/admin/payments/fees`}>
               <Settings2 className="mr-2 h-4 w-4" />
               Paramétrer les frais
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/payments/new">
+            <Link href={`/${slug}/admin/payments/new`}>
               <Plus className="mr-2 h-4 w-4" />
               Saisir un paiement
             </Link>

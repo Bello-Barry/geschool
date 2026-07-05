@@ -8,9 +8,10 @@ import Link from "next/link";
 import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, Copy, ExternalLink, UserPlus } from "lucide-react";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const supabaseAdmin = createAdminClient();
-  const auth = await getAuthUser();
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) {
     redirect(auth ? "/teacher" : "/login");
   }
@@ -46,7 +47,7 @@ export default async function AdminDashboard() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/admin/school`}>
+            <Link href={`/${schoolSlug}/admin/school`}>
               Paramètres école
             </Link>
           </Button>
@@ -110,19 +111,19 @@ export default async function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href="/admin/students/new" className="block">
+                <Link href={`/${schoolSlug}/admin/students/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <UserPlus className="h-6 w-6" />
                     Nouvel élève
                   </Button>
                 </Link>
-                <Link href="/admin/teachers/new" className="block">
+                <Link href={`/${schoolSlug}/admin/teachers/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <BookOpen className="h-6 w-6" />
                     Nouvel enseignant
                   </Button>
                 </Link>
-                <Link href="/admin/parents/new" className="block">
+                <Link href={`/${schoolSlug}/admin/parents/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <Users className="h-6 w-6" />
                     Nouveau parent

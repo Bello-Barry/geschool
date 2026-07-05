@@ -1,5 +1,8 @@
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/forms/login-form';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getSchoolFromHeaders } from '@/lib/utils/school-resolver';
 
 export default async function LoginPage({
@@ -10,7 +13,29 @@ export default async function LoginPage({
   const headersList = await headers();
   const params = await searchParams;
 
-  // L'école est résolue par le middleware depuis le slug dans le chemin
+  // Rediriger si déjà connecté
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.id) {
+    const adminClient = createAdminClient();
+    const { data: user } = await adminClient
+      .from("users")
+      .select("role, school_id")
+      .eq("id", session.user.id)
+      .single();
+    if (user) {
+      const { data: school } = await adminClient
+        .from("schools")
+        .select("subdomain")
+        .eq("id", user.school_id)
+        .single();
+      if (school) {
+        const rolePath = user.role === "super_admin" || user.role === "admin_school" ? "/admin" : `/${user.role}`;
+        redirect(`/${school.subdomain}${rolePath}`);
+      }
+    }
+  }
+
   const school = await getSchoolFromHeaders(headersList);
 
   return (

@@ -1,14 +1,18 @@
+import { headers } from "next/headers";
 import { TeacherForm } from "@/components/forms/teacher-form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function NewTeacherPage() {
+export default async function NewTeacherPage() {
+  const h = await headers();
+  const slug = h.get("x-school-subdomain") || "";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon">
-          <Link href="/admin/teachers">
+          <Link href={`/${slug}/admin/teachers`}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

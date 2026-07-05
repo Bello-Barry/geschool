@@ -1,31 +1,28 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DollarSign, AlertCircle } from "lucide-react";
 
-export default async function ParentPaymentsPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+export default async function ParentPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "parent") redirect("/login");
 
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
+  const supabaseAdmin = createAdminClient();
 
   // Récupérer les enfants et leurs paiements
-  const { data: parent } = await supabase
+  const { data: parent } = await supabaseAdmin
     .from("parents")
     .select("id")
-    .eq("user_id", session.user.id)
-    .eq("school_id", schoolId)
+    .eq("user_id", auth.userId)
+    .eq("school_id", auth.schoolId)
     .single();
 
   if (!parent) redirect("/parent");
 
-  const { data: children } = await supabase
+  const { data: children } = await supabaseAdmin
     .from("student_parents")
     .select("student_id")
     .eq("parent_id", parent.id);
@@ -33,7 +30,7 @@ export default async function ParentPaymentsPage() {
   const childrenIds = children?.map((c) => c.student_id) || [];
 
   // Récupérer les paiements
-  const { data: payments } = await supabase
+  const { data: payments } = await supabaseAdmin
     .from("payments")
     .select(`
       *,

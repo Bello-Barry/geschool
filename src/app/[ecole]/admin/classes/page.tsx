@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 
-export default async function ClassesPage() {
-  const auth = await getAuthUser();
+export default async function ClassesPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
   const supabaseAdmin = createAdminClient();
@@ -33,7 +34,7 @@ export default async function ClassesPage() {
           <h1 className="text-3xl font-bold">Gestion des classes</h1>
           <p className="text-gray-600 mt-1">Organisez vos classes et sections</p>
         </div>
-        <Link href="/admin/classes/new">
+        <Link href={`/${slug}/admin/classes/new`}>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle classe
@@ -44,7 +45,7 @@ export default async function ClassesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {classes && classes.length > 0 ? (
           classes.map((cls: any) => (
-            <Link key={cls.id} href={`/admin/classes/${cls.id}`} className="block">
+            <Link key={cls.id} href={`/${slug}/admin/classes/${cls.id}`} className="block">
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">

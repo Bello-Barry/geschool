@@ -15,8 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { BookMarked, Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 
-export default async function SubjectsPage() {
-    const auth = await getAuthUser();
+export default async function SubjectsPage({ params }: { params: Promise<{ ecole: string }> }) {
+    const slug = (await params).ecole;
+    const auth = await getAuthUser(slug);
     if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
     const supabaseAdmin = createAdminClient();
@@ -36,7 +37,7 @@ export default async function SubjectsPage() {
                     <p className="text-muted-foreground">Gérez les matières enseignées et leurs coefficients.</p>
                 </div>
                 <Button asChild>
-                    <Link href="/admin/subjects/new">
+                    <Link href={`/${slug}/admin/subjects/new`}>
                         <Plus className="mr-2 h-4 w-4" />
                         Nouvelle matière
                     </Link>
@@ -78,7 +79,7 @@ export default async function SubjectsPage() {
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
                                                 <Button variant="ghost" size="icon" asChild>
-                                                    <Link href={`/admin/subjects/${subject.id}/edit`}>
+                                                    <Link href={`/${slug}/admin/subjects/${subject.id}/edit`}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -96,7 +97,7 @@ export default async function SubjectsPage() {
                                                 <BookMarked className="mx-auto h-12 w-12 text-muted-foreground/30" />
                                                 <p className="text-muted-foreground">Aucune matière enregistrée.</p>
                                                 <Button variant="outline" size="sm" asChild>
-                                                    <Link href="/admin/subjects/new">Ajouter une matière</Link>
+                                                    <Link href={`/${slug}/admin/subjects/new`}>Ajouter une matière</Link>
                                                 </Button>
                                             </div>
                                         </TableCell>

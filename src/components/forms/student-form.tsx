@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +37,11 @@ interface StudentFormProps {
   isLoading?: boolean;
 }
 
-export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: StudentFormProps) {
+export function StudentForm({ classes, isLoading: externalLoading }: StudentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const params = useParams();
 
   const {
     register,
@@ -74,7 +77,8 @@ export function StudentForm({ classes, onSuccess, isLoading: externalLoading }: 
         throw new Error(errorData.error || "Erreur lors de la création");
       }
 
-      if (onSuccess) onSuccess();
+      const slug = params?.ecole ? `/${params.ecole}` : "";
+      router.push(`${slug}/admin/students`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la création");
     } finally {

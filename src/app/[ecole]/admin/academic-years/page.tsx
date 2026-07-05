@@ -16,8 +16,9 @@ import { Calendar, Plus, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
 
-export default async function AcademicYearsPage() {
-    const auth = await getAuthUser();
+export default async function AcademicYearsPage({ params }: { params: Promise<{ ecole: string }> }) {
+    const slug = (await params).ecole;
+    const auth = await getAuthUser(slug);
     if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
     const supabaseAdmin = createAdminClient();
@@ -40,7 +41,7 @@ export default async function AcademicYearsPage() {
                     <p className="text-muted-foreground">Gérez les périodes académiques et les trimestres.</p>
                 </div>
                 <Button asChild>
-                    <Link href="/admin/academic-years/new">
+                    <Link href={`/${slug}/admin/academic-years/new`}>
                         <Plus className="mr-2 h-4 w-4" />
                         Nouvelle année
                     </Link>
@@ -62,7 +63,7 @@ export default async function AcademicYearsPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/admin/academic-years/${year.id}/edit`}>
+                                    <Link href={`/${slug}/admin/academic-years/${year.id}/edit`}>
                                         <Settings2 className="h-4 w-4 mr-2" />
                                         Modifier
                                     </Link>
@@ -115,7 +116,7 @@ export default async function AcademicYearsPage() {
                         <h3 className="text-lg font-medium">Aucune année scolaire</h3>
                         <p className="text-muted-foreground mb-6">Commencez par créer votre première année académique.</p>
                         <Button asChild>
-                            <Link href="/admin/academic-years/new">Créer une année scolaire</Link>
+                            <Link href={`/${slug}/admin/academic-years/new`}>Créer une année scolaire</Link>
                         </Button>
                     </div>
                 )}

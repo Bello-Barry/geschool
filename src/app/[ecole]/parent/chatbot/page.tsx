@@ -1,17 +1,19 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bot, User, Send, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default async function ParentChatbotPage() {
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
-  const schoolName = headersList.get("x-school-name") || "l'école";
+export default async function ParentChatbotPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "parent") redirect("/login");
 
-  if (!schoolId) redirect("/login");
+  const headersList = await headers();
+  const schoolName = headersList.get("x-school-name") || "l'école";
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">

@@ -1,32 +1,29 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
-export default async function ParentChildrenPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+export default async function ParentChildrenPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "parent") redirect("/login");
 
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
+  const supabaseAdmin = createAdminClient();
 
   // Récupérer les enfants du parent
-  const { data: parent } = await supabase
+  const { data: parent } = await supabaseAdmin
     .from("parents")
     .select("id")
-    .eq("user_id", session.user.id)
-    .eq("school_id", schoolId)
+    .eq("user_id", auth.userId)
+    .eq("school_id", auth.schoolId)
     .single();
 
   if (!parent) redirect("/parent");
 
-  const { data: children } = await supabase
+  const { data: children } = await supabaseAdmin
     .from("student_parents")
     .select(`
       student:student_id(
@@ -53,7 +50,7 @@ export default async function ParentChildrenPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {children && children.length > 0 ? (
           children.map((item: any) => (
-            <Link key={item.student.id} href={`/parent/children/${item.student.id}`}>
+            <Link key={item.student.id} href={`/${slug}/parent/children/${item.student.id}`}>
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle>
@@ -67,13 +64,13 @@ export default async function ParentChildrenPage() {
                     <span className="font-mono text-sm">{item.student.matricule}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Link href={`/parent/children/${item.student.id}/grades`} className="flex-1">
+                      <Link href={`/${slug}/parent/children/${item.student.id}/grades`} className="flex-1">
                       <Button className="w-full" variant="outline" size="sm">
                         Notes
                       </Button>
                     </Link>
                     <Link
-                      href={`/parent/children/${item.student.id}/reports`}
+                      href={`/${slug}/parent/children/${item.student.id}/reports`}
                       className="flex-1"
                     >
                       <Button className="w-full" variant="outline" size="sm">

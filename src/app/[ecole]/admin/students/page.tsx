@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { Plus, Upload } from "lucide-react";
 
-export default async function StudentsPage() {
-  const auth = await getAuthUser();
+export default async function StudentsPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
   const supabaseAdmin = createAdminClient();
@@ -39,13 +40,13 @@ export default async function StudentsPage() {
           <p className="text-gray-600 mt-1">Gérez les élèves de votre école</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/students/import">
+          <Link href={`/${slug}/admin/students/import`}>
             <Button variant="outline">
               <Upload className="h-4 w-4 mr-2" />
               Import CSV
             </Button>
           </Link>
-          <Link href="/admin/students/new">
+          <Link href={`/${slug}/admin/students/new`}>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Nouvel élève
@@ -82,7 +83,7 @@ export default async function StudentsPage() {
                       <td className="py-3 px-4">{student.user?.email}</td>
                       <td className="py-3 px-4">{student.class?.name || "-"}</td>
                       <td className="py-3 px-4">
-                        <Link href={`/admin/students/${student.id}`}>
+                        <Link href={`/${slug}/admin/students/${student.id}`}>
                           <Button variant="outline" size="sm">
                             Voir
                           </Button>

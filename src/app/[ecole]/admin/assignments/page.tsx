@@ -16,8 +16,9 @@ import { UserCog, Plus, Trash2, Search } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 
-export default async function AssignmentsPage() {
-    const auth = await getAuthUser();
+export default async function AssignmentsPage({ params }: { params: Promise<{ ecole: string }> }) {
+    const slug = (await params).ecole;
+    const auth = await getAuthUser(slug);
     if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
     const supabaseAdmin = createAdminClient();
@@ -44,7 +45,7 @@ export default async function AssignmentsPage() {
                     <p className="text-muted-foreground">Associez les enseignants aux matières et aux classes.</p>
                 </div>
                 <Button asChild>
-                    <Link href="/admin/assignments/new">
+                    <Link href={`/${slug}/admin/assignments/new`}>
                         <Plus className="mr-2 h-4 w-4" />
                         Nouvelle affectation
                     </Link>
@@ -98,7 +99,7 @@ export default async function AssignmentsPage() {
                                             <UserCog className="mx-auto h-12 w-12 text-muted-foreground/30" />
                                             <p className="text-muted-foreground">Aucune affectation configurée.</p>
                                             <Button variant="outline" size="sm" asChild>
-                                                <Link href="/admin/assignments/new">Créer une affectation</Link>
+                                                <Link href={`/${slug}/admin/assignments/new`}>Créer une affectation</Link>
                                             </Button>
                                         </div>
                                     </TableCell>

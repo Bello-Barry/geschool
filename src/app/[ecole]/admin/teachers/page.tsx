@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-export default async function TeachersPage() {
-  const auth = await getAuthUser();
+export default async function TeachersPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect("/login");
 
   const supabaseAdmin = createAdminClient();
@@ -39,7 +40,7 @@ export default async function TeachersPage() {
           <h1 className="text-3xl font-bold">Gestion des enseignants</h1>
           <p className="text-gray-600 mt-1">Gérez votre équipe pédagogique</p>
         </div>
-        <Link href="/admin/teachers/new">
+        <Link href={`/${slug}/admin/teachers/new`}>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Nouvel enseignant
@@ -67,7 +68,7 @@ export default async function TeachersPage() {
                           {teacher.specialization || "Général"}
                         </CardDescription>
                       </div>
-                      <Link href={`/admin/teachers/${teacher.id}`}>
+                      <Link href={`/${slug}/admin/teachers/${teacher.id}`}>
                         <Button variant="ghost" size="sm">
                           Éditer
                         </Button>

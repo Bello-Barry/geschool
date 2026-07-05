@@ -1,29 +1,26 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default async function TeacherGradesPage() {
-  const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
+export default async function TeacherGradesPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "teacher") redirect("/login");
 
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
+  const supabaseAdmin = createAdminClient();
 
   // Récupérer les classes et matières de l'enseignant
-  const { data: teacherSubjects } = await supabase
+  const { data: teacherSubjects } = await supabaseAdmin
     .from("teacher_subjects")
     .select(`
       id,
       subject:subject_id(id, name),
       class:class_id(id, name)
     `)
-    .eq("school_id", schoolId);
+    .eq("school_id", auth.schoolId);
 
   // Grouper par classe
   const classesBySubject = (teacherSubjects || []).reduce(
@@ -51,7 +48,7 @@ export default async function TeacherGradesPage() {
           return (
             <Link
               key={classId}
-              href={`/teacher/grades/${classId}`}
+              href={`/${slug}/teacher/grades/${classId}`}
             >
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>

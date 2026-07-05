@@ -1,33 +1,26 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BarChart3, FileText, MessageSquare, DollarSign } from "lucide-react";
 
-export default async function ParentDashboard() {
+export default async function ParentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "parent") redirect("/login");
+  const schoolId = auth.schoolId;
   const supabase = await createClient();
-  const headersList = await headers();
-  const schoolId = headersList.get("x-school-id");
-
-  if (!schoolId) redirect("/login");
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) redirect("/login");
-
-  // Vérifier le rôle
-  const { data: user } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (user?.role !== "parent") {
-    redirect("/admin");
-  }
 
   // Récupérer les enfants du parent
+  const { data: parentRow } = await supabase
+    .from("parents")
+    .select("id")
+    .eq("user_id", auth.userId)
+    .eq("school_id", schoolId)
+    .single();
+
   const { data: children } = await supabase
     .from("student_parents")
     .select(`
@@ -40,14 +33,7 @@ export default async function ParentDashboard() {
         class:class_id(name)
       )
     `)
-    .eq("parent_id", 
-      (await supabase
-        .from("parents")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .eq("school_id", schoolId)
-        .single()).data?.id
-    );
+    .eq("parent_id", parentRow?.id);
 
   return (
     <div className="space-y-8">
@@ -58,7 +44,7 @@ export default async function ParentDashboard() {
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/parent/children">
+        <Link href={`/${slug}/parent/children`}>
           <Button className="w-full h-16">
             <div className="text-center">
               <BarChart3 className="h-5 w-5 mx-auto mb-1" />
@@ -66,7 +52,7 @@ export default async function ParentDashboard() {
             </div>
           </Button>
         </Link>
-        <Link href="/parent/payments">
+        <Link href={`/${slug}/parent/payments`}>
           <Button className="w-full h-16" variant="outline">
             <div className="text-center">
               <DollarSign className="h-5 w-5 mx-auto mb-1" />
@@ -74,7 +60,7 @@ export default async function ParentDashboard() {
             </div>
           </Button>
         </Link>
-        <Link href="/parent/messages">
+        <Link href={`/${slug}/parent/messages`}>
           <Button className="w-full h-16" variant="outline">
             <div className="text-center">
               <MessageSquare className="h-5 w-5 mx-auto mb-1" />
@@ -82,7 +68,7 @@ export default async function ParentDashboard() {
             </div>
           </Button>
         </Link>
-        <Link href="/parent/chatbot">
+        <Link href={`/${slug}/parent/chatbot`}>
           <Button className="w-full h-16" variant="outline">
             <div className="text-center">
               <FileText className="h-5 w-5 mx-auto mb-1" />
@@ -102,7 +88,7 @@ export default async function ParentDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {children && children.length > 0 ? (
               children.map((item: any, i: number) => (
-                <Link key={i} href={`/parent/children/${item.student.id}`}>
+                <Link key={i} href={`/${slug}/parent/children/${item.student.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow border">
                     <CardContent className="pt-6">
                       <p className="font-semibold text-lg">
