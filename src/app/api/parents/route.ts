@@ -14,17 +14,21 @@ const parentSchema = z.object({
   student_ids: z.array(z.string().uuid()).optional(),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createClient();
-  const schoolId = request.headers.get("x-school-id");
-
-  if (!schoolId) {
-    return NextResponse.json({ error: "No school found" }, { status: 400 });
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("school_id")
+    .eq("id", session.user.id)
+    .single();
+  const schoolId = userProfile?.school_id;
+  if (!schoolId) {
+    return NextResponse.json({ error: "No school found" }, { status: 400 });
   }
 
   try {
@@ -47,12 +51,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const schoolId = request.headers.get("x-school-id");
-
-  if (!schoolId) {
-    return NextResponse.json({ error: "No school found" }, { status: 400 });
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,9 +63,10 @@ export async function POST(request: NextRequest) {
     .eq("id", session.user.id)
     .single();
 
-  if (!user || (user.role !== "admin_school" && user.role !== "super_admin") || user.school_id !== schoolId) {
+  if (!user || (user.role !== "admin_school" && user.role !== "super_admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const schoolId = user.school_id;
 
   try {
     const body = await request.json();

@@ -1,12 +1,14 @@
-import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { TeacherForm } from "@/components/forms/teacher-form";
+import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default async function NewTeacherPage() {
-  const h = await headers();
-  const slug = h.get("x-school-subdomain") || "";
+export default async function NewTeacherPage({ params }: { params: Promise<{ ecole: string }> }) {
+  const slug = (await params).ecole;
+  const auth = await getAuthUser(slug);
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect(`/${slug}/login`);
 
   return (
     <div className="space-y-6">

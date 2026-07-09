@@ -18,9 +18,14 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
 
   const schoolId = auth.schoolId;
 
-  // School name from headers
+  // School name from DB
+  const { data: schoolInfo } = await supabaseAdmin
+    .from("schools")
+    .select("name")
+    .eq("id", schoolId)
+    .single();
+  const schoolName = schoolInfo?.name || "École";
   const headersList = await headers();
-  const schoolName = headersList.get("x-school-name") || "École";
 
   // Récupérer statistiques (admin client pour bypass RLS)
   const [students, teachers, classes, payments] = await Promise.all([
@@ -33,10 +38,9 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
   const totalRevenue = (payments.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
 
   // URL de l'école via le slug
-  const schoolSlug = headersList.get("x-school-subdomain") || "";
   const host = headersList.get("host") || "";
   const protocol = host.includes("localhost") ? "http" : "https";
-  const schoolUrl = schoolSlug ? `${protocol}://${host}/${schoolSlug}` : `${protocol}://${host}`;
+  const schoolUrl = `${protocol}://${host}/${slug}`;
 
   return (
     <div className="space-y-8 pb-12">
@@ -47,7 +51,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/${schoolSlug}/admin/school`}>
+            <Link href={`/${slug}/admin/school`}>
               Paramètres école
             </Link>
           </Button>
@@ -111,19 +115,19 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href={`/${schoolSlug}/admin/students/new`} className="block">
+                <Link href={`/${slug}/admin/students/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <UserPlus className="h-6 w-6" />
                     Nouvel élève
                   </Button>
                 </Link>
-                <Link href={`/${schoolSlug}/admin/teachers/new`} className="block">
+                <Link href={`/${slug}/admin/teachers/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <BookOpen className="h-6 w-6" />
                     Nouvel enseignant
                   </Button>
                 </Link>
-                <Link href={`/${schoolSlug}/admin/parents/new`} className="block">
+                <Link href={`/${slug}/admin/parents/new`} className="block">
                   <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
                     <Users className="h-6 w-6" />
                     Nouveau parent
