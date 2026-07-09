@@ -11,7 +11,9 @@ import {
   Calendar,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserCog,
+  CalendarRange
 } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -25,8 +27,10 @@ export function Sidebar() {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Tableau de Bord", href: `${prefix}/admin` },
+    { icon: CalendarRange, label: "Années Scolaires", href: `${prefix}/admin/academic-years` },
     { icon: GraduationCap, label: "Élèves", href: `${prefix}/admin/students` },
     { icon: Users, label: "Enseignants", href: `${prefix}/admin/teachers` },
+    { icon: UserCog, label: "Affectations", href: `${prefix}/admin/assignments` },
     { icon: School, label: "Classes", href: `${prefix}/admin/classes` },
     { icon: FileText, label: "Notes", href: `${prefix}/admin/grades` },
     { icon: Calendar, label: "Présences", href: `${prefix}/admin/attendance` },

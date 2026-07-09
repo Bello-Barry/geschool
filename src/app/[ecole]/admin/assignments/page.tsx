@@ -12,9 +12,10 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Plus, Trash2, Search } from "lucide-react";
+import { UserCog, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { DeleteAssignmentButton } from "@/components/forms/delete-assignment-button";
 
 export default async function AssignmentsPage({ params }: { params: Promise<{ ecole: string }> }) {
     const slug = (await params).ecole;
@@ -86,9 +87,7 @@ export default async function AssignmentsPage({ params }: { params: Promise<{ ec
                                         <Badge variant="outline">{assignment.class?.name}</Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        <DeleteAssignmentButton id={assignment.id} />
                                     </TableCell>
                                 </TableRow>
                             ))}
