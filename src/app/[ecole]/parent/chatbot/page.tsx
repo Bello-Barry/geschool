@@ -1,5 +1,5 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,13 @@ export default async function ParentChatbotPage({ params }: { params: Promise<{ 
   const auth = await getAuthUser(slug);
   if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
 
-  const headersList = await headers();
-  const schoolName = headersList.get("x-school-name") || "l'école";
+  const adminClient = createAdminClient();
+  const { data: schoolInfo } = await adminClient
+    .from("schools")
+    .select("name")
+    .eq("id", auth.schoolId)
+    .single();
+  const schoolName = schoolInfo?.name || "l'école";
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] space-y-4">
