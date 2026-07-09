@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     if (authError) throw new Error(authError.message);
 
-    // Créer le record user
-    const { error: userError } = await supabase
+    // Créer le record user (admin client pour bypass RLS - pas de policy INSERT sur users)
+    const { error: userError } = await adminClient
       .from("users")
       .insert({
         id: authData.user.id,
