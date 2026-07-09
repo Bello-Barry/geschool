@@ -145,18 +145,24 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50">
-                <p className="text-sm font-medium">Configuration de l'année scolaire</p>
-                <Button size="sm" variant="ghost">Gérer</Button>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <p className="text-sm font-medium">Définition des frais de scolarité</p>
-                <Button size="sm" variant="ghost">Gérer</Button>
-              </div>
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <p className="text-sm font-medium">Importation massive d'élèves (CSV)</p>
-                <Button size="sm" variant="ghost">Importer</Button>
-              </div>
+              <Link href={`/${slug}/admin/academic-years/new`} className="block">
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50 hover:bg-yellow-100/50 transition-colors">
+                  <p className="text-sm font-medium">Configuration de l'année scolaire</p>
+                  <Button size="sm" variant="ghost">Créer</Button>
+                </div>
+              </Link>
+              <Link href={`/${slug}/admin/classes/new`} className="block">
+                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <p className="text-sm font-medium">Créer une classe</p>
+                  <Button size="sm" variant="ghost">Créer</Button>
+                </div>
+              </Link>
+              <Link href={`/${slug}/admin/assignments/new`} className="block">
+                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <p className="text-sm font-medium">Affecter un enseignant à une classe</p>
+                  <Button size="sm" variant="ghost">Affecter</Button>
+                </div>
+              </Link>
             </CardContent>
           </Card>
         </div>
