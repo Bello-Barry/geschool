@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { analyzeSchoolPerformance } from '@/lib/ai/deepseek';
-import { headers } from 'next/headers';
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    const headersList = await headers();
-    const schoolId = headersList.get('x-school-id');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const { data: userProfile } = await supabase
+      .from("users")
+      .select("school_id")
+      .eq("id", session.user.id)
+      .single();
+    const schoolId = userProfile?.school_id;
     if (!schoolId) {
       return NextResponse.json({ error: 'School ID missing' }, { status: 400 });
     }

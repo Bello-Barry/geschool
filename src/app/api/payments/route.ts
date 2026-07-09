@@ -15,17 +15,22 @@ const paymentSchema = z.object({
 
 export async function GET(request: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
-  const schoolId = request.headers.get("x-school-id");
   const { searchParams } = new URL(request.url);
   const studentId = searchParams.get("student_id");
-
-  if (!schoolId) {
-    return NextResponse.json({ error: "No school found" }, { status: 400 });
-  }
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("school_id")
+    .eq("id", session.user.id)
+    .single();
+  const schoolId = userProfile?.school_id;
+  if (!schoolId) {
+    return NextResponse.json({ error: "No school found" }, { status: 400 });
   }
 
   try {
@@ -58,12 +63,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
-  const schoolId = request.headers.get("x-school-id");
-
-  if (!schoolId) {
-    return NextResponse.json({ error: "No school found" }, { status: 400 });
-  }
-
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -72,13 +71,14 @@ export async function POST(request: NextRequest) {
   // Vérifier que c'est un admin
   const { data: user } = await supabase
     .from("users")
-    .select("role")
+    .select("role, school_id")
     .eq("id", session.user.id)
     .single();
 
   if (user?.role !== "admin_school" && user?.role !== "super_admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const schoolId = user.school_id;
 
   try {
     const body = await request.json();

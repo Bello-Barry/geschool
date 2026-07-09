@@ -11,12 +11,24 @@ const chatSchema = z.object({
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
-        const headersList = request.headers;
-        const schoolName = headersList.get('x-school-name') || "l'école";
-
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+        }
+
+        const { data: userProfile } = await supabase
+            .from("users")
+            .select("school_id")
+            .eq("id", session.user.id)
+            .single();
+        let schoolName = "l'école";
+        if (userProfile?.school_id) {
+            const { data: school } = await supabase
+                .from("schools")
+                .select("name")
+                .eq("id", userProfile.school_id)
+                .single();
+            if (school?.name) schoolName = school.name;
         }
 
         const body = await request.json();
