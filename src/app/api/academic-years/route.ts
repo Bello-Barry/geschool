@@ -16,29 +16,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: user, error: userError } = await supabase
+  const { data: user } = await supabase
     .from("users")
     .select("role, school_id")
     .eq("id", session.user.id)
     .single();
 
-  if (userError) {
-    console.error("academic-years POST user lookup failed", {
-      message: userError.message,
-      code: userError.code,
-      details: userError.details,
-      hint: userError.hint,
-      userId: session.user.id,
-    });
-  }
-
   if (!user || (user.role !== "admin_school" && user.role !== "super_admin")) {
-    console.error("academic-years POST forbidden", {
-      userId: session.user.id,
-      role: user?.role,
-      schoolId: user?.school_id,
-      hasUser: Boolean(user),
-    });
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const schoolId = user.school_id;
