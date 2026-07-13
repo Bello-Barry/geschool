@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSchoolBySubdomain } from "@/lib/utils/school-resolver";
+import { getAuthUser } from "@/lib/utils/auth-utils";
+import { NavBar } from "@/components/layout/nav-bar";
 
 export default async function SchoolLayout({
   children,
@@ -15,5 +17,12 @@ export default async function SchoolLayout({
     redirect("/school-not-found");
   }
 
-  return <>{children}</>;
+  const auth = await getAuthUser(ecole);
+
+  return (
+    <>
+      {auth && <NavBar schoolName={school.name} schoolSlug={ecole} />}
+      {children}
+    </>
+  );
 }
