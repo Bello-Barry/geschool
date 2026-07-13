@@ -35,7 +35,7 @@ export default async function SchoolLoginPage({
       .eq('id', session.user.id)
       .single();
 
-    if (user?.school_id === school.id) {
+    if (user && user.school_id === school.id) {
       const rolePath = user.role === 'super_admin' || user.role === 'admin_school' ? '/admin' : `/${user.role}`;
       redirect(`/${ecole}${rolePath}`);
     }
