@@ -26,27 +26,21 @@ export default async function SchoolLoginPage({
 
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
+
+  // Si l'utilisateur est déjà connecté et appartient à CETTE école → rediriger
   if (session?.user?.id) {
     const { data: user } = await adminClient
       .from('users')
       .select('role, school_id')
       .eq('id', session.user.id)
       .single();
-    if (user) {
-      if (user.school_id === school.id) {
-        const rolePath = user.role === 'super_admin' || user.role === 'admin_school' ? '/admin' : `/${user.role}`;
-        redirect(`/${ecole}${rolePath}`);
-      }
-      const { data: userSchool } = await adminClient
-        .from('schools')
-        .select('subdomain')
-        .eq('id', user.school_id)
-        .single();
-      if (userSchool) {
-        const rolePath = user.role === 'super_admin' || user.role === 'admin_school' ? '/admin' : `/${user.role}`;
-        redirect(`/${userSchool.subdomain}${rolePath}`);
-      }
+
+    if (user?.school_id === school.id) {
+      const rolePath = user.role === 'super_admin' || user.role === 'admin_school' ? '/admin' : `/${user.role}`;
+      redirect(`/${ecole}${rolePath}`);
     }
+    // Sinon (école différente) → laisser le formulaire s'afficher
+    // pour permettre à l'utilisateur de se connecter avec un autre compte
   }
 
   return (
