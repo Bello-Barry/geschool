@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { cookies, headers } from 'next/headers';
 
 export async function GET(_request: NextRequest) {
@@ -30,6 +31,24 @@ export async function GET(_request: NextRequest) {
     const { data, error } = await supabase.auth.getSession();
     results.getSession = { has_session: !!data?.session, user_id: data?.session?.user?.id, error: error?.message };
   } catch (e: any) { results.getSession_error = e.message; }
+
+  // Look up user's school_id directly from the database
+  if (results.getSession?.has_session && results.getSession?.user_id) {
+    try {
+      const admin = createAdminClient();
+      const { data: user } = await admin
+        .from("users")
+        .select("school_id, role")
+        .eq("id", results.getSession.user_id)
+        .single();
+      if (user) {
+        results.user_profile = user;
+        if (!results.headers['x-school-id']) {
+          results.headers['x-school-id'] = user.school_id;
+        }
+      }
+    } catch (e: any) { results.user_profile_error = e.message; }
+  }
 
   return NextResponse.json(results);
 }

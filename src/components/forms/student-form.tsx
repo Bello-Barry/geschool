@@ -35,21 +35,44 @@ interface StudentFormProps {
   classes: Array<{ id: string; name: string }>;
   onSuccess?: () => void;
   isLoading?: boolean;
+  initialData?: {
+    id: string;
+    matricule: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    classId: string;
+    dateOfBirth?: string;
+    placeOfBirth?: string;
+    gender?: "M" | "F";
+  };
 }
 
-export function StudentForm({ classes, isLoading: externalLoading }: StudentFormProps) {
+export function StudentForm({ classes, isLoading: externalLoading, initialData }: StudentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const isEditing = !!initialData;
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
+    defaultValues: initialData ? {
+      matricule: initialData.matricule,
+      firstName: initialData.firstName,
+      lastName: initialData.lastName,
+      email: initialData.email,
+      classId: initialData.classId,
+      dateOfBirth: initialData.dateOfBirth,
+      placeOfBirth: initialData.placeOfBirth,
+      gender: initialData.gender,
+    } : undefined,
   });
 
   const onSubmit = async (data: StudentFormData) => {
@@ -57,8 +80,11 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
     setError(null);
 
     try {
-      const response = await fetch("/api/students", {
-        method: "POST",
+      const url = isEditing ? `/api/students/${initialData.id}` : "/api/students";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           matricule: data.matricule,
@@ -74,13 +100,13 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la création");
+        throw new Error(errorData.error || "Erreur lors de la sauvegarde");
       }
 
       const slug = params?.ecole ? `/${params.ecole}` : "";
-      router.push(`${slug}/admin/students`);
+      router.push(isEditing ? `${slug}/admin/students/${initialData.id}` : `${slug}/admin/students`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la création");
+      setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
       setLoading(false);
     }
@@ -89,8 +115,8 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouvel élève</CardTitle>
-        <CardDescription>Remplissez les informations de l'élève</CardDescription>
+        <CardTitle>{isEditing ? "Modifier l'élève" : "Nouvel élève"}</CardTitle>
+        <CardDescription>{isEditing ? "Modifiez les informations de l'élève" : "Remplissez les informations de l'élève"}</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -116,7 +142,7 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
 
             <div>
               <label className="text-sm font-medium">Genre</label>
-              <Select onValueChange={(value) => setValue("gender", value as "M" | "F")}>
+              <Select value={watch("gender")} onValueChange={(value) => setValue("gender", value as "M" | "F")}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
@@ -166,7 +192,7 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
 
             <div className="sm:col-span-2">
               <label className="text-sm font-medium">Classe</label>
-              <Select onValueChange={(value) => setValue("classId", value)}>
+              <Select value={watch("classId")} onValueChange={(value) => setValue("classId", value)}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Sélectionner une classe" />
                 </SelectTrigger>
@@ -206,10 +232,10 @@ export function StudentForm({ classes, isLoading: externalLoading }: StudentForm
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Création en cours...
+                {isEditing ? "Mise à jour..." : "Création en cours..."}
               </>
             ) : (
-              "Créer l'élève"
+              isEditing ? "Enregistrer les modifications" : "Créer l'élève"
             )}
           </Button>
         </form>

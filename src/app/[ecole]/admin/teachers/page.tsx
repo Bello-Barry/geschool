@@ -70,7 +70,7 @@ export default async function TeachersPage({ params }: { params: Promise<{ ecole
                       </div>
                       <Link href={`/${slug}/admin/teachers/${teacher.id}`}>
                         <Button variant="ghost" size="sm">
-                          Éditer
+                          Voir
                         </Button>
                       </Link>
                     </div>

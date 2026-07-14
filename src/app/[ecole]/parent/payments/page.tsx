@@ -20,7 +20,7 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
     .eq("school_id", auth.schoolId)
     .single();
 
-  if (!parent) redirect("/parent");
+  if (!parent) redirect(`/${slug}`);
 
   const { data: children } = await supabaseAdmin
     .from("student_parents")

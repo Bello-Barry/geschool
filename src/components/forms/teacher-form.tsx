@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +25,23 @@ type TeacherFormData = z.infer<typeof teacherSchema>;
 interface TeacherFormProps {
   onSuccess?: () => void;
   isLoading?: boolean;
+  initialData?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    specialization?: string;
+    employeeId?: string;
+    hireDate?: string;
+  };
 }
 
-export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFormProps) {
+export function TeacherForm({ isLoading: externalLoading, initialData }: TeacherFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const params = useParams();
+  const isEditing = !!initialData;
 
   const {
     register,
@@ -36,6 +49,14 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
     formState: { errors },
   } = useForm<TeacherFormData>({
     resolver: zodResolver(teacherSchema),
+    defaultValues: initialData ? {
+      firstName: initialData.firstName,
+      lastName: initialData.lastName,
+      email: initialData.email,
+      specialization: initialData.specialization,
+      employeeId: initialData.employeeId,
+      hireDate: initialData.hireDate,
+    } : undefined,
   });
 
   const onSubmit = async (data: TeacherFormData) => {
@@ -43,8 +64,11 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
     setError(null);
 
     try {
-      const response = await fetch("/api/teachers", {
-        method: "POST",
+      const url = isEditing ? `/api/teachers/${initialData.id}` : "/api/teachers";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           first_name: data.firstName,
@@ -58,12 +82,13 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la création");
+        throw new Error(errorData.error || "Erreur lors de la sauvegarde");
       }
 
-      if (onSuccess) onSuccess();
+      const slug = params?.ecole ? `/${params.ecole}` : "";
+      router.push(isEditing ? `${slug}/admin/teachers/${initialData.id}` : `${slug}/admin/teachers`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la création");
+      setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
       setLoading(false);
     }
@@ -72,8 +97,8 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouvel enseignant</CardTitle>
-        <CardDescription>Remplissez les informations de l'enseignant</CardDescription>
+        <CardTitle>{isEditing ? "Modifier l'enseignant" : "Nouvel enseignant"}</CardTitle>
+        <CardDescription>{isEditing ? "Modifiez les informations de l'enseignant" : "Remplissez les informations de l'enseignant"}</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -87,66 +112,36 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Prénom</label>
-              <Input
-                placeholder="Marc"
-                {...register("firstName")}
-                className="mt-1"
-              />
+              <Input placeholder="Marc" {...register("firstName")} className="mt-1" />
               {errors.firstName && (
                 <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>
               )}
             </div>
-
             <div>
               <label className="text-sm font-medium">Nom</label>
-              <Input
-                placeholder="Tshiani"
-                {...register("lastName")}
-                className="mt-1"
-              />
+              <Input placeholder="Tshiani" {...register("lastName")} className="mt-1" />
               {errors.lastName && (
                 <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>
               )}
             </div>
-
             <div className="sm:col-span-2">
               <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="enseignant@ecole.com"
-                {...register("email")}
-                className="mt-1"
-              />
+              <Input type="email" placeholder="enseignant@ecole.com" {...register("email")} className="mt-1" />
               {errors.email && (
                 <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
               )}
             </div>
-
             <div>
               <label className="text-sm font-medium">Spécialisation</label>
-              <Input
-                placeholder="Mathématiques"
-                {...register("specialization")}
-                className="mt-1"
-              />
+              <Input placeholder="Mathématiques" {...register("specialization")} className="mt-1" />
             </div>
-
             <div>
               <label className="text-sm font-medium">Identifiant employé</label>
-              <Input
-                placeholder="EMP-001"
-                {...register("employeeId")}
-                className="mt-1"
-              />
+              <Input placeholder="EMP-001" {...register("employeeId")} className="mt-1" />
             </div>
-
             <div className="sm:col-span-2">
               <label className="text-sm font-medium">Date d'embauche</label>
-              <Input
-                type="date"
-                {...register("hireDate")}
-                className="mt-1"
-              />
+              <Input type="date" {...register("hireDate")} className="mt-1" />
             </div>
           </div>
 
@@ -154,10 +149,10 @@ export function TeacherForm({ onSuccess, isLoading: externalLoading }: TeacherFo
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Création en cours...
+                {isEditing ? "Mise à jour..." : "Création en cours..."}
               </>
             ) : (
-              "Créer l'enseignant"
+              isEditing ? "Enregistrer les modifications" : "Créer l'enseignant"
             )}
           </Button>
         </form>

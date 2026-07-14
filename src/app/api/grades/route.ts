@@ -1,7 +1,6 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
 
 const gradeSchema = z.object({
   student_id: z.string().uuid(),
@@ -9,12 +8,13 @@ const gradeSchema = z.object({
   term_id: z.string().uuid(),
   grade_type: z.enum(["homework", "test", "exam"]),
   score: z.number().min(0).max(20),
+  max_score: z.number().min(1).max(20).default(20),
   date: z.string(),
   comments: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { searchParams } = new URL(request.url);
   const studentId = searchParams.get("student_id");
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

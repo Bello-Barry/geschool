@@ -89,6 +89,11 @@ export async function middleware(request: NextRequest) {
     if (user) {
       requestHeaders.set('x-user-role', user.role);
 
+      // Pour les routes sans slug (API, etc.), dériver l'école depuis l'utilisateur
+      if (!schoolSlug && user.school_id) {
+        requestHeaders.set('x-school-id', user.school_id);
+      }
+
       // Rediriger depuis / et /login vers le dashboard de l'utilisateur
       if (pathname === '/' || pathname === '/login') {
         const rolePath = getRoleDashboard(user.role);

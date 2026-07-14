@@ -82,9 +82,11 @@ export default async function TeacherDashboard({ params }: { params: Promise<{ e
           <Link href={`/${slug}/teacher/grades`}>
             <Button className="w-full">Saisir les notes</Button>
           </Link>
-          <Link href={`/${slug}/teacher/attendance`}>
-            <Button className="w-full" variant="outline">Absences</Button>
-          </Link>
+          {classes.length > 0 && classes[0]?.id && (
+            <Link href={`/${slug}/teacher/attendance/${classes[0].id}`}>
+              <Button className="w-full" variant="outline">Absences</Button>
+            </Link>
+          )}
           <Link href={`/${slug}/teacher/classes`}>
             <Button className="w-full" variant="outline">Mes classes</Button>
           </Link>
@@ -104,14 +106,14 @@ export default async function TeacherDashboard({ params }: { params: Promise<{ e
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {classes.map((cls: any) => (
-                <Link key={cls.id} href={`/${slug}/teacher/classes/${cls.id}`}>
+                <Link key={cls.id} href={`/${slug}/teacher/attendance/${cls.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow border">
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3">
                         <BookOpen className="h-5 w-5 text-blue-600" />
                         <div>
                           <p className="font-semibold">{cls.name}</p>
-                          <p className="text-xs text-gray-600">Cliquez pour gérer</p>
+                          <p className="text-xs text-gray-600">Appel du jour</p>
                         </div>
                       </div>
                     </CardContent>

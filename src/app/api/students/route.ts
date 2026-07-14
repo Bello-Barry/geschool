@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       throw studentError;
     }
 
-    return NextResponse.json(student, { status: 201 });
+    return NextResponse.json({ ...student, tempPassword }, { status: 201 });
   } catch (error) {
     console.error(error);
     if (error instanceof z.ZodError) {

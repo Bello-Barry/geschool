@@ -24,45 +24,67 @@ type FormData = z.infer<typeof schema>;
 
 interface ClassFormProps {
   academicYears: Array<{ id: string; name: string; is_current: boolean }>;
+  initialData?: {
+    id: string;
+    name: string;
+    level: string;
+    academic_year_id: string;
+    capacity?: string | null;
+    room_number?: string | null;
+  };
 }
 
-export function ClassForm({ academicYears }: ClassFormProps) {
+export function ClassForm({ academicYears, initialData }: ClassFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const isEditing = !!initialData;
 
-  const defaultYear = academicYears.find(y => y.is_current)?.id || "";
+  const defaultYear = isEditing
+    ? initialData.academic_year_id
+    : (academicYears.find(y => y.is_current)?.id || "");
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { academic_year_id: defaultYear },
+    defaultValues: initialData ? {
+      name: initialData.name,
+      level: initialData.level,
+      academic_year_id: initialData.academic_year_id,
+      capacity: initialData.capacity || "",
+      room_number: initialData.room_number || "",
+    } : { academic_year_id: defaultYear },
   });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/classes", {
-        method: "POST",
+      const url = isEditing ? `/api/classes/${initialData.id}` : "/api/classes";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: data.name,
           level: data.level,
           academic_year_id: data.academic_year_id,
-          capacity: data.capacity ? parseInt(data.capacity) : undefined,
-          room_number: data.room_number || undefined,
+          capacity: data.capacity ? parseInt(data.capacity) : null,
+          room_number: data.room_number || null,
         }),
       });
+
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Erreur lors de la création");
+        throw new Error(err.error || "Erreur lors de la sauvegarde");
       }
+
       const slug = params?.ecole ? `/${params.ecole}` : "";
-      router.push(`${slug}/admin/classes`);
+      router.push(isEditing ? `${slug}/admin/classes/${initialData.id}` : `${slug}/admin/classes`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la création");
+      setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
       setLoading(false);
     }
@@ -71,8 +93,8 @@ export function ClassForm({ academicYears }: ClassFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouvelle classe</CardTitle>
-        <CardDescription>Créez une nouvelle classe ou section</CardDescription>
+        <CardTitle>{isEditing ? "Modifier la classe" : "Nouvelle classe"}</CardTitle>
+        <CardDescription>{isEditing ? "Modifiez les informations de la classe" : "Créez une nouvelle classe ou section"}</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -124,7 +146,7 @@ export function ClassForm({ academicYears }: ClassFormProps) {
             )}
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Création...</> : "Créer la classe"}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isEditing ? "Mise à jour..." : "Création..."}</> : (isEditing ? "Enregistrer les modifications" : "Créer la classe")}
           </Button>
         </form>
       </CardContent>

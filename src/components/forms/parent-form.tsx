@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +25,23 @@ type ParentFormData = z.infer<typeof parentSchema>;
 interface ParentFormProps {
   onSuccess?: () => void;
   isLoading?: boolean;
+  initialData?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    relationship?: string;
+    profession?: string;
+  };
 }
 
-export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentFormProps) {
+export function ParentForm({ isLoading: externalLoading, initialData }: ParentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const params = useParams();
+  const isEditing = !!initialData;
 
   const {
     register,
@@ -36,6 +49,14 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
     formState: { errors },
   } = useForm<ParentFormData>({
     resolver: zodResolver(parentSchema),
+    defaultValues: initialData ? {
+      firstName: initialData.firstName,
+      lastName: initialData.lastName,
+      email: initialData.email,
+      phone: initialData.phone,
+      relationship: initialData.relationship,
+      profession: initialData.profession,
+    } : undefined,
   });
 
   const onSubmit = async (data: ParentFormData) => {
@@ -43,8 +64,11 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
     setError(null);
 
     try {
-      const response = await fetch("/api/parents", {
-        method: "POST",
+      const url = isEditing ? `/api/parents/${initialData.id}` : "/api/parents";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           first_name: data.firstName,
@@ -58,12 +82,13 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la création");
+        throw new Error(errorData.error || "Erreur lors de la sauvegarde");
       }
 
-      if (onSuccess) onSuccess();
+      const slug = params?.ecole ? `/${params.ecole}` : "";
+      router.push(isEditing ? `${slug}/admin/parents/${initialData.id}` : `${slug}/admin/parents`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la création");
+      setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
       setLoading(false);
     }
@@ -72,8 +97,8 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nouveau parent</CardTitle>
-        <CardDescription>Remplissez les informations du parent</CardDescription>
+        <CardTitle>{isEditing ? "Modifier le parent" : "Nouveau parent"}</CardTitle>
+        <CardDescription>{isEditing ? "Modifiez les informations du parent" : "Remplissez les informations du parent"}</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -87,66 +112,36 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium">Prénom</label>
-              <Input
-                placeholder="Samuel"
-                {...register("firstName")}
-                className="mt-1"
-              />
+              <Input placeholder="Samuel" {...register("firstName")} className="mt-1" />
               {errors.firstName && (
                 <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>
               )}
             </div>
-
             <div>
               <label className="text-sm font-medium">Nom</label>
-              <Input
-                placeholder="Mvouba"
-                {...register("lastName")}
-                className="mt-1"
-              />
+              <Input placeholder="Mvouba" {...register("lastName")} className="mt-1" />
               {errors.lastName && (
                 <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>
               )}
             </div>
-
             <div className="sm:col-span-2">
               <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="parent@example.com"
-                {...register("email")}
-                className="mt-1"
-              />
+              <Input type="email" placeholder="parent@example.com" {...register("email")} className="mt-1" />
               {errors.email && (
                 <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
               )}
             </div>
-
             <div>
               <label className="text-sm font-medium">Téléphone</label>
-              <Input
-                placeholder="+242 06 123 4567"
-                {...register("phone")}
-                className="mt-1"
-              />
+              <Input placeholder="+242 06 123 4567" {...register("phone")} className="mt-1" />
             </div>
-
             <div>
               <label className="text-sm font-medium">Lien de parenté</label>
-              <Input
-                placeholder="Père / Mère"
-                {...register("relationship")}
-                className="mt-1"
-              />
+              <Input placeholder="Père / Mère" {...register("relationship")} className="mt-1" />
             </div>
-
             <div className="sm:col-span-2">
               <label className="text-sm font-medium">Profession</label>
-              <Input
-                placeholder="Médecin"
-                {...register("profession")}
-                className="mt-1"
-              />
+              <Input placeholder="Médecin" {...register("profession")} className="mt-1" />
             </div>
           </div>
 
@@ -154,10 +149,10 @@ export function ParentForm({ onSuccess, isLoading: externalLoading }: ParentForm
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Création en cours...
+                {isEditing ? "Mise à jour..." : "Création en cours..."}
               </>
             ) : (
-              "Créer le parent"
+              isEditing ? "Enregistrer les modifications" : "Créer le parent"
             )}
           </Button>
         </form>

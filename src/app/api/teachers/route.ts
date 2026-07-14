@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       throw teacherError;
     }
 
-    return NextResponse.json(teacher, { status: 201 });
+    return NextResponse.json({ ...teacher, tempPassword }, { status: 201 });
   } catch (error) {
     console.error(error);
     if (error instanceof z.ZodError) {
