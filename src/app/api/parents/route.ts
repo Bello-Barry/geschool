@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
+import { sendWelcomeEmail } from "@/lib/notifications/email";
 
 const parentSchema = z.object({
   first_name: z.string().min(1),
@@ -133,7 +134,23 @@ export async function POST(request: NextRequest) {
       await supabase.from("student_parents").insert(links);
     }
 
-    return NextResponse.json(parent, { status: 201 });
+    // Envoyer email de bienvenue (ne bloque pas la création)
+    const { data: school } = await adminClient
+      .from("schools")
+      .select("subdomain, name")
+      .eq("id", schoolId)
+      .single();
+    sendWelcomeEmail({
+      email: validated.email,
+      tempPassword,
+      firstName: validated.first_name,
+      lastName: validated.last_name,
+      role: "parent",
+      schoolName: school?.name || "Votre école",
+      schoolSlug: school?.subdomain || "",
+    }).catch(() => {});
+
+    return NextResponse.json({ ...parent, tempPassword }, { status: 201 });
   } catch (error) {
     console.error(error);
     if (error instanceof z.ZodError) {

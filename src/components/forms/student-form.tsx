@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { CredentialsModal } from "./credentials-modal";
 
 const studentSchema = z.object({
   matricule: z.string().min(1, "Matricule requis"),
@@ -51,6 +52,7 @@ interface StudentFormProps {
 export function StudentForm({ classes, isLoading: externalLoading, initialData }: StudentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [credentials, setCredentials] = useState<{ name: string; email: string; tempPassword: string } | null>(null);
   const router = useRouter();
   const params = useParams();
   const isEditing = !!initialData;
@@ -103,13 +105,31 @@ export function StudentForm({ classes, isLoading: externalLoading, initialData }
         throw new Error(errorData.error || "Erreur lors de la sauvegarde");
       }
 
+      if (!isEditing) {
+        const result = await response.json();
+        if (result.tempPassword) {
+          setCredentials({
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            tempPassword: result.tempPassword,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       const slug = params?.ecole ? `/${params.ecole}` : "";
       router.push(isEditing ? `${slug}/admin/students/${initialData.id}` : `${slug}/admin/students`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
-      setLoading(false);
+      if (!credentials) setLoading(false);
     }
+  };
+
+  const handleCredentialsConfirmed = () => {
+    const slug = params?.ecole ? `/${params.ecole}` : "";
+    router.push(`${slug}/admin/students`);
   };
 
   return (
@@ -239,6 +259,14 @@ export function StudentForm({ classes, isLoading: externalLoading, initialData }
             )}
           </Button>
         </form>
+
+        <CredentialsModal
+          open={credentials !== null}
+          name={credentials?.name || ""}
+          email={credentials?.email || ""}
+          tempPassword={credentials?.tempPassword || ""}
+          onConfirm={handleCredentialsConfirmed}
+        />
       </CardContent>
     </Card>
   );

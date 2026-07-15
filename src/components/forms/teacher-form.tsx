@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { CredentialsModal } from "./credentials-modal";
 
 const teacherSchema = z.object({
   firstName: z.string().min(2, "Prénom requis"),
@@ -39,6 +40,7 @@ interface TeacherFormProps {
 export function TeacherForm({ isLoading: externalLoading, initialData }: TeacherFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [credentials, setCredentials] = useState<{ name: string; email: string; tempPassword: string } | null>(null);
   const router = useRouter();
   const params = useParams();
   const isEditing = !!initialData;
@@ -85,13 +87,31 @@ export function TeacherForm({ isLoading: externalLoading, initialData }: Teacher
         throw new Error(errorData.error || "Erreur lors de la sauvegarde");
       }
 
+      if (!isEditing) {
+        const result = await response.json();
+        if (result.tempPassword) {
+          setCredentials({
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            tempPassword: result.tempPassword,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       const slug = params?.ecole ? `/${params.ecole}` : "";
       router.push(isEditing ? `${slug}/admin/teachers/${initialData.id}` : `${slug}/admin/teachers`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la sauvegarde");
     } finally {
-      setLoading(false);
+      if (!credentials) setLoading(false);
     }
+  };
+
+  const handleCredentialsConfirmed = () => {
+    const slug = params?.ecole ? `/${params.ecole}` : "";
+    router.push(`${slug}/admin/teachers`);
   };
 
   return (
@@ -156,6 +176,14 @@ export function TeacherForm({ isLoading: externalLoading, initialData }: Teacher
             )}
           </Button>
         </form>
+
+        <CredentialsModal
+          open={credentials !== null}
+          name={credentials?.name || ""}
+          email={credentials?.email || ""}
+          tempPassword={credentials?.tempPassword || ""}
+          onConfirm={handleCredentialsConfirmed}
+        />
       </CardContent>
     </Card>
   );

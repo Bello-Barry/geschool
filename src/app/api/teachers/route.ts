@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
+import { sendWelcomeEmail } from "@/lib/notifications/email";
 
 const teacherSchema = z.object({
   first_name: z.string().min(1),
@@ -111,9 +112,9 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: authData.user.id,
         school_id: schoolId,
-        specialization: validated.specialization,
-        hire_date: validated.hire_date,
-        employee_id: validated.employee_id,
+        specialization: validated.specialization || null,
+        hire_date: validated.hire_date || null,
+        employee_id: validated.employee_id || null,
       })
       .select()
       .single();
@@ -122,6 +123,22 @@ export async function POST(request: NextRequest) {
       await adminClient.auth.admin.deleteUser(authData.user.id);
       throw teacherError;
     }
+
+    // Envoyer email de bienvenue (ne bloque pas la création)
+    const { data: school } = await adminClient
+      .from("schools")
+      .select("subdomain, name")
+      .eq("id", schoolId)
+      .single();
+    sendWelcomeEmail({
+      email: validated.email,
+      tempPassword,
+      firstName: validated.first_name,
+      lastName: validated.last_name,
+      role: "teacher",
+      schoolName: school?.name || "Votre école",
+      schoolSlug: school?.subdomain || "",
+    }).catch(() => {});
 
     return NextResponse.json({ ...teacher, tempPassword }, { status: 201 });
   } catch (error) {
