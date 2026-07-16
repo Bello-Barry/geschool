@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Mail, BookOpen, Hash, Calendar } from "lucide-react";
 import { DeleteTeacherButton } from "@/components/forms/delete-teacher-button";
+import { ToggleActiveButton } from "@/components/forms/toggle-active-button";
 
 export default async function TeacherDetailPage({ params }: { params: Promise<{ ecole: string; id: string }> }) {
   const { ecole, id } = await params;
@@ -20,13 +21,15 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
     .from("teachers")
     .select(`
       id,
+      user_id,
       specialization,
       employee_id,
       hire_date,
       user:user_id(
         first_name,
         last_name,
-        email
+        email,
+        is_active
       ),
       teacher_subjects(
         id,
@@ -40,8 +43,9 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
 
   if (!teacher) notFound();
 
-  const userData = teacher.user as unknown as { first_name: string; last_name: string; email: string } | null;
+  const userData = teacher.user as unknown as { first_name: string; last_name: string; email: string; is_active: boolean } | null;
   const subjects = teacher.teacher_subjects as unknown as Array<{ id: string; subject: { name: string } | null; class: { name: string } | null }> | null;
+  const teacherUserId = (teacher as any).user_id as string | null;
 
   return (
     <div className="space-y-6">
@@ -51,9 +55,16 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">
-          {userData?.first_name} {userData?.last_name}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">
+            {userData?.first_name} {userData?.last_name}
+          </h1>
+          {userData && (
+            <Badge variant={userData.is_active === false ? "secondary" : "outline"}>
+              {userData.is_active === false ? "Inactif" : "Actif"}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -154,6 +165,9 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
                 </Link>
               </Button>
               <DeleteTeacherButton id={id} slug={ecole} />
+              {teacherUserId && (
+                <ToggleActiveButton userId={teacherUserId} isActive={userData?.is_active ?? true} />
+              )}
             </CardContent>
           </Card>
         </div>

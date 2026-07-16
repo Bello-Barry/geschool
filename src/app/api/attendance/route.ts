@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyParentsOfAbsence, getParentUserIds } from "@/lib/notifications/create";
+import { sendAbsenceEmail } from "@/lib/notifications/email";
 
 const attendanceRecordSchema = z.object({
   student_id: z.string().uuid(),
@@ -101,6 +104,54 @@ export async function POST(request: NextRequest) {
       .select();
 
     if (error) throw error;
+
+    const supabaseAdmin = createAdminClient();
+
+    for (const record of records) {
+      if (record.status === "absent") {
+        notifyParentsOfAbsence(record.student_id, profile.school_id, validated.date).catch(
+          (err) => console.error("Absence notification error:", err)
+        );
+
+        const childParentUserIds = await getParentUserIds(record.student_id);
+        if (childParentUserIds.length > 0) {
+          const { data: studentData } = await supabaseAdmin
+            .from("students")
+            .select("user:user_id(first_name, last_name)")
+            .eq("id", record.student_id)
+            .single();
+
+          const studentInfo = studentData?.user as unknown as { first_name: string; last_name: string } | null;
+          const studentName = studentInfo ? `${studentInfo.first_name} ${studentInfo.last_name}` : "Votre enfant";
+
+          const { data: school } = await supabaseAdmin
+            .from("schools")
+            .select("name, subdomain")
+            .eq("id", profile.school_id)
+            .single();
+
+          const { data: parentRecords } = await supabaseAdmin
+            .from("parents")
+            .select("user:user_id(email, first_name, last_name)")
+            .in("user_id", childParentUserIds);
+
+          if (parentRecords) {
+            for (const parent of parentRecords as unknown as Array<{ user: { email: string; first_name: string; last_name: string } | null }>) {
+              if (parent.user?.email) {
+                sendAbsenceEmail({
+                  parentEmail: parent.user.email,
+                  parentFirstName: parent.user.first_name,
+                  studentName,
+                  date: validated.date,
+                  schoolName: school?.name || "",
+                  schoolSlug: school?.subdomain || "",
+                }).catch(() => {});
+              }
+            }
+          }
+        }
+      }
+    }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

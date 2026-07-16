@@ -59,13 +59,28 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       }
 
       if (data.user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("is_active")
+          .eq("id", data.user.id)
+          .single();
+
+        if (userData && userData.is_active === false) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Compte désactivé",
+            description: "Ce compte a été désactivé. Veuillez contacter votre administrateur.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         toast({
           title: 'Connexion réussie',
           description: school ? `Bienvenue ${school.name} !` : 'Bienvenue !',
         });
         
-        // window.location.href force un rechargement complet (hard navigation)
-        // nécessaire pour que le middleware relise le cookie Supabase fraîchement écrit
         setTimeout(() => {
           window.location.href = returnUrl || '/';
         }, 1000);

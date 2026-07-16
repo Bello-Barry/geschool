@@ -5,6 +5,7 @@ export interface SchoolInfo {
   id: string;
   name: string;
   subdomain: string;
+  logo_url: string | null;
   primary_color: string | null;
 }
 
@@ -13,7 +14,7 @@ export async function getSchoolBySubdomain(subdomain: string): Promise<SchoolInf
     const supabaseAdmin = createAdminClient();
     const { data: school } = await supabaseAdmin
       .from("schools")
-      .select("id, name, subdomain, primary_color")
+      .select("id, name, subdomain, logo_url, primary_color")
       .eq("subdomain", subdomain)
       .single();
     return school as SchoolInfo | null;

@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default async function TeacherGradesPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -12,7 +12,15 @@ export default async function TeacherGradesPage({ params }: { params: Promise<{ 
 
   const supabaseAdmin = createAdminClient();
 
-  // Récupérer les classes et matières de l'enseignant
+  const { data: teacherRecord } = await supabaseAdmin
+    .from("teachers")
+    .select("id")
+    .eq("user_id", auth.userId)
+    .eq("school_id", auth.schoolId)
+    .single();
+
+  if (!teacherRecord) redirect(`/${slug}/teacher`);
+
   const { data: teacherSubjects } = await supabaseAdmin
     .from("teacher_subjects")
     .select(`
@@ -20,9 +28,8 @@ export default async function TeacherGradesPage({ params }: { params: Promise<{ 
       subject:subject_id(id, name),
       class:class_id(id, name)
     `)
-    .eq("school_id", auth.schoolId);
+    .eq("teacher_id", teacherRecord.id);
 
-  // Grouper par classe
   const classesBySubject = (teacherSubjects || []).reduce(
     (acc: any, ts: any) => {
       if (!acc[ts.class.id]) {
@@ -41,37 +48,31 @@ export default async function TeacherGradesPage({ params }: { params: Promise<{ 
         <p className="text-gray-600 mt-2">Entrez les notes de vos élèves</p>
       </div>
 
-      {/* Classes avec notes à saisir */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.entries(classesBySubject).map(([classId, subjects]: [string, any]) => {
           const className = subjects[0]?.class?.name;
           return (
-            <Link
-              key={classId}
-              href={`/${slug}/teacher/grades/${classId}`}
-            >
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle>{className}</CardTitle>
-                  <CardDescription>
-                    {subjects.length} matière{subjects.length > 1 ? "s" : ""}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {subjects.map((ts: any) => (
-                    <div
-                      key={ts.id}
-                      className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                    >
-                      <span className="text-sm">{ts.subject.name}</span>
-                      <Button size="sm" variant="outline">
-                        Éditer
-                      </Button>
+            <Card key={classId}>
+              <CardHeader>
+                <CardTitle>{className}</CardTitle>
+                <CardDescription>
+                  {subjects.length} matière{subjects.length > 1 ? "s" : ""}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {subjects.map((ts: any) => (
+                  <Link
+                    key={ts.id}
+                    href={`/${slug}/teacher/grades/${classId}/${ts.subject.id}`}
+                  >
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                      <span className="text-sm font-medium">{ts.subject.name}</span>
+                      <ArrowRight className="h-4 w-4 text-gray-400" />
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </Link>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
           );
         })}
       </div>

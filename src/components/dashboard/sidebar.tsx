@@ -7,9 +7,7 @@ import {
   Users,
   GraduationCap,
   School,
-  FileText,
   Calendar,
-  Settings,
   ChevronLeft,
   ChevronRight,
   UserCog,
@@ -32,9 +30,7 @@ export function Sidebar() {
     { icon: Users, label: "Enseignants", href: `${prefix}/admin/teachers` },
     { icon: UserCog, label: "Affectations", href: `${prefix}/admin/assignments` },
     { icon: School, label: "Classes", href: `${prefix}/admin/classes` },
-    { icon: FileText, label: "Notes", href: `${prefix}/admin/grades` },
     { icon: Calendar, label: "Présences", href: `${prefix}/admin/attendance` },
-    { icon: Settings, label: "Paramètres", href: `${prefix}/admin/settings` },
   ];
 
   return (

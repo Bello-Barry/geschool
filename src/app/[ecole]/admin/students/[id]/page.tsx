@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Pencil, ArrowLeft, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { DeleteStudentButton } from "@/components/forms/delete-student-button";
 import GenerateReportButton from "@/components/forms/generate-report-button";
+import { ToggleActiveButton } from "@/components/forms/toggle-active-button";
 
 export default async function StudentDetailPage({
   params,
@@ -23,6 +25,7 @@ export default async function StudentDetailPage({
     .from("students")
     .select(`
       id,
+      user_id,
       matricule,
       date_of_birth,
       place_of_birth,
@@ -31,7 +34,8 @@ export default async function StudentDetailPage({
       user:user_id(
         first_name,
         last_name,
-        email
+        email,
+        is_active
       ),
       class:class_id(
         id,
@@ -87,8 +91,9 @@ export default async function StudentDetailPage({
     (existingReports ?? []).map((r: any) => [r.term_id, r]),
   );
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string; email: string } | null;
+  const userInfo = student.user as unknown as { first_name: string; last_name: string; email: string; is_active: boolean } | null;
   const classInfo = student.class as unknown as { id: string; name: string } | null;
+  const studentUserId = (student as any).user_id as string | null;
 
   return (
     <div className="space-y-6">
@@ -100,9 +105,16 @@ export default async function StudentDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">
-              {userInfo?.first_name} {userInfo?.last_name}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">
+                {userInfo?.first_name} {userInfo?.last_name}
+              </h1>
+              {userInfo && (
+                <Badge variant={userInfo.is_active === false ? "secondary" : "outline"}>
+                  {userInfo.is_active === false ? "Inactif" : "Actif"}
+                </Badge>
+              )}
+            </div>
             <p className="text-gray-600 mt-1">{student.matricule}</p>
           </div>
         </div>
@@ -114,6 +126,9 @@ export default async function StudentDetailPage({
             </Button>
           </Link>
           <DeleteStudentButton id={id} slug={ecole} />
+          {studentUserId && (
+            <ToggleActiveButton userId={studentUserId} isActive={userInfo?.is_active ?? true} />
+          )}
         </div>
       </div>
 

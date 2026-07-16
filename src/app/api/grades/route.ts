@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyParentsOfGrade } from "@/lib/notifications/create";
 
 const gradeSchema = z.object({
   student_id: z.string().uuid(),
@@ -92,6 +94,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    const supabaseAdmin = createAdminClient();
+    const { data: subject } = await supabaseAdmin
+      .from("subjects")
+      .select("name")
+      .eq("id", validated.subject_id)
+      .single();
+
+    notifyParentsOfGrade(validated.student_id, schoolId, subject?.name || "Matière inconnue", validated.score).catch(
+      (err) => console.error("Grade notification error:", err)
+    );
 
     return NextResponse.json(grade, { status: 201 });
   } catch (error) {

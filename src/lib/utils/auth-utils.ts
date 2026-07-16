@@ -47,11 +47,13 @@ export async function getAuthUser(slug?: string) {
 
   const { data: user } = await supabaseAdmin
     .from("users")
-    .select("role, school_id")
+    .select("role, school_id, is_active")
     .eq("id", userId)
     .single();
 
   if (!user) return null;
+
+  if (user.is_active === false) return null;
 
   // Si schoolId n'a pas été défini par le middleware, le dériver du slug dans l'URL
   if (!schoolId) {

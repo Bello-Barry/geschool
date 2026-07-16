@@ -21,7 +21,7 @@ export default async function SchoolLayout({
 
   return (
     <>
-      {auth && <NavBar schoolName={school.name} schoolSlug={ecole} />}
+      {auth && <NavBar schoolName={school.name} schoolSlug={ecole} logoUrl={school.logo_url} primaryColor={school.primary_color} />}
       {children}
     </>
   );

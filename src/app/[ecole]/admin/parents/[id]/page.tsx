@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Mail, Phone, Briefcase, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { DeleteParentButton } from "@/components/forms/delete-parent-button";
+import { ToggleActiveButton } from "@/components/forms/toggle-active-button";
 
 export default async function ParentDetailPage({ params }: { params: Promise<{ ecole: string; id: string }> }) {
   const { ecole, id } = await params;
@@ -19,13 +21,15 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ e
     .from("parents")
     .select(`
       id,
+      user_id,
       relationship,
       profession,
       user:user_id(
         first_name,
         last_name,
         email,
-        phone
+        phone,
+        is_active
       ),
       student_parents(
         id,
@@ -43,11 +47,12 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ e
 
   if (!parent) notFound();
 
-  const userData = parent.user as unknown as { first_name: string; last_name: string; email: string; phone: string } | null;
+  const userData = parent.user as unknown as { first_name: string; last_name: string; email: string; phone: string; is_active: boolean } | null;
   const children = parent.student_parents as unknown as Array<{
     id: string;
     student: { id: string; matricule: string; user: { first_name: string; last_name: string } | null; class: { name: string } | null } | null;
   }> | null;
+  const parentUserId = (parent as any).user_id as string | null;
 
   return (
     <div className="space-y-6">
@@ -57,9 +62,16 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ e
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">
-          {userData?.first_name} {userData?.last_name}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">
+            {userData?.first_name} {userData?.last_name}
+          </h1>
+          {userData && (
+            <Badge variant={userData.is_active === false ? "secondary" : "outline"}>
+              {userData.is_active === false ? "Inactif" : "Actif"}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -172,6 +184,9 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ e
                 </Link>
               </Button>
               <DeleteParentButton id={id} slug={ecole} />
+              {parentUserId && (
+                <ToggleActiveButton userId={parentUserId} isActive={userData?.is_active ?? true} />
+              )}
             </CardContent>
           </Card>
         </div>

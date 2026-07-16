@@ -1,5 +1,58 @@
 import { Resend } from "resend";
 
+export interface AbsenceEmailParams {
+  parentEmail: string;
+  parentFirstName: string;
+  studentName: string;
+  date: string;
+  schoolName: string;
+  schoolSlug: string;
+}
+
+export async function sendAbsenceEmail(params: AbsenceEmailParams): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("RESEND_API_KEY not configured, skipping absence email to", params.parentEmail);
+    return;
+  }
+
+  const resend = new Resend(apiKey);
+
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_ROOT_DOMAIN === "localhost:3000" ? "http://localhost:3000" : "https://geschool.vercel.app"}/${params.schoolSlug}/parent/children`;
+
+  try {
+    await resend.emails.send({
+      from: "Geschool <noreply@geschool.app>",
+      to: params.parentEmail,
+      subject: `Absence signalée — ${params.studentName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #DC2626; padding: 24px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">${params.schoolName}</h1>
+          </div>
+          <div style="padding: 32px 24px; background: #f9fafb;">
+            <p style="font-size: 16px; color: #374151;">Bonjour <strong>${params.parentFirstName}</strong>,</p>
+            <p style="font-size: 16px; color: #374151;">
+              Votre enfant <strong>${params.studentName}</strong> a été marqué <strong style="color: #DC2626;">absent</strong> le <strong>${params.date}</strong>.
+            </p>
+            <a href="${dashboardUrl}"
+               style="display: inline-block; background: #4F46E5; color: white; text-decoration: none;
+                      padding: 12px 32px; border-radius: 6px; font-size: 16px; font-weight: 600;">
+              Voir les présences
+            </a>
+          </div>
+          <div style="padding: 16px 24px; text-align: center; color: #9ca3af; font-size: 12px;">
+            <p>Geschool — Application de gestion scolaire</p>
+          </div>
+        </div>
+      `,
+    });
+    console.log("Absence email sent to", params.parentEmail);
+  } catch (error) {
+    console.error("Failed to send absence email to", params.parentEmail, error);
+  }
+}
+
 export interface WelcomeEmailParams {
   email: string;
   tempPassword: string;

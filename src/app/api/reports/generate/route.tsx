@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generatePDFBuffer } from "@/lib/utils/pdf-generator";
 import ReportCardPDF, { type ReportCardData } from "@/components/pdf/report-card-template";
 import { z } from "zod";
+import { notifyParentsOfReport } from "@/lib/notifications/create";
 
 const reportSchema = z.object({
   studentId: z.string().uuid(),
@@ -212,7 +213,12 @@ export async function POST(request: NextRequest) {
 
     if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
 
-    // 13. Return download URL
+    // 13. Notify parents
+    notifyParentsOfReport(studentId, student.school_id, `/api/reports/download/${reportCard.id}`, term.name).catch(
+      (err) => console.error("Report notification error:", err)
+    );
+
+    // 14. Return download URL
     return NextResponse.json({
       success: true,
       id: reportCard.id,
