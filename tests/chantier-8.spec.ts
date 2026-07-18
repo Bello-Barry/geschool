@@ -153,8 +153,8 @@ test.describe("Chantier 8 — Désactivation de comptes (is_active)", () => {
     await page.waitForTimeout(2000);
 
     // Alice should now appear with Inactif badge
-    await expect(page.locator("text=Alice Test")).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Inactif", { exact: true })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("cell", { name: /Alice Test/ })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("cell", { name: /Inactif/ })).toBeVisible({ timeout: 5000 });
 
     console.log("✅ TEST 1: Élève désactivé → disparaît de la liste → réapparaît avec filtre inactifs");
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generatePDFBuffer } from "@/lib/utils/pdf-generator";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import ReportCardPDF, { type ReportCardData } from "@/components/pdf/report-card-template";
 import { z } from "zod";
 import { notifyParentsOfReport } from "@/lib/notifications/create";
@@ -159,8 +160,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const classInfo = student.class as unknown as { id: string; name: string; level?: string } | null;
-    const userInfo = student.user as unknown as { first_name: string; last_name: string } | null;
+    const classInfo = unwrapJoin(student.class) as { id: string; name: string; level?: string } | null;
+    const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
 
     // 9. Build PDF data
     const now = new Date();

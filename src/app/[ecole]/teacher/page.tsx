@@ -33,91 +33,93 @@ export default async function TeacherDashboard({ params }: { params: Promise<{ e
   })))];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Tableau de bord Enseignant</h1>
-        <p className="text-gray-600 mt-2">Gérez vos classes et évaluations</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">Tableau de bord</h1>
+        <p className="text-sm text-muted-foreground mt-1">Gérez vos classes et évaluations</p>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stat cards — 2 cols mobile */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mes classes</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Mes classes</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{classes.length}</div>
-            <p className="text-xs text-gray-600">Classes assurées</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{classes.length}</div>
+            <p className="text-[11px] text-muted-foreground">Classes assurées</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tâches</CardTitle>
-            <BarChart3 className="h-4 w-4 text-green-600" />
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Notes</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-gray-600">À compléter</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">
+              <Link href={`/${slug}/teacher/grades`} className="text-primary">Saisir</Link>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Saisie des notes</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Messages</CardTitle>
-            <MessageSquare className="h-4 w-4 text-purple-600" />
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Présences</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-gray-600">Non lus</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">
+              {classes.length > 0 && classes[0]?.id ? (
+                <Link href={`/${slug}/teacher/attendance/${classes[0].id}`} className="text-primary">Appel</Link>
+              ) : <span className="text-muted-foreground">—</span>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Faire l'appel</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick actions */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href={`/${slug}/teacher/grades`}>
-            <Button className="w-full">Saisir les notes</Button>
+      {/* Actions rapides */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link href={`/${slug}/teacher/grades`} className="min-h-[44px]">
+          <Button className="w-full h-12 sm:h-14 text-xs sm:text-sm">
+            <BarChart3 className="h-4 w-4 mr-2 shrink-0" /> Saisir notes
+          </Button>
+        </Link>
+        {classes.length > 0 && classes[0]?.id && (
+          <Link href={`/${slug}/teacher/attendance/${classes[0].id}`} className="min-h-[44px]">
+            <Button className="w-full h-12 sm:h-14 text-xs sm:text-sm" variant="outline">
+              <Users className="h-4 w-4 mr-2 shrink-0" /> Absences
+            </Button>
           </Link>
-          {classes.length > 0 && classes[0]?.id && (
-            <Link href={`/${slug}/teacher/attendance/${classes[0].id}`}>
-              <Button className="w-full" variant="outline">Absences</Button>
-            </Link>
-          )}
-          <Link href={`/${slug}/teacher/classes`}>
-            <Button className="w-full" variant="outline">Mes classes</Button>
-          </Link>
-          <Link href={`/${slug}/teacher/messages`}>
-            <Button className="w-full" variant="outline">Messages</Button>
-          </Link>
-        </div>
+        )}
+        <Link href={`/${slug}/teacher/classes`} className="min-h-[44px]">
+          <Button className="w-full h-12 sm:h-14 text-xs sm:text-sm" variant="outline">
+            <BookOpen className="h-4 w-4 mr-2 shrink-0" /> Mes classes
+          </Button>
+        </Link>
+        <Link href={`/${slug}/teacher/messages`} className="min-h-[44px]">
+          <Button className="w-full h-12 sm:h-14 text-xs sm:text-sm" variant="outline">
+            <MessageSquare className="h-4 w-4 mr-2 shrink-0" /> Messages
+          </Button>
+        </Link>
       </div>
 
       {/* Classes list */}
       {classes.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Mes classes</CardTitle>
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="text-base">Mes classes</CardTitle>
             <CardDescription>Cliquez pour gérer une classe</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="px-4 md:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {classes.map((cls: any) => (
-                <Link key={cls.id} href={`/${slug}/teacher/attendance/${cls.id}`}>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow border">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <p className="font-semibold">{cls.name}</p>
-                          <p className="text-xs text-gray-600">Appel du jour</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                <Link key={cls.id} href={`/${slug}/teacher/attendance/${cls.id}`} className="block min-h-[44px]">
+                  <div className="flex items-center gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <BookOpen className="h-5 w-5 text-blue-600 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">{cls.name}</p>
+                      <p className="text-xs text-muted-foreground">Appel du jour</p>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>

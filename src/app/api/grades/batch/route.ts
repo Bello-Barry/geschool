@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Batch grade error:", error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.flatten() }, { status: 400 });
+      const flat = error.flatten();
+      const messages = Object.values(flat.fieldErrors).flat().filter(Boolean);
+      return NextResponse.json({ error: messages.length > 0 ? messages.join("; ") : "Erreur de validation" }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to save grades" }, { status: 500 });
   }

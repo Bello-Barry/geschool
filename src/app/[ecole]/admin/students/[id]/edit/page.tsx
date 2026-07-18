@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { StudentForm } from "@/components/forms/student-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export default async function StudentEditPage({
     .eq("school_id", auth.schoolId)
     .order("name");
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string; email: string } | null;
+  const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string; email: string } | null;
 
   return (
     <div className="space-y-6">

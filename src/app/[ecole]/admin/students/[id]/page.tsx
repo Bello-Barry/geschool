@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -91,8 +92,8 @@ export default async function StudentDetailPage({
     (existingReports ?? []).map((r: any) => [r.term_id, r]),
   );
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string; email: string; is_active: boolean } | null;
-  const classInfo = student.class as unknown as { id: string; name: string } | null;
+  const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string; email: string; is_active: boolean } | null;
+  const classInfo = unwrapJoin(student.class) as { id: string; name: string } | null;
   const studentUserId = (student as any).user_id as string | null;
 
   return (

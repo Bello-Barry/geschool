@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/utils/auth-utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { GraduationCap, BookOpen, BarChart3, Medal } from "lucide-react";
 
 export default async function StudentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -28,8 +28,8 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
 
   if (!student) redirect(`/${slug}/login`);
 
-  const userData = student.user as unknown as { first_name: string; last_name: string; email: string } | null;
-  const classInfo = student.class as unknown as { name: string; level: string } | null;
+  const userData = unwrapJoin(student.user) as { first_name: string; last_name: string; email: string } | null;
+  const classInfo = unwrapJoin(student.class) as { name: string; level: string } | null;
 
   const { data: recentGrades } = await supabase
     .from("grades")
@@ -63,70 +63,75 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-2xl sm:text-3xl font-bold">
           Bonjour, {userData?.first_name} {userData?.last_name}
         </h1>
-        <p className="text-gray-600 mt-2">Bienvenue sur votre espace élève</p>
+        <p className="text-sm text-muted-foreground mt-1">Bienvenue sur votre espace élève</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats — 2 cols on mobile, 3 on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Classe</CardTitle>
-            <GraduationCap className="h-4 w-4 text-blue-600" />
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Classe</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{classInfo?.name || "-"}</div>
-            <p className="text-xs text-gray-600">{classInfo?.level || ""}</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{classInfo?.name || "-"}</div>
+            <p className="text-[11px] text-muted-foreground">{classInfo?.level || ""}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Moyenne générale</CardTitle>
-            <Medal className="h-4 w-4 text-green-600" />
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Moyenne</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{average !== null ? `${average}/20` : "N/A"}</div>
-            <p className="text-xs text-gray-600">Sur les dernières notes</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{average !== null ? `${average}/20` : "N/A"}</div>
+            <p className="text-[11px] text-muted-foreground">Dernières notes</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Notes</CardTitle>
-            <BarChart3 className="h-4 w-4 text-purple-600" />
+        <Card className="col-span-2 md:col-span-1">
+          <CardHeader className="space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Notes</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{allScores.length}</div>
-            <p className="text-xs text-gray-600">Notes enregistrées</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{allScores.length}</div>
+            <p className="text-[11px] text-muted-foreground">Enregistrées</p>
           </CardContent>
         </Card>
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold">Dernières notes</h2>
           <Link href={`/${slug}/student/grades`}>
-            <Button className="w-full">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Voir mes notes
-            </Button>
+            <Button variant="outline" size="sm" className="text-xs h-8">Voir tout</Button>
           </Link>
         </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Dernières notes</CardTitle>
-          <CardDescription>Vos 10 dernières évaluations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {grades && grades.length > 0 ? (
-            <div className="overflow-x-auto">
+        {grades && grades.length > 0 ? (
+          <div className="space-y-2">
+            {/* Mobile: cards */}
+            <div className="block md:hidden space-y-2">
+              {grades.slice(0, 5).map((g) => (
+                <div key={g.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="min-w-0 flex-1 mr-3">
+                    <p className="text-sm font-medium truncate">{g.subject?.name || "-"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {gradeTypeLabel(g.grade_type)} — {new Date(g.date).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <Badge variant={g.score >= 10 ? "default" : "destructive"} className="shrink-0 text-xs">
+                    {g.score}/{g.max_score}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden md:block rounded-md border overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b">
+                  <tr className="border-b bg-muted/50">
                     <th className="text-left py-3 px-4 font-semibold">Date</th>
                     <th className="text-left py-3 px-4 font-semibold">Matière</th>
                     <th className="text-left py-3 px-4 font-semibold">Type</th>
@@ -136,11 +141,11 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
                 </thead>
                 <tbody>
                   {grades.map((g) => (
-                    <tr key={g.id} className="border-b hover:bg-gray-50">
+                    <tr key={g.id} className="border-b hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4">{new Date(g.date).toLocaleDateString("fr-FR")}</td>
                       <td className="py-3 px-4">{g.subject?.name || "-"}</td>
                       <td className="py-3 px-4">
-                        <Badge variant="outline">{gradeTypeLabel(g.grade_type)}</Badge>
+                        <Badge variant="outline" className="text-xs">{gradeTypeLabel(g.grade_type)}</Badge>
                       </td>
                       <td className="py-3 px-4">{g.term?.name || "-"}</td>
                       <td className="py-3 px-4 font-semibold">{g.score}/{g.max_score}</td>
@@ -149,11 +154,11 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p className="text-gray-500">Aucune note pour le moment</p>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">Aucune note pour le moment</p>
+        )}
+      </div>
     </div>
   );
 }

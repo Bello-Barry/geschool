@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { GradeEntryForm } from "@/components/forms/grade-entry-form";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PageProps {
     params: Promise<{
@@ -35,14 +36,27 @@ export default async function GradeEntryPage({ params }: PageProps) {
         user: Array.isArray(s.user) ? s.user[0] ?? null : s.user ?? null,
     }));
 
+    if (!academicTerm.data?.id) {
+        return (
+            <div className="space-y-6">
+                <h1 className="text-2xl font-bold">Saisie des notes</h1>
+                <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                        Aucune période scolaire active. Veuillez activer un trimestre dans les paramètres.
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <GradeEntryForm
             students={mappedStudents}
             subjectId={subjectId}
-            termId={academicTerm.data?.id ?? ""}
+            termId={academicTerm.data.id}
             subjectName={subjectData.data?.name ?? ""}
             className={classData.data?.name ?? ""}
-            termName={academicTerm.data?.name ?? ""}
+            termName={academicTerm.data.name}
         />
     );
 }

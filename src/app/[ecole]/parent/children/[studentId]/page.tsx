@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Calendar, GraduationCap } from "lucide-react";
@@ -66,8 +67,8 @@ export default async function StudentDetailPage({
     .order("date", { ascending: false })
     .limit(10);
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string } | null;
-  const classInfo = student.class as unknown as { id: string; name: string } | null;
+  const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
+  const classInfo = unwrapJoin(student.class) as { id: string; name: string } | null;
 
   return (
     <div className="space-y-6">

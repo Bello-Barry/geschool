@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
@@ -52,8 +53,8 @@ export default async function StudentReportsPage({
     .eq("student_id", studentId)
     .order("generated_at", { ascending: false });
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string } | null;
-  const classInfo = student.class as unknown as { name: string } | null;
+  const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
+  const classInfo = unwrapJoin(student.class) as { name: string } | null;
 
   return (
     <div className="space-y-6">

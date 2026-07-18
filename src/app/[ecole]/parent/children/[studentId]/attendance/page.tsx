@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
@@ -48,8 +49,8 @@ export default async function StudentAttendancePage({
     .eq("student_id", studentId)
     .order("date", { ascending: false });
 
-  const userInfo = student.user as unknown as { first_name: string; last_name: string } | null;
-  const classInfo = student.class as unknown as { name: string } | null;
+  const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
+  const classInfo = unwrapJoin(student.class) as { name: string } | null;
 
   const statusLabels: Record<string, string> = {
     present: "Présent",

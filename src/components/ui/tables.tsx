@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Users, Pencil, Trash2 } from "lucide-react";
 
 export function ClassesGrid({ data, slug }: { data: any[]; slug: string }) {
   return (
@@ -77,6 +77,29 @@ export function StudentsTable({ data, slug }: { data: any[]; slug: string }) {
           ),
         },
       ]}
+      renderMobileCard={(s: any) => (
+        <Card className="border">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="font-semibold">{s.user?.first_name} {s.user?.last_name}</p>
+                <p className="text-sm text-muted-foreground">{s.matricule}</p>
+              </div>
+              <Badge variant={s.is_active === false ? "secondary" : "outline"}>
+                {s.is_active === false ? "Inactif" : "Actif"}
+              </Badge>
+            </div>
+            <div className="text-sm space-y-1">
+              <p><span className="text-muted-foreground">Classe:</span> {s.class?.name || "-"}</p>
+            </div>
+            <div className="pt-1">
+              <Link href={`/${slug}/admin/students/${s.id}`}>
+                <Button variant="outline" size="sm" className="w-full">Voir</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     />
   );
 }
@@ -111,6 +134,85 @@ export function ParentsTable({ data, slug }: { data: any[]; slug: string }) {
           ),
         },
       ]}
+      renderMobileCard={(p: any) => (
+        <Card className="border">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="font-semibold">{p.user?.first_name} {p.user?.last_name}</p>
+                <p className="text-sm text-muted-foreground">{p.user?.email}</p>
+              </div>
+              <Badge variant={p.is_active === false ? "secondary" : "outline"}>
+                {p.is_active === false ? "Inactif" : "Actif"}
+              </Badge>
+            </div>
+            <div className="text-sm space-y-1">
+              {p.user?.phone && <p><span className="text-muted-foreground">Tél:</span> {p.user.phone}</p>}
+              {p.relationship && <p><span className="text-muted-foreground">Lien:</span> {p.relationship}</p>}
+              {p.profession && <p><span className="text-muted-foreground">Profession:</span> {p.profession}</p>}
+            </div>
+            <div className="pt-1">
+              <Link href={`/${slug}/admin/parents/${p.id}`}>
+                <Button variant="outline" size="sm" className="w-full">Voir</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    />
+  );
+}
+
+export function SubjectsTable({ data, slug }: { data: any[]; slug: string }) {
+  return (
+    <DataTable
+      data={data}
+      searchFields={["name", "code"]}
+      emptyMessage="Aucune matière enregistrée"
+      columns={[
+        { key: "name", label: "Nom", render: (s: any) => <span className="font-medium">{s.name}</span> },
+        { key: "code", label: "Code", render: (s: any) => <Badge variant="outline" className="font-mono">{s.code || "N/A"}</Badge> },
+        { key: "coefficient", label: "Coefficient", className: "text-center", render: (s: any) => <span className="font-bold">{s.coefficient}</span> },
+        { key: "description", label: "Description", render: (s: any) => <span className="max-w-[300px] truncate text-muted-foreground text-sm inline-block">{s.description || "—"}</span> },
+        {
+          key: "actions", label: "Actions", className: "text-right",
+          render: (s: any) => (
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href={`/${slug}/admin/subjects/${s.id}/edit`}>
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ),
+        },
+      ]}
+      renderMobileCard={(s: any) => (
+        <Card className="border">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="font-semibold">{s.name}</p>
+                <Badge variant="outline" className="font-mono">{s.code || "N/A"}</Badge>
+              </div>
+              <span className="text-lg font-bold">{s.coefficient}</span>
+            </div>
+            {s.description && (
+              <p className="text-sm text-muted-foreground truncate">{s.description}</p>
+            )}
+            <div className="flex gap-2 pt-1">
+              <Link href={`/${slug}/admin/subjects/${s.id}/edit`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">
+                  <Pencil className="mr-1 h-3 w-3" /> Modifier
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     />
   );
 }

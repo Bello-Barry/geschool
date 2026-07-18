@@ -30,6 +30,7 @@ interface DataTableProps<T> {
   pageSize?: number;
   emptyMessage?: string;
   showInactiveToggle?: boolean;
+  renderMobileCard?: (item: T) => ReactNode;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -39,6 +40,7 @@ export function DataTable<T extends Record<string, any>>({
   pageSize = 20,
   emptyMessage = "Aucun résultat",
   showInactiveToggle,
+  renderMobileCard,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -93,7 +95,19 @@ export function DataTable<T extends Record<string, any>>({
         </label>
       )}
 
-      <div className="overflow-x-auto rounded-md border">
+      {renderMobileCard && (
+        <div className="md:hidden flex flex-col gap-3" data-mobile-cards>
+          {paged.length > 0 ? (
+            paged.map((item, i) => (
+              <div key={item.id || i}>{renderMobileCard(item)}</div>
+            ))
+          ) : (
+            <div className="py-8 text-center text-gray-500">{emptyMessage}</div>
+          )}
+        </div>
+      )}
+
+      <div className={`${renderMobileCard ? "hidden md:block" : ""} overflow-x-auto rounded-md border`}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

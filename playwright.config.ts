@@ -13,4 +13,18 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 60000,
   },
+  projects: [
+    {
+      name: "desktop",
+      use: { viewport: { width: 1280, height: 720 } },
+    },
+    {
+      name: "mobile",
+      use: {
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+  ],
 });

@@ -43,93 +43,117 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
   const schoolUrl = `${protocol}://${host}/${slug}`;
 
   return (
-    <div className="space-y-8 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tableau de bord {schoolName}</h1>
-          <p className="text-gray-600 mt-2">Bienvenue dans l'interface de gestion de votre école</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tableau de bord</h1>
+          <p className="text-sm text-muted-foreground mt-1">{schoolName}</p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href={`/${slug}/admin/school`}>
-              Paramètres école
-            </Link>
-          </Button>
-        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/${slug}/admin/school`}>Paramètres</Link>
+        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Stats Cards — 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Élèves</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Élèves</CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{students.count || 0}</div>
-            <p className="text-xs text-gray-600">Inscrits cette année</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{students.count || 0}</div>
+            <p className="text-[11px] text-muted-foreground">Inscrits</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enseignants</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Enseignants</CardTitle>
             <BookOpen className="h-4 w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teachers.count || 0}</div>
-            <p className="text-xs text-gray-600">Actuellement actifs</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{teachers.count || 0}</div>
+            <p className="text-[11px] text-muted-foreground">Actifs</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Classes</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Classes</CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{classes.count || 0}</div>
-            <p className="text-xs text-gray-600">Formées</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{classes.count || 0}</div>
+            <p className="text-[11px] text-muted-foreground">Formées</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenus</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+            <CardTitle className="text-xs md:text-sm font-medium">Revenus</CardTitle>
             <DollarSign className="h-4 w-4 text-red-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}₣</div>
-            <p className="text-xs text-gray-600">Total collecté</p>
+          <CardContent className="px-3 md:px-6">
+            <div className="text-xl md:text-2xl font-bold">{totalRevenue.toLocaleString()}₣</div>
+            <p className="text-[11px] text-muted-foreground">Total</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Quick Actions */}
+      {/* Actions requises — AVANT les actions rapides (spec) */}
+      <Card>
+        <CardHeader className="px-4 md:px-6">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0" />
+            Actions requises
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 px-4 md:px-6">
+          <Link href={`/${slug}/admin/academic-years/new`} className="block min-h-[44px]">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50 hover:bg-yellow-100/50 transition-colors">
+              <p className="text-sm font-medium">Configuration année scolaire</p>
+              <Button size="sm" variant="ghost" className="shrink-0">Créer</Button>
+            </div>
+          </Link>
+          <Link href={`/${slug}/admin/classes/new`} className="block min-h-[44px]">
+            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <p className="text-sm font-medium">Créer une classe</p>
+              <Button size="sm" variant="ghost" className="shrink-0">Créer</Button>
+            </div>
+          </Link>
+          <Link href={`/${slug}/admin/assignments/new`} className="block min-h-[44px]">
+            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <p className="text-sm font-medium">Affecter un enseignant</p>
+              <Button size="sm" variant="ghost" className="shrink-0">Affecter</Button>
+            </div>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick actions + AI */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Gestion du personnel et des élèves</CardTitle>
-              <CardDescription>Ajoutez rapidement de nouveaux membres à votre établissement</CardDescription>
+            <CardHeader className="px-4 md:px-6">
+              <CardTitle className="text-base">Ajout rapide</CardTitle>
+              <CardDescription>Personnel et élèves</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link href={`/${slug}/admin/students/new`} className="block">
-                  <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
-                    <UserPlus className="h-6 w-6" />
+            <CardContent className="px-4 md:px-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link href={`/${slug}/admin/students/new`} className="block min-h-[44px]">
+                  <Button className="w-full h-14 sm:h-20 flex flex-col gap-1 text-xs sm:text-sm" variant="outline">
+                    <UserPlus className="h-5 w-5" />
                     Nouvel élève
                   </Button>
                 </Link>
-                <Link href={`/${slug}/admin/teachers/new`} className="block">
-                  <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
-                    <BookOpen className="h-6 w-6" />
+                <Link href={`/${slug}/admin/teachers/new`} className="block min-h-[44px]">
+                  <Button className="w-full h-14 sm:h-20 flex flex-col gap-1 text-xs sm:text-sm" variant="outline">
+                    <BookOpen className="h-5 w-5" />
                     Nouvel enseignant
                   </Button>
                 </Link>
-                <Link href={`/${slug}/admin/parents/new`} className="block">
-                  <Button className="w-full h-24 flex flex-col gap-2" variant="outline">
-                    <Users className="h-6 w-6" />
+                <Link href={`/${slug}/admin/parents/new`} className="block min-h-[44px]">
+                  <Button className="w-full h-14 sm:h-20 flex flex-col gap-1 text-xs sm:text-sm" variant="outline">
+                    <Users className="h-5 w-5" />
                     Nouveau parent
                   </Button>
                 </Link>
@@ -137,76 +161,44 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                Actions requises
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href={`/${slug}/admin/academic-years/new`} className="block">
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50 hover:bg-yellow-100/50 transition-colors">
-                  <p className="text-sm font-medium">Configuration de l'année scolaire</p>
-                  <Button size="sm" variant="ghost">Créer</Button>
-                </div>
-              </Link>
-              <Link href={`/${slug}/admin/classes/new`} className="block">
-                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <p className="text-sm font-medium">Créer une classe</p>
-                  <Button size="sm" variant="ghost">Créer</Button>
-                </div>
-              </Link>
-              <Link href={`/${slug}/admin/assignments/new`} className="block">
-                <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <p className="text-sm font-medium">Affecter un enseignant à une classe</p>
-                  <Button size="sm" variant="ghost">Affecter</Button>
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Access & Sharing */}
-        <div className="space-y-6">
           <AIInsights />
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Share2 className="h-5 w-5 text-primary" />
-                Accès École
-              </CardTitle>
-              <CardDescription>Partagez ce lien avec votre personnel et les parents</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6 text-center">
-              <div className="bg-white p-4 rounded-xl border inline-block mx-auto">
-                <img
-                  src={`https://chart.googleapis.com/chart?cht=qr&chs=180x180&chl=${encodeURIComponent(schoolUrl)}`}
-                  alt="QR Code"
-                  className="mx-auto"
-                />
-              </div>
-
-              <div className="space-y-2 text-left">
-                <p className="text-sm font-medium">Lien direct :</p>
-                <div className="flex items-center gap-2 p-2 bg-muted rounded border text-xs font-mono break-all">
-                  {schoolUrl}
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="w-full flex gap-2">
-                    <Copy className="h-3 w-3" /> Copier
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full flex gap-2" asChild>
-                    <a href={schoolUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-3 w-3" /> Ouvrir
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
+
+        {/* Accès École */}
+        <Card>
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Share2 className="h-5 w-5 text-primary shrink-0" />
+              Accès École
+            </CardTitle>
+            <CardDescription>Partagez ce lien</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 px-4 md:px-6">
+            <div className="bg-white p-3 rounded-xl border inline-block mx-auto">
+              <img
+                src={`https://chart.googleapis.com/chart?cht=qr&chs=140x140&chl=${encodeURIComponent(schoolUrl)}`}
+                alt="QR Code"
+                className="mx-auto w-[120px] h-[120px] md:w-[140px] md:h-[140px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground font-medium">Lien direct :</p>
+              <div className="p-2 bg-muted rounded border text-[11px] font-mono break-all leading-relaxed">
+                {schoolUrl}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 gap-1 text-xs h-9">
+                  <Copy className="h-3 w-3" /> Copier
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 gap-1 text-xs h-9" asChild>
+                  <a href={schoolUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3" /> Ouvrir
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
