@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -23,6 +24,7 @@ const updateSchoolSchema = z.object({
 
 export async function GET() {
   const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -39,7 +41,7 @@ export async function GET() {
     return NextResponse.json({ error: 'No school found' }, { status: 404 })
   }
 
-  const { data: school } = await supabase
+  const { data: school } = await adminClient
     .from('schools')
     .select('*')
     .eq('id', profile.school_id)
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -131,7 +134,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await adminClient
     .from('schools')
     .update(updates)
     .eq('id', profile.school_id)

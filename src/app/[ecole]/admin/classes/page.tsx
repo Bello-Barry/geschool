@@ -2,10 +2,9 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SearchableGrid } from "@/components/ui/data-table";
+import { ClassesGrid } from "@/components/ui/tables";
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default async function ClassesPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -43,42 +42,7 @@ export default async function ClassesPage({ params }: { params: Promise<{ ecole:
         </Link>
       </div>
 
-      <SearchableGrid
-        data={classes || []}
-        searchFields={["name", "level"]}
-        emptyMessage="Aucune classe créée pour le moment"
-        gridCols="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        renderItem={(cls: any) => (
-          <Link key={cls.id} href={`/${slug}/admin/classes/${cls.id}`} className="block">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{cls.name}</CardTitle>
-                    <CardDescription>{cls.level}</CardDescription>
-                  </div>
-                  <Users className="h-5 w-5 text-gray-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Élèves</span>
-                  <span className="font-semibold">
-                    {cls.students?.[0]?.count || 0}/{cls.capacity || "-"}
-                  </span>
-                </div>
-                {cls.room_number && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Salle</span>
-                    <span className="font-semibold">{cls.room_number}</span>
-                  </div>
-                )}
-                <Button className="w-full mt-4">Gérer</Button>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-      />
+      <ClassesGrid data={classes || []} slug={slug} />
     </div>
   );
 }

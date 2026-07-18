@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -74,50 +75,62 @@ export function AssignmentForm({ teachers, subjects, classes }: AssignmentFormPr
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label className="text-sm font-medium">Enseignant</label>
-            <Select onValueChange={(value) => setValue("teacher_id", value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Sélectionner un enseignant" />
-              </SelectTrigger>
-              <SelectContent>
-                {teachers.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.user?.first_name} {t.user?.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {teachers.length === 0 ? (
+              <p className="text-sm text-amber-600 mt-1">Aucun enseignant disponible. Créez d&apos;abord des enseignants.</p>
+            ) : (
+              <Select onValueChange={(value) => setValue("teacher_id", value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Sélectionner un enseignant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.user?.first_name} {t.user?.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.teacher_id && <p className="text-sm text-red-500 mt-1">{errors.teacher_id.message}</p>}
           </div>
           <div>
             <label className="text-sm font-medium">Matière</label>
-            <Select onValueChange={(value) => setValue("subject_id", value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Sélectionner une matière" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} {s.code ? `(${s.code})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {subjects.length === 0 ? (
+              <p className="text-sm text-amber-600 mt-1">Aucune matière disponible. <Link href={`/${params?.ecole}/admin/subjects/new`} className="underline">Créez d&apos;abord des matières.</Link></p>
+            ) : (
+              <Select onValueChange={(value) => setValue("subject_id", value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Sélectionner une matière" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} {s.code ? `(${s.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.subject_id && <p className="text-sm text-red-500 mt-1">{errors.subject_id.message}</p>}
           </div>
           <div>
             <label className="text-sm font-medium">Classe</label>
-            <Select onValueChange={(value) => setValue("class_id", value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Sélectionner une classe" />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {classes.length === 0 ? (
+              <p className="text-sm text-amber-600 mt-1">Aucune classe disponible. Créez d&apos;abord des classes.</p>
+            ) : (
+              <Select onValueChange={(value) => setValue("class_id", value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Sélectionner une classe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.class_id && <p className="text-sm text-red-500 mt-1">{errors.class_id.message}</p>}
           </div>
           <Button type="submit" disabled={loading} className="w-full">

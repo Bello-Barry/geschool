@@ -5,6 +5,48 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { Users } from "lucide-react";
+
+export function ClassesGrid({ data, slug }: { data: any[]; slug: string }) {
+  return (
+    <SearchableGrid
+      data={data}
+      searchFields={["name", "level"]}
+      emptyMessage="Aucune classe créée pour le moment"
+      gridCols="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      renderItem={(cls: any) => (
+        <Link key={cls.id} href={`/${slug}/admin/classes/${cls.id}`} className="block">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{cls.name}</CardTitle>
+                  <CardDescription>{cls.level}</CardDescription>
+                </div>
+                <Users className="h-5 w-5 text-gray-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Élèves</span>
+                <span className="font-semibold">
+                  {cls.students?.[0]?.count || 0}/{cls.capacity || "-"}
+                </span>
+              </div>
+              {cls.room_number && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Salle</span>
+                  <span className="font-semibold">{cls.room_number}</span>
+                </div>
+              )}
+              <Button className="w-full mt-4">Gérer</Button>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+    />
+  );
+}
 
 export function StudentsTable({ data, slug }: { data: any[]; slug: string }) {
   return (
