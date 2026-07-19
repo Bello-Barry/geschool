@@ -48,6 +48,44 @@ export type Database = {
         };
       };
     };
+      schedule_slots: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_id: string;
+          teacher_subject_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          room_number: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_id: string;
+          teacher_subject_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          room_number?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_id?: string;
+          teacher_subject_id?: string;
+          day_of_week?: number;
+          start_time?: string;
+          end_time?: string;
+          room_number?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };
