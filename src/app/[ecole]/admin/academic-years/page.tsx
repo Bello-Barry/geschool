@@ -63,9 +63,9 @@ export default async function AcademicYearsPage({ params }: { params: Promise<{ 
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/${slug}/admin/academic-years/${year.id}/edit`}>
+                                    <Link href={`/${slug}/admin/academic-years/${year.id}`}>
                                         <Settings2 className="h-4 w-4 mr-2" />
-                                        Modifier
+                                        Gérer
                                     </Link>
                                 </Button>
                             </div>

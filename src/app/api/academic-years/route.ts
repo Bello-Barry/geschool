@@ -53,6 +53,36 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    // Auto-create 3 trimesters split evenly across the academic year
+    const start = new Date(validated.start_date);
+    const end = new Date(validated.end_date);
+    const totalMs = end.getTime() - start.getTime();
+    const thirdMs = totalMs / 3;
+
+    const termNames = ["Trimestre 1", "Trimestre 2", "Trimestre 3"];
+    const terms = termNames.map((name, i) => {
+      const tStart = new Date(start.getTime() + thirdMs * i);
+      const tEnd = new Date(start.getTime() + thirdMs * (i + 1));
+      return {
+        academic_year_id: data.id,
+        school_id: schoolId,
+        name,
+        term_number: i + 1,
+        start_date: tStart.toISOString().split("T")[0],
+        end_date: tEnd.toISOString().split("T")[0],
+        is_current: false,
+      };
+    });
+
+    const { error: termsError } = await supabase.from("terms").insert(terms);
+    if (termsError) {
+      console.error("Failed to create terms for academic year", {
+        message: termsError.message,
+        code: termsError.code,
+      });
+    }
+
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

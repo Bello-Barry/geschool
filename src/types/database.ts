@@ -48,6 +48,70 @@ export type Database = {
         };
       };
     };
+      academic_years: {
+        Row: {
+          id: string;
+          school_id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          is_current: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          start_date?: string;
+          end_date?: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+      };
+      terms: {
+        Row: {
+          id: string;
+          academic_year_id: string;
+          school_id: string;
+          name: string;
+          term_number: number;
+          start_date: string;
+          end_date: string;
+          is_current: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          academic_year_id: string;
+          school_id: string;
+          name: string;
+          term_number: number;
+          start_date: string;
+          end_date: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          academic_year_id?: string;
+          school_id?: string;
+          name?: string;
+          term_number?: number;
+          start_date?: string;
+          end_date?: string;
+          is_current?: boolean;
+          created_at?: string;
+        };
+      };
       schedule_slots: {
         Row: {
           id: string;
