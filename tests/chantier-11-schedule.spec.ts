@@ -28,15 +28,16 @@ test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
     await page.evaluate(async ({ url, data }) => {
       const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       return { ok: r.ok };
-    }, { url: `${BASE}/api/schools`, data: {
-      schoolName: `School ${rand}`, subdomain: SCHOOL, adminEmail: ADMIN_EMAIL, adminPassword: USER_PW,
-      schoolPhone: "", schoolAddress: "", primaryColor: "#3B82F6", schoolCode: rand,
+    }, { url: `${BASE}/api/auth/register`, data: {
+      firstName: "Admin", lastName: "Test", email: ADMIN_EMAIL, password: USER_PW, schoolName: `School ${rand}`, subdomain: SCHOOL,
     }});
     await page.waitForTimeout(2000);
 
     // ── Login as admin ───────────────────────────────────
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.waitForTimeout(1500);
+    await page.context().clearCookies();
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(2000);
+    await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 10000 });
     await page.fill('input[type="email"]', ADMIN_EMAIL);
     await page.fill('input[type="password"]', USER_PW);
     await Promise.all([
@@ -84,16 +85,23 @@ test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(500);
 
-    // Fill form
-    await page.selectOption('select:below(:text("Classe"))', cls!.id);
-    await page.selectOption('select:below(:text("Matière"))', ts!.id);
-    await page.selectOption('select:below(:text("Jour"))', "0");
-    await page.fill('input[type="time"]:first-of-type', "08:00");
-    await page.fill('input[type="time"]:last-of-type', "09:00");
+    // Fill form (shadcn Select uses Radix UI — click combobox then select option)
+    await page.getByRole("combobox").nth(0).click();
+    await page.getByRole("option", { name: "CM1" }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole("combobox").nth(1).click();
+    await page.getByRole("option").filter({ hasText: "Maths" }).first().click();
+    await page.waitForTimeout(300);
+    await page.getByRole("combobox").nth(2).click();
+    await page.getByRole("option", { name: "Lundi" }).click();
+    await page.waitForTimeout(300);
+    const timeInputs = page.locator('input[type="time"]');
+    await timeInputs.nth(0).fill("08:00");
+    await timeInputs.nth(1).fill("09:00");
     await page.fill('input[placeholder="Salle 12"]', "Salle A");
 
     await page.click('button[type="submit"]');
-    await page.waitForURL(`**/${SCHOOL}/admin/schedule`, { timeout: 10000 });
+    await page.waitForURL(`**/${SCHOOL}/admin/schedule`, { timeout: 15000 });
 
     // Verify slot appears
     await expect(page.locator("body")).toContainText("08:00-09:00", { timeout: 5000 });
@@ -102,11 +110,18 @@ test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
     // ── Test anti-overlap ────────────────────────────────
     await page.click('a:has-text("Nouveau créneau")');
     await page.waitForLoadState("networkidle");
-    await page.selectOption('select:below(:text("Classe"))', cls!.id);
-    await page.selectOption('select:below(:text("Matière"))', ts!.id);
-    await page.selectOption('select:below(:text("Jour"))', "0");
-    await page.fill('input[type="time"]:first-of-type', "08:30");
-    await page.fill('input[type="time"]:last-of-type', "09:30");
+    await page.getByRole("combobox").nth(0).click();
+    await page.getByRole("option", { name: "CM1" }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole("combobox").nth(1).click();
+    await page.getByRole("option").filter({ hasText: "Maths" }).first().click();
+    await page.waitForTimeout(300);
+    await page.getByRole("combobox").nth(2).click();
+    await page.getByRole("option", { name: "Lundi" }).click();
+    await page.waitForTimeout(300);
+    const timeInputs2 = page.locator('input[type="time"]');
+    await timeInputs2.nth(0).fill("08:30");
+    await timeInputs2.nth(1).fill("09:30");
     await page.click('button[type="submit"]');
     await page.waitForTimeout(2000);
     // Should show overlap error
@@ -120,8 +135,9 @@ test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(500);
 
-    await page.fill('input[type="time"]:first-of-type', "09:00");
-    await page.fill('input[type="time"]:last-of-type', "10:00");
+    const editTimeInputs = page.locator('input[type="time"]');
+    await editTimeInputs.nth(0).fill("09:00");
+    await editTimeInputs.nth(1).fill("10:00");
     await page.click('button[type="submit"]');
     await page.waitForURL(`**/${SCHOOL}/admin/schedule`, { timeout: 10000 });
     await expect(page.locator("body")).toContainText("09:00-10:00", { timeout: 5000 });
