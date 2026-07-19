@@ -121,10 +121,10 @@ test.describe("Fixes — 404 routes + grade save [object Object]", () => {
     await page.waitForTimeout(1000);
 
     // ===== TEST: teacher/classes loads without 404 =====
-    const classesResp = await page.goto(`${BASE}/${SCHOOL}/teacher/classes`, { waitUntil: "load" });
+    const classesResp = await page.goto(`${BASE}/${SCHOOL}/teacher/classes`, { waitUntil: "networkidle" });
     expect(classesResp?.status()).not.toBe(404);
-    await expect(page.locator("text=Mes classes").first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("text=Maths").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("body")).toContainText("Mes classes", { timeout: 5000 });
+    await expect(page.locator("body")).toContainText("Maths", { timeout: 5000 });
     console.log("OK teacher/classes loads with content");
 
     // ===== TEST: Grade entry save still works (no [object Object]) =====

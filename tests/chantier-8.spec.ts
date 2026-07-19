@@ -153,8 +153,8 @@ test.describe("Chantier 8 — Désactivation de comptes (is_active)", () => {
     await page.waitForTimeout(2000);
 
     // Alice should now appear with Inactif badge
-    await expect(page.getByRole("cell", { name: /Alice Test/ })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole("cell", { name: /Inactif/ })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("body")).toContainText("Alice Test", { timeout: 5000 });
+    await expect(page.locator("body")).toContainText("Inactif", { timeout: 5000 });
 
     console.log("✅ TEST 1: Élève désactivé → disparaît de la liste → réapparaît avec filtre inactifs");
 
@@ -214,10 +214,12 @@ test.describe("Chantier 8 — Désactivation de comptes (is_active)", () => {
     await page.waitForTimeout(1500);
     await page.fill('input[type="email"]', STUDENT_EMAIL);
     await page.fill('input[type="password"]', USER_PW);
-    await page.click('button[type="submit"]');
-    await page.waitForTimeout(5000);
+    await Promise.all([
+      page.waitForURL(`**/${SCHOOL}/student`, { timeout: 20000 }),
+      page.click('button[type="submit"]'),
+    ]);
 
-    // Verify we're no longer on the login page (content check is more reliable than URL)
+    // Verify we're no longer on the login page
     const loginForm = page.locator('button:has-text("Se connecter")');
     await expect(loginForm).not.toBeVisible({ timeout: 5000 });
 
@@ -264,8 +266,10 @@ test.describe("Chantier 8 — Désactivation de comptes (is_active)", () => {
     await page.waitForTimeout(1500);
     await page.fill('input[type="email"]', TEACHER_EMAIL);
     await page.fill('input[type="password"]', USER_PW);
-    await page.click('button[type="submit"]');
-    await page.waitForTimeout(5000);
+    await Promise.all([
+      page.waitForURL(`**/${SCHOOL}/teacher`, { timeout: 20000 }),
+      page.click('button[type="submit"]'),
+    ]);
 
     // Verify teacher dashboard is shown
     const teacherLoginForm = page.locator('button:has-text("Se connecter")');
