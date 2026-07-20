@@ -48,11 +48,7 @@ export default async function AcademicYearDetailPage({ params }: PageProps) {
       </div>
 
       <AcademicYearDetail
-        yearId={year.id}
-        slug={slug}
         terms={terms}
-        yearStartDate={year.start_date}
-        yearEndDate={year.end_date}
       />
     </div>
   );

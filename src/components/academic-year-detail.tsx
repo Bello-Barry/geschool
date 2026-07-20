@@ -17,19 +17,11 @@ interface Term {
 }
 
 interface AcademicYearDetailProps {
-  yearId: string;
-  slug: string;
   terms: Term[];
-  yearStartDate: string;
-  yearEndDate: string;
 }
 
 export function AcademicYearDetail({
-  yearId,
-  slug,
   terms: initialTerms,
-  yearStartDate,
-  yearEndDate,
 }: AcademicYearDetailProps) {
   const [terms, setTerms] = useState<Term[]>(initialTerms);
   const [editing, setEditing] = useState<Record<string, { start_date: string; end_date: string }>>({});
