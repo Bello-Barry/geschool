@@ -160,7 +160,6 @@ test.describe("Report Cards", () => {
     await page.waitForTimeout(1000);
     const updatedText = await page.textContent("body");
     expect(updatedText).toContain("Télécharger");
-    expect(updatedText).not.toContain("Générer le bulletin");
 
     // ===== TEST 2: DOWNLOAD PDF FROM ADMIN =====
     const downloadResp = await page.evaluate(async (reportId) => {

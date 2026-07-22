@@ -13,6 +13,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Classes", href: "/admin/classes", icon: "School" },
     { label: "Matières", href: "/admin/subjects", icon: "BookOpen" },
     { label: "Affectations", href: "/admin/assignments", icon: "Link" },
+    { label: "Emploi du temps", href: "/admin/schedule", icon: "CalendarRange" },
     { label: "Présences", href: "/admin/attendance", icon: "Calendar" },
     { label: "Années scolaires", href: "/admin/academic-years", icon: "CalendarRange" },
     { label: "Paiements", href: "/admin/payments", icon: "CreditCard" },

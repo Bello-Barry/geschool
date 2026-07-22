@@ -78,7 +78,7 @@ export default async function AdminSchedulePage({ params }: { params: Promise<{ 
                   {slot.room_number && <div>Salle: {slot.room_number}</div>}
                   <div className="flex gap-1 mt-1">
                     <Button asChild variant="ghost" size="icon" className="h-6 w-6">
-                      <Link href={`/${slug}/admin/schedule/${slot.id}/edit`}>
+                      <Link href={`/${slug}/admin/schedule/${slot.id}/edit`} aria-label="Modifier">
                         <Pencil className="h-3 w-3" />
                       </Link>
                     </Button>
@@ -104,7 +104,7 @@ export default async function AdminSchedulePage({ params }: { params: Promise<{ 
               </span>
               <div className="flex gap-1">
                 <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                  <Link href={`/${slug}/admin/schedule/${slot.id}/edit`}>
+                  <Link href={`/${slug}/admin/schedule/${slot.id}/edit`} aria-label="Modifier">
                     <Pencil className="h-3 w-3" />
                   </Link>
                 </Button>

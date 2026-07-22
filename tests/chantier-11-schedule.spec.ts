@@ -131,7 +131,7 @@ test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
     await page.goto(`${BASE}/${SCHOOL}/admin/schedule`, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
     // Click edit (pencil icon)
-    await page.locator('a[href*="/edit"]').first().click();
+    await page.getByRole("link", { name: /Modifier/i }).first().click();
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(500);
 
