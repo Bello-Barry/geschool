@@ -14,6 +14,115 @@ const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 test.describe("Chantier 11 — Emploi du temps (schedule_slots)", () => {
   test.setTimeout(180000);
 
+  test("bugfix: schedule visible even if slot.class_id != student.class_id (teacher_subject_id lookup)", async ({ page }) => {
+    const rand = Math.random().toString(36).slice(2, 8);
+    const SCHOOL = "bugfix-" + rand;
+    const ADMIN_EMAIL = `ad-${rand}@test.com`;
+    const STUDENT_EMAIL = `st-${rand}@test.com`;
+    const PARENT_EMAIL = `pa-${rand}@test.com`;
+    const USER_PW = "Test123!";
+
+    // Register school
+    await page.goto(`${BASE}/register`, { waitUntil: "load" });
+    await page.evaluate(async ({ url, data }) => {
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      return { ok: r.ok };
+    }, { url: `${BASE}/api/auth/register`, data: {
+      firstName: "Admin", lastName: "Test", email: ADMIN_EMAIL, password: USER_PW, schoolName: `School ${rand}`, subdomain: SCHOOL,
+    }});
+    await page.waitForTimeout(2000);
+
+    const { data: school } = await supabaseAdmin
+      .from("schools").select("id").eq("subdomain", SCHOOL).single();
+
+    const { data: ay } = await supabaseAdmin
+      .from("academic_years").insert({ school_id: school!.id, name: "2025-2026", start_date: "2025-09-01", end_date: "2026-07-31", is_current: true }).select().single();
+
+    // ══════ Simulate duplicate class name scenario ══════
+    // Create two classes with the SAME name (like the real duplicate bug)
+    const { data: clsA } = await supabaseAdmin
+      .from("classes").insert({ school_id: school!.id, academic_year_id: ay!.id, name: "6ème A", level: "6ème" }).select().single();
+    const { data: clsB } = await supabaseAdmin
+      .from("classes").insert({ school_id: school!.id, academic_year_id: ay!.id, name: "6ème A", level: "6ème" }).select().single();
+
+    const { data: subj } = await supabaseAdmin
+      .from("subjects").insert({ school_id: school!.id, name: "Maths", coefficient: 4 }).select().single();
+
+    // Teacher + subject assigned to clsB
+    const { data: teacherAuth } = await supabaseAdmin.auth.admin.createUser({
+      email: `tch-${rand}@test.com`, password: USER_PW, email_confirm: true,
+    });
+    await supabaseAdmin.from("users").insert({ id: teacherAuth.user!.id, email: `tch-${rand}@test.com`, school_id: school!.id, role: "teacher", first_name: "Jean", last_name: "Test" });
+    const { data: teacher } = await supabaseAdmin.from("teachers").insert({ user_id: teacherAuth.user!.id, school_id: school!.id, employee_id: `T-${rand}` }).select().single();
+    const { data: ts } = await supabaseAdmin
+      .from("teacher_subjects").insert({ teacher_id: teacher!.id, subject_id: subj!.id, class_id: clsB!.id, school_id: school!.id }).select().single();
+
+    // ══════ Create schedule slot with MISMATCHED class_id (clsA) but correct teacher_subject_id (ts -> clsB) ══════
+    const { error: slotErr } = await supabaseAdmin.from("schedule_slots").insert({
+      school_id: school!.id,
+      class_id: clsA!.id,           // WRONG class on purpose
+      teacher_subject_id: ts!.id,   // teacher_subject belongs to clsB
+      day_of_week: 0,
+      start_time: "08:00",
+      end_time: "09:00",
+      room_number: "Salle B",
+    });
+    expect(slotErr).toBeNull();
+
+    // ══════ Student in clsB should see the slot despite class_id mismatch ══════
+    const { data: studentAuth } = await supabaseAdmin.auth.admin.createUser({
+      email: STUDENT_EMAIL, password: USER_PW, email_confirm: true,
+    });
+    await supabaseAdmin.from("users").insert({ id: studentAuth.user!.id, email: STUDENT_EMAIL, school_id: school!.id, role: "student", first_name: "Alain", last_name: "Test" });
+    const { data: student } = await supabaseAdmin
+      .from("students").insert({ user_id: studentAuth.user!.id, school_id: school!.id, class_id: clsB!.id, matricule: `STU-${rand}` }).select().single();
+
+    await page.context().clearCookies();
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    await page.fill('input[type="email"]', STUDENT_EMAIL);
+    await page.fill('input[type="password"]', USER_PW);
+    await Promise.all([
+      page.waitForURL(`**/${SCHOOL}/student`, { timeout: 20000 }),
+      page.click('button[type="submit"]'),
+    ]);
+
+    await page.goto(`${BASE}/${SCHOOL}/student/schedule`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1000);
+    await expect(page.locator("body")).toContainText("Maths", { timeout: 5000 });
+    await expect(page.locator("body")).toContainText("08:00-09:00", { timeout: 5000 });
+
+    // ══════ Parent of Alain should also see the slot ══════
+    const { data: parentAuth } = await supabaseAdmin.auth.admin.createUser({
+      email: PARENT_EMAIL, password: USER_PW, email_confirm: true,
+    });
+    await supabaseAdmin.from("users").insert({ id: parentAuth.user!.id, email: PARENT_EMAIL, school_id: school!.id, role: "parent", first_name: "Parent", last_name: "Test" });
+    const { data: parent } = await supabaseAdmin
+      .from("parents").insert({ user_id: parentAuth.user!.id, school_id: school!.id, relationship: "Père" }).select().single();
+    await supabaseAdmin.from("student_parents").insert({ student_id: student!.id, parent_id: parent!.id, is_primary: true });
+
+    await page.evaluate(() => {
+      document.cookie = "sb-wvxahcvyejsxmlrirhdr-auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00; samesite=lax";
+    });
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    await page.fill('input[type="email"]', PARENT_EMAIL);
+    await page.fill('input[type="password"]', USER_PW);
+    await Promise.all([
+      page.waitForURL(`**/${SCHOOL}/parent`, { timeout: 20000 }),
+      page.click('button[type="submit"]'),
+    ]);
+
+    await page.goto(`${BASE}/${SCHOOL}/parent/schedule`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1000);
+    await expect(page.locator("body")).toContainText("Alain Test", { timeout: 5000 });
+    await page.click(`a[href*="/${SCHOOL}/parent/children/${student!.id}/schedule"]`);
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(1000);
+    await expect(page.locator("body")).toContainText("Maths", { timeout: 5000 });
+    await expect(page.locator("body")).toContainText("08:00-09:00", { timeout: 5000 });
+  });
+
   test("CRUD admin + consultation teacher/student/parent", async ({ page }) => {
     const rand = Math.random().toString(36).slice(2, 8);
     const SCHOOL = "sch-" + rand;

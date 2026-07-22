@@ -40,6 +40,31 @@ export default async function ChildSchedulePage({ params }: { params: Promise<{ 
 
   if (!student) notFound();
 
+  const { data: tsList } = await supabase
+    .from("teacher_subjects")
+    .select("id")
+    .eq("class_id", student.class_id)
+    .eq("school_id", auth.schoolId);
+
+  const tsIds = (tsList || []).map((ts) => ts.id);
+  if (tsIds.length === 0) {
+    const user = Array.isArray(student.user) ? student.user[0] : student.user;
+    const studentName = user ? `${user.first_name || ""} ${user.last_name || ""}` : "Élève";
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="ghost" size="icon">
+            <Link href={`/${ecole}/parent/schedule`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">Emploi du temps — {studentName}</h1>
+        </div>
+        <p className="text-muted-foreground text-sm">Aucun cours programmé</p>
+      </div>
+    );
+  }
+
   const { data: slots } = await supabase
     .from("schedule_slots")
     .select(`
@@ -54,7 +79,7 @@ export default async function ChildSchedulePage({ params }: { params: Promise<{ 
       )
     `)
     .eq("school_id", auth.schoolId)
-    .eq("class_id", student.class_id)
+    .in("teacher_subject_id", tsIds)
     .order("day_of_week")
     .order("start_time");
 

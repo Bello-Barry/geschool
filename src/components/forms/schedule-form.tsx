@@ -43,6 +43,7 @@ interface TeacherSubjectOption {
   teacher_name: string;
   subject_name: string;
   class_name: string;
+  class_id: string;
 }
 
 interface ScheduleFormProps {
@@ -62,6 +63,7 @@ interface ScheduleFormProps {
 export function ScheduleForm({ classes, teacherSubjects, initialData }: ScheduleFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | undefined>(initialData?.class_id);
   const router = useRouter();
   const params = useParams();
   const isEditing = !!initialData;
@@ -78,7 +80,11 @@ export function ScheduleForm({ classes, teacherSubjects, initialData }: Schedule
     } : { day_of_week: "0", room_number: "" },
   });
 
-  const daySlots = teacherSubjects.filter((ts) => ts.subject_name && ts.teacher_name);
+  const daySlots = teacherSubjects.filter((ts) => {
+    if (!ts.subject_name || !ts.teacher_name) return false;
+    if (selectedClassId) return ts.class_id === selectedClassId;
+    return true;
+  });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -134,7 +140,7 @@ export function ScheduleForm({ classes, teacherSubjects, initialData }: Schedule
           <div>
             <label className="text-sm font-medium">Classe</label>
             <Select
-              onValueChange={(v) => setValue("class_id", v)}
+              onValueChange={(v) => { setValue("class_id", v); setValue("teacher_subject_id", ""); setSelectedClassId(v); }}
               defaultValue={initialData?.class_id}
             >
               <SelectTrigger className="mt-1">

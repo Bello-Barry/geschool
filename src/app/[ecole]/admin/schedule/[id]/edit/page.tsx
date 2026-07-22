@@ -47,6 +47,7 @@ export default async function EditSchedulePage({ params }: { params: Promise<{ e
       : "Enseignant inconnu",
     subject_name: ts.subject?.name || "Matière inconnue",
     class_name: ts.class?.name || "Classe inconnue",
+    class_id: ts.class?.id || "",
   }));
 
   return (

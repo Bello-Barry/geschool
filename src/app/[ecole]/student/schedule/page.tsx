@@ -19,6 +19,17 @@ export default async function StudentSchedulePage({ params }: { params: Promise<
 
   if (!studentRecord) redirect(`/${slug}/student`);
 
+  const { data: tsList } = await supabase
+    .from("teacher_subjects")
+    .select("id")
+    .eq("class_id", studentRecord.class_id)
+    .eq("school_id", auth.schoolId);
+
+  const tsIds = (tsList || []).map((ts) => ts.id);
+  if (tsIds.length === 0) {
+    return <ScheduleView slots={[]} title="Mon emploi du temps" />;
+  }
+
   const { data: slots } = await supabase
     .from("schedule_slots")
     .select(`
@@ -33,7 +44,7 @@ export default async function StudentSchedulePage({ params }: { params: Promise<
       )
     `)
     .eq("school_id", auth.schoolId)
-    .eq("class_id", studentRecord.class_id)
+    .in("teacher_subject_id", tsIds)
     .order("day_of_week")
     .order("start_time");
 

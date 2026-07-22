@@ -37,6 +37,7 @@ export default async function NewSchedulePage({ params }: { params: Promise<{ ec
       : "Enseignant inconnu",
     subject_name: ts.subject?.name || "Matière inconnue",
     class_name: ts.class?.name || "Classe inconnue",
+    class_id: ts.class?.id || "",
   }));
 
   return (
