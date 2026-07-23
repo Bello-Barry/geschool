@@ -197,7 +197,8 @@ export function InboxLayout({
         for (let i = 0; i < files.length; i++) {
           setUploadProgress(Math.round(((i) / files.length) * 100));
           const fd = new FormData();
-          fd.append("file", files[i]);
+          const f = files[i]; if (!f) continue;
+          fd.append("file", f);
           fd.append("messageId", message.id);
           fd.append("conversationId", activeConv);
           await fetch("/api/attachments", { method: "POST", body: fd });
