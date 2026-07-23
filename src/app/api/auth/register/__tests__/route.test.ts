@@ -3,9 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
 }));
 
 describe('POST /api/auth/register', () => {
@@ -26,9 +31,16 @@ describe('POST /api/auth/register', () => {
     },
   };
 
+  const mockSupabaseServer = {
+    auth: {
+      signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
+    },
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     (createAdminClient as any).mockReturnValue(mockSupabase);
+    (createClient as any).mockResolvedValue(mockSupabaseServer);
   });
 
   it('should return 400 if validation fails', async () => {
@@ -97,7 +109,7 @@ describe('POST /api/auth/register', () => {
     expect(mockSupabase.insert).toHaveBeenCalledWith(expect.objectContaining({
         name: 'Test School',
         subdomain: 'test-school',
-        code: expect.stringContaining('TESTSCHOOL-')
+        code: 'TEST-SCHOOL'
     }));
   });
 });
