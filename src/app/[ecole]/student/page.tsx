@@ -5,6 +5,7 @@ import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 export default async function StudentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
@@ -100,6 +101,14 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
             <p className="text-[11px] text-muted-foreground">Enregistrées</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex gap-3">
+        <Link href={`/${slug}/student/messages`} className="min-h-[44px]">
+          <Button className="w-full h-12 sm:h-14 text-xs sm:text-sm" variant="outline">
+            <MessageSquare className="h-4 w-4 mr-2 shrink-0" /> Messages
+          </Button>
+        </Link>
       </div>
 
       <div>

@@ -86,6 +86,10 @@ WITH CHECK (
     SELECT conversation_id FROM conversation_participants
     WHERE user_id = auth.uid()
   )
+  OR
+  conversation_id IN (
+    SELECT id FROM conversations WHERE created_by = auth.uid()
+  )
 );
 
 -- Messages : l'utilisateur voit les messages de ses conversations

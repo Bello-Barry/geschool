@@ -272,6 +272,35 @@ export type Database = {
           created_at?: string;
         };
       };
+      message_attachments: {
+        Row: {
+          id: string;
+          message_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          message_id?: string;
+          file_name?: string;
+          file_type?: string;
+          file_size?: number;
+          storage_path?: string;
+          created_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };

@@ -45,11 +45,15 @@ export async function POST(request: NextRequest) {
 
   const { data: users } = await supabase
     .from("users")
-    .select("first_name, last_name")
+    .select("id, first_name, last_name")
     .in("id", allIds)
     .eq("school_id", auth.schoolId);
 
-  const title = users?.map((u) => `${u.first_name} ${u.last_name}`).join(", ") || null;
+  if (!users || users.length !== allIds.length) {
+    return NextResponse.json({ error: "Un ou plusieurs utilisateurs introuvables dans cette école" }, { status: 400 });
+  }
+
+  const title = users.map((u) => `${u.first_name} ${u.last_name}`).join(", ") || null;
 
   const { data: conversation, error: convErr } = await supabase
     .from("conversations")

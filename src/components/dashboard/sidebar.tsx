@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCog,
-  CalendarRange
+  CalendarRange,
+  MessageSquare
 } from "lucide-react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -31,6 +32,7 @@ export function Sidebar() {
     { icon: UserCog, label: "Affectations", href: `${prefix}/admin/assignments` },
     { icon: School, label: "Classes", href: `${prefix}/admin/classes` },
     { icon: Calendar, label: "Présences", href: `${prefix}/admin/attendance` },
+    { icon: MessageSquare, label: "Messages", href: `${prefix}/admin/messages` },
   ];
 
   return (

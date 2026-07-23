@@ -4,7 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Send, MessageSquare, Plus, ArrowLeft } from "lucide-react";
+import {
+  Loader2, Send, MessageSquare, Plus, ArrowLeft,
+  Paperclip, FileText, FileImage, File, X, Download,
+} from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -18,12 +21,12 @@ interface Participant {
   user: UserProfile;
 }
 
-interface Conversation {
+interface Attachment {
   id: string;
-  title: string | null;
-  created_at: string;
-  updated_at: string;
-  participants: Participant[];
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  signed_url: string | null;
 }
 
 interface Message {
@@ -32,6 +35,38 @@ interface Message {
   sender_id: string;
   created_at: string;
   sender: UserProfile;
+  attachments?: Attachment[];
+}
+
+interface Conversation {
+  id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+  participants: Participant[];
+}
+
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
+const MAX_SIZE = 10 * 1024 * 1024;
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+function FileIcon({ type }: { type: string }) {
+  if (type.startsWith("image/")) return <FileImage className="h-4 w-4" />;
+  if (type.includes("pdf")) return <FileText className="h-4 w-4" />;
+  if (type.includes("word") || type.includes("document")) return <FileText className="h-4 w-4" />;
+  return <File className="h-4 w-4" />;
 }
 
 export function InboxLayout({
@@ -52,7 +87,11 @@ export function InboxLayout({
   const [showNewConv, setShowNewConv] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -91,6 +130,7 @@ export function InboxLayout({
               sender: msg.sender_id === userId
                 ? { id: userId, first_name: "Vous", last_name: "", role, email: "" }
                 : { id: msg.sender_id, first_name: "", last_name: "", role: "", email: "" },
+              attachments: [],
             }];
           });
         }
@@ -125,22 +165,55 @@ export function InboxLayout({
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    const valid = selected.filter((f) => {
+      if (!ALLOWED_TYPES.includes(f.type)) { alert(`Type non autorisé: ${f.name}`); return false; }
+      if (f.size > MAX_SIZE) { alert(`Fichier trop volumineux: ${f.name} (max 10 Mo)`); return false; }
+      return true;
+    });
+    setFiles((prev) => [...prev, ...valid]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const sendMessage = async () => {
-    if (!newMsg.trim() || !activeConv) return;
+    if ((!newMsg.trim() && files.length === 0) || !activeConv) return;
     setSending(true);
     try {
       const res = await fetch(`/api/conversations/${activeConv}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMsg }),
+        body: JSON.stringify({ content: newMsg.trim() || "(Pièce jointe)" }),
       });
-      if (res.ok) {
-        setNewMsg("");
-        await fetchMessages(activeConv);
-        await fetchConversations();
+      if (!res.ok) return;
+      const message = await res.json();
+
+      if (files.length > 0) {
+        setUploading(true);
+        for (let i = 0; i < files.length; i++) {
+          setUploadProgress(Math.round(((i) / files.length) * 100));
+          const fd = new FormData();
+          fd.append("file", files[i]);
+          fd.append("messageId", message.id);
+          fd.append("conversationId", activeConv);
+          await fetch("/api/attachments", { method: "POST", body: fd });
+        }
+        setUploadProgress(100);
+        setFiles([]);
+        setUploading(false);
       }
+
+      setNewMsg("");
+      await fetchMessages(activeConv);
+      await fetchConversations();
     } finally {
       setSending(false);
+      setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -161,7 +234,7 @@ export function InboxLayout({
 
   return (
     <div className="flex h-[calc(100vh-8rem)] border rounded-lg overflow-hidden">
-      {/* Sidebar: conversations */}
+      {/* Sidebar */}
       <div className={`w-full md:w-80 border-r flex flex-col ${activeConv ? "hidden md:flex" : "flex"}`}>
         <div className="p-3 border-b flex items-center justify-between">
           <h2 className="font-semibold">Messages</h2>
@@ -267,6 +340,39 @@ export function InboxLayout({
                         <p className="text-xs font-medium mb-1 opacity-70">{msg.sender.first_name} {msg.sender.last_name}</p>
                       )}
                       <p>{msg.content}</p>
+                      {msg.attachments && msg.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          {msg.attachments.map((att) => {
+                            const isImage = att.file_type.startsWith("image/");
+                            return (
+                              <div key={att.id}>
+                                {isImage && att.signed_url ? (
+                                  <a href={att.signed_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+                                    <img
+                                      src={att.signed_url}
+                                      alt={att.file_name}
+                                      className="max-w-full rounded-md max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                    />
+                                  </a>
+                                ) : null}
+                                <a
+                                  href={att.signed_url || "#"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center gap-2 rounded-md p-2 text-xs ${
+                                    isMe ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-background hover:bg-muted"
+                                  } transition-colors`}
+                                >
+                                  <FileIcon type={att.file_type} />
+                                  <span className="flex-1 truncate">{att.file_name}</span>
+                                  <span className="opacity-60">{formatFileSize(att.file_size)}</span>
+                                  <Download className="h-3 w-3 shrink-0" />
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                       <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                         {formatTime(msg.created_at)}
                       </p>
@@ -277,21 +383,58 @@ export function InboxLayout({
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Preview files */}
+            {files.length > 0 && (
+              <div className="px-3 pt-3 border-t flex flex-wrap gap-2">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-muted rounded-md px-2 py-1 text-xs max-w-[200px]">
+                    <FileIcon type={f.type} />
+                    <span className="truncate flex-1">{f.name}</span>
+                    <span className="opacity-60 shrink-0">{formatFileSize(f.size)}</span>
+                    <button onClick={() => removeFile(i)} className="shrink-0 hover:text-destructive">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload progress */}
+            {uploading && (
+              <div className="px-3 py-2 border-t">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Upload... {uploadProgress}%
+                </div>
+                <div className="mt-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
+
             {/* Input */}
             <div className="p-3 border-t">
-              <form
-                onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-                className="flex gap-2"
-              >
+              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ALLOWED_TYPES.join(",")}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  multiple
+                />
+                <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={sending || uploading}>
+                  <Paperclip className="h-4 w-4" />
+                </Button>
                 <Input
                   value={newMsg}
                   onChange={(e) => setNewMsg(e.target.value)}
                   placeholder="Écrivez un message..."
-                  disabled={sending}
+                  disabled={sending || uploading}
                   className="flex-1"
                 />
-                <Button type="submit" size="icon" disabled={sending || !newMsg.trim()}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                <Button type="submit" size="icon" disabled={sending || uploading || (!newMsg.trim() && files.length === 0)}>
+                  {sending || uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </form>
             </div>
