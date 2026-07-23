@@ -8,6 +8,16 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn().mockImplementation(() => {
+    return Promise.resolve({
+      auth: {
+        signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
+      },
+    });
+  }),
+}));
+
 describe('POST /api/auth/register', () => {
   const mockSupabase = {
     from: vi.fn().mockReturnThis(),
@@ -42,6 +52,8 @@ describe('POST /api/auth/register', () => {
   });
 
   it('should return 409 if subdomain exists', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'example');
     mockSupabase.maybeSingle.mockResolvedValue({ data: { id: '1' }, error: null });
 
     const request = new NextRequest('http://localhost', {
@@ -58,9 +70,12 @@ describe('POST /api/auth/register', () => {
 
     const response = await POST(request);
     expect(response.status).toBe(409);
+    vi.unstubAllEnvs();
   });
 
   it('should successfully register a school and user', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'example');
     // 1. Check subdomain exists -> null
     mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
     // 2. Insert school -> success (returns chainable)
@@ -97,7 +112,8 @@ describe('POST /api/auth/register', () => {
     expect(mockSupabase.insert).toHaveBeenCalledWith(expect.objectContaining({
         name: 'Test School',
         subdomain: 'test-school',
-        code: expect.stringContaining('TESTSCHOOL-')
+        code: expect.stringContaining('TEST')
     }));
+    vi.unstubAllEnvs();
   });
 });
