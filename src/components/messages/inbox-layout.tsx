@@ -196,11 +196,14 @@ export function InboxLayout({
         setUploading(true);
         for (let i = 0; i < files.length; i++) {
           setUploadProgress(Math.round(((i) / files.length) * 100));
-          const fd = new FormData();
-          fd.append("file", files[i]);
-          fd.append("messageId", message.id);
-          fd.append("conversationId", activeConv);
-          await fetch("/api/attachments", { method: "POST", body: fd });
+          const fileToUpload = files[i];
+          if (fileToUpload) {
+            const fd = new FormData();
+            fd.append("file", fileToUpload);
+            fd.append("messageId", message.id);
+            fd.append("conversationId", activeConv);
+            await fetch("/api/attachments", { method: "POST", body: fd });
+          }
         }
         setUploadProgress(100);
         setFiles([]);
