@@ -54,11 +54,13 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Paiements", href: "/parent/payments", icon: "CreditCard" },
     { label: "Messages", href: "/parent/messages", icon: "MessageSquare" },
     { label: "Assistant IA", href: "/parent/chatbot", icon: "Bot" },
+    { label: "Programme", href: "/parent/programme", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/parent/schedule", icon: "CalendarRange" },
   ],
   student: [
     { label: "Tableau de bord", href: "/student", icon: "LayoutDashboard" },
     { label: "Mes notes", href: "/student/grades", icon: "ClipboardList" },
+    { label: "Programme", href: "/student/programme", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/student/schedule", icon: "CalendarRange" },
     { label: "Messages", href: "/student/messages", icon: "MessageSquare" },
   ],
