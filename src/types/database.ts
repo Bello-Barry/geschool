@@ -200,6 +200,78 @@ export type Database = {
           updated_at?: string;
         };
       };
+      conversations: {
+        Row: {
+          id: string;
+          school_id: string;
+          title: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          title?: string | null;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          title?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      conversation_participants: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          user_id: string;
+          last_read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          user_id: string;
+          last_read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          user_id?: string;
+          last_read_at?: string | null;
+          created_at?: string;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          conversation_id?: string;
+          sender_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };

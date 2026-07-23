@@ -19,6 +19,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Années scolaires", href: "/admin/academic-years", icon: "CalendarRange" },
     { label: "Paiements", href: "/admin/payments", icon: "CreditCard" },
     { label: "Bulletins", href: "/admin/reports", icon: "FileText" },
+    { label: "Messages", href: "/admin/messages", icon: "MessageSquare" },
     { label: "Paramètres", href: "/admin/school", icon: "Settings" },
   ],
   super_admin: [
@@ -35,6 +36,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Années scolaires", href: "/admin/academic-years", icon: "CalendarRange" },
     { label: "Paiements", href: "/admin/payments", icon: "CreditCard" },
     { label: "Bulletins", href: "/admin/reports", icon: "FileText" },
+    { label: "Messages", href: "/admin/messages", icon: "MessageSquare" },
     { label: "Paramètres", href: "/admin/school", icon: "Settings" },
   ],
   teacher: [
@@ -58,5 +60,6 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Tableau de bord", href: "/student", icon: "LayoutDashboard" },
     { label: "Mes notes", href: "/student/grades", icon: "ClipboardList" },
     { label: "Emploi du temps", href: "/student/schedule", icon: "CalendarRange" },
+    { label: "Messages", href: "/student/messages", icon: "MessageSquare" },
   ],
 };
