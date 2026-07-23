@@ -1,18 +1,41 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { PwaRegister } from '@/components/pwa-register';
 import './globals.css';
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  title: 'École Congo - Gestion Scolaire Multi-Tenant',
+  title: 'GESchool — Gérer, Apprendre, Réussir',
   description: 'Application de gestion scolaire pour les établissements du Congo-Brazzaville',
-  icons: {
-    icon: '/favicon.ico',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'GESchool',
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '64x64 32x32 16x16', type: 'image/x-icon' },
+    ],
+    apple: '/apple-touch-icon.png',
+    other: [
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#FF6600',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -30,6 +53,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <PwaRegister />
             <ToastProvider />
             {children}
           </AuthProvider>
