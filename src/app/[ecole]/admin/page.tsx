@@ -28,14 +28,21 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
   const headersList = await headers();
 
   // Récupérer statistiques (admin client pour bypass RLS)
-  const [students, teachers, classes, payments] = await Promise.all([
+  const [students, teachers, classes, payments, academicYears, subjects] = await Promise.all([
     supabaseAdmin.from("students").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("teachers").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("classes").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("payments").select("amount").eq("school_id", schoolId),
+    supabaseAdmin.from("academic_years").select("id", { count: "exact" }).eq("school_id", schoolId),
+    supabaseAdmin.from("subjects").select("id", { count: "exact" }).eq("school_id", schoolId),
   ]);
 
   const totalRevenue = (payments.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+  const hasAcademicYear = (academicYears.count || 0) > 0;
+  const hasClasses = (classes.count || 0) > 0;
+  const hasSubjects = (subjects.count || 0) > 0;
+  const hasTeachers = (teachers.count || 0) > 0;
+  const allDone = hasAcademicYear && hasClasses && hasSubjects && hasTeachers;
 
   // URL de l'école via le slug
   const host = headersList.get("host") || "";
@@ -99,35 +106,77 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
         </Card>
       </div>
 
-      {/* Actions requises — AVANT les actions rapides (spec) */}
-      <Card>
-        <CardHeader className="px-4 md:px-6">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0" />
-            Actions requises
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 px-4 md:px-6">
-          <Link href={`/${slug}/admin/academic-years/new`} className="block min-h-[44px]">
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50/50 hover:bg-yellow-100/50 transition-colors">
-              <p className="text-sm font-medium">Configuration année scolaire</p>
-              <Button size="sm" variant="ghost" className="shrink-0">Créer</Button>
-            </div>
-          </Link>
-          <Link href={`/${slug}/admin/classes/new`} className="block min-h-[44px]">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              <p className="text-sm font-medium">Créer une classe</p>
-              <Button size="sm" variant="ghost" className="shrink-0">Créer</Button>
-            </div>
-          </Link>
-          <Link href={`/${slug}/admin/assignments/new`} className="block min-h-[44px]">
-            <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-              <p className="text-sm font-medium">Affecter un enseignant</p>
-              <Button size="sm" variant="ghost" className="shrink-0">Affecter</Button>
-            </div>
-          </Link>
-        </CardContent>
-      </Card>
+      {/* Onboarding checklist */}
+      {!allDone && (
+        <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertCircle className="h-5 w-5 text-primary shrink-0" />
+              Configuration de votre école
+            </CardTitle>
+            <CardDescription>
+              {!hasAcademicYear
+                ? "Commencez par créer une année scolaire pour activer votre établissement."
+                : "Bonne progression ! Continuez à configurer votre école."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 px-4 md:px-6">
+            <SetupStep
+              done={hasAcademicYear}
+              label="Année scolaire"
+              desc="Créez l'année en cours (3 trimestres auto-générés)"
+              href={`/${slug}/admin/academic-years/new`}
+              cta="Créer"
+            />
+            <SetupStep
+              done={hasSubjects}
+              label="Matières"
+              desc="Ajoutez les matières enseignées (Maths, Français, etc.)"
+              href={`/${slug}/admin/subjects/new`}
+              cta="Ajouter"
+            />
+            <SetupStep
+              done={hasClasses}
+              label="Classes"
+              desc="Créez les classes (6e, 5e, CM2, etc.)"
+              href={`/${slug}/admin/classes/new`}
+              cta="Créer"
+              disabled={!hasAcademicYear}
+            />
+            <SetupStep
+              done={hasTeachers}
+              label="Enseignants"
+              desc="Ajoutez le personnel enseignant"
+              href={`/${slug}/admin/teachers/new`}
+              cta="Ajouter"
+            />
+            <SetupStep
+              done={hasTeachers && hasClasses && hasSubjects}
+              label="Affectations"
+              desc="Assignez les enseignants aux classes et matières"
+              href={`/${slug}/admin/assignments/new`}
+              cta="Affecter"
+              disabled={!(hasTeachers && hasClasses && hasSubjects)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {allDone && (
+        <Card>
+          <CardHeader className="px-4 md:px-6">
+            <CardTitle className="flex items-center gap-2 text-base text-emerald-600">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              École configurée
+            </CardTitle>
+            <CardDescription>
+              Votre établissement est prêt. Vous pouvez maintenant ajouter des élèves, des parents et gérer les présences.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick actions + AI */}
@@ -201,5 +250,54 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
         </Card>
       </div>
     </div>
+  );
+}
+
+function SetupStep({
+  done,
+  label,
+  desc,
+  href,
+  disabled,
+  cta,
+}: {
+  done: boolean;
+  label: string;
+  desc: string;
+  href: string;
+  disabled?: boolean;
+  cta: string;
+}) {
+  if (done) {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50/50">
+        <svg className="h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-emerald-800">{label}</p>
+          <p className="text-xs text-emerald-600">{desc}</p>
+        </div>
+        <span className="text-xs text-emerald-600 font-medium shrink-0">Fait</span>
+      </div>
+    );
+  }
+
+  return (
+    <Link href={disabled ? "#" : href} className="block">
+      <div className={`flex items-center justify-between gap-3 p-3 border rounded-lg transition-colors ${
+        disabled
+          ? "border-dashed border-muted-foreground/30 bg-muted/20 opacity-60 cursor-not-allowed"
+          : "hover:bg-muted/50"
+      }`}>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{desc}</p>
+        </div>
+        <Button size="sm" variant={disabled ? "ghost" : "default"} className="shrink-0" disabled={disabled}>
+          {disabled ? "Attend..." : cta}
+        </Button>
+      </div>
+    </Link>
   );
 }
