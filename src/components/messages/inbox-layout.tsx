@@ -118,7 +118,7 @@ export function InboxLayout({
       .channel(`messages:${activeConv}`)
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${activeConv}` },
-        (payload) => {
+        (payload: { new: Record<string, unknown> }) => {
           const msg = payload.new as any;
           setMessages((prev) => {
             if (prev.some((m) => m.id === msg.id)) return prev;
