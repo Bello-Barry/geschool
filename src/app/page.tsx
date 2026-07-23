@@ -3,6 +3,8 @@ import { Footer } from '@/components/layout/footer';
 import { SchoolDetectionForm } from '@/components/forms/school-detection-form';
 import { StatsShowcase } from '@/components/dashboard/stats-showcase';
 import { Features } from '@/components/layout/features';
+import { HeroBackground } from '@/components/layout/hero-background';
+import { SectionDivider } from '@/components/layout/section-divider';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -12,7 +14,7 @@ export default function HomePage() {
       <Header />
       <main className="flex-1">
         <section className="container px-4 py-24 md:py-36 text-center relative">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_hsl(var(--primary)/0.08)_0%,_transparent_60%)]" />
+          <HeroBackground />
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border bg-muted/50 text-sm text-muted-foreground mb-8 animate-fade-in">
             <span className="w-2 h-2 rounded-full bg-primary" />
             Plateforme #1 au Congo-Brazzaville
@@ -47,6 +49,7 @@ export default function HomePage() {
         </section>
 
         <Features />
+        <SectionDivider />
         <StatsShowcase />
       </main>
       <Footer />
