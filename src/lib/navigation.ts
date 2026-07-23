@@ -13,6 +13,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Classes", href: "/admin/classes", icon: "School" },
     { label: "Matières", href: "/admin/subjects", icon: "BookOpen" },
     { label: "Affectations", href: "/admin/assignments", icon: "Link" },
+    { label: "Programme", href: "/admin/programme", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/admin/schedule", icon: "CalendarRange" },
     { label: "Présences", href: "/admin/attendance", icon: "Calendar" },
     { label: "Années scolaires", href: "/admin/academic-years", icon: "CalendarRange" },
@@ -28,6 +29,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Classes", href: "/admin/classes", icon: "School" },
     { label: "Matières", href: "/admin/subjects", icon: "BookOpen" },
     { label: "Affectations", href: "/admin/assignments", icon: "Link" },
+    { label: "Programme", href: "/admin/programme", icon: "BookOpen" },
     { label: "Présences", href: "/admin/attendance", icon: "Calendar" },
     { label: "Emploi du temps", href: "/admin/schedule", icon: "CalendarRange" },
     { label: "Années scolaires", href: "/admin/academic-years", icon: "CalendarRange" },
@@ -41,6 +43,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Présences", href: "/teacher/attendance", icon: "Calendar" },
     { label: "Mes classes", href: "/teacher/classes", icon: "School" },
     { label: "Emploi du temps", href: "/teacher/schedule", icon: "CalendarRange" },
+    { label: "Programme", href: "/teacher/programme", icon: "BookOpen" },
     { label: "Messages", href: "/teacher/messages", icon: "MessageSquare" },
   ],
   parent: [

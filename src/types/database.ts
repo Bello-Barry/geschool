@@ -150,6 +150,56 @@ export type Database = {
           updated_at?: string;
         };
       };
+      programmes: {
+        Row: {
+          id: string;
+          school_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id: string;
+          week_number: number;
+          topic: string;
+          learning_objectives: string | null;
+          resources: string | null;
+          evaluation_method: string | null;
+          status: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id: string;
+          week_number: number;
+          topic: string;
+          learning_objectives?: string | null;
+          resources?: string | null;
+          evaluation_method?: string | null;
+          status?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          subject_id?: string;
+          class_id?: string;
+          term_id?: string;
+          week_number?: number;
+          topic?: string;
+          learning_objectives?: string | null;
+          resources?: string | null;
+          evaluation_method?: string | null;
+          status?: string;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };
