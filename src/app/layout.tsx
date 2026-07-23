@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
+import { Outfit } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import './globals.css';
+
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
   title: 'École Congo - Gestion Scolaire Multi-Tenant',
@@ -19,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className="font-sans">
+      <body className={`font-sans ${outfit.variable}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

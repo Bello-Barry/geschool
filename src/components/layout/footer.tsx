@@ -6,7 +6,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="font-semibold mb-4">GESchool</h3>
+            <h3 className="font-semibold mb-4 font-heading">GESchool</h3>
             <p className="text-sm text-muted-foreground">
               La plateforme de gestion scolaire pour le Congo-Brazzaville.
             </p>

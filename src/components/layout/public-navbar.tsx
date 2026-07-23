@@ -26,7 +26,7 @@ export function Header() {
   return (
     <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold flex items-center gap-2">
+        <Link href="/" className="text-2xl font-bold flex items-center gap-1 font-heading">
           <span className="text-primary text-3xl">GE</span>School
         </Link>
 
