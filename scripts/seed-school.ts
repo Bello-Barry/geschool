@@ -26,36 +26,56 @@ async function main() {
   const schoolId = school.id;
   console.log(`✅ School: ${school.name} (${schoolId})`);
 
-  // 1. Academic Year
+  // 1. Academic Year (idempotent)
   console.log('\n📅 Creating academic year...');
-  const { data: year } = await admin.from('academic_years').insert({
-    school_id: schoolId,
-    name: '2025-2026',
-    start_date: '2025-09-01',
-    end_date: '2026-07-31',
-    is_current: true,
-  }).select().single();
-  if (!year) { console.error('Failed to create academic year'); return; }
+  let { data: year } = await admin.from('academic_years')
+    .select('*')
+    .eq('school_id', schoolId)
+    .eq('name', '2025-2026')
+    .maybeSingle();
+  if (!year) {
+    const { data: newYear } = await admin.from('academic_years').insert({
+      school_id: schoolId,
+      name: '2025-2026',
+      start_date: '2025-09-01',
+      end_date: '2026-07-31',
+      is_current: true,
+    }).select().single();
+    if (!newYear) { console.error('Failed to create academic year'); return; }
+    year = newYear;
+    console.log(`   ✅ Created new year`);
+  } else {
+    console.log(`   ⏭️  Already exists`);
+  }
   const yearId = year.id;
   console.log(`   Year: ${year.name} (${yearId})`);
 
-  // 2. Terms
+  // 2. Terms (idempotent)
   console.log('\n📆 Creating terms...');
-  const terms = [
+  const termsData = [
     { name: '1er Trimestre', term_number: 1, start_date: '2025-09-01', end_date: '2025-12-20', is_current: true },
     { name: '2ème Trimestre', term_number: 2, start_date: '2026-01-05', end_date: '2026-04-04', is_current: false },
     { name: '3ème Trimestre', term_number: 3, start_date: '2026-04-13', end_date: '2026-07-31', is_current: false },
   ];
   const termIds: Record<string, string> = {};
-  for (const t of terms) {
-    const { data: term } = await admin.from('terms').insert({
-      school_id: schoolId, academic_year_id: yearId, ...t,
-    }).select().single();
+  for (const t of termsData) {
+    let { data: term } = await admin.from('terms')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', yearId)
+      .eq('name', t.name)
+      .maybeSingle();
+    if (!term) {
+      const { data: newTerm } = await admin.from('terms').insert({
+        school_id: schoolId, academic_year_id: yearId, ...t,
+      }).select().single();
+      term = newTerm || undefined;
+    }
     if (term) termIds[t.name] = term.id;
   }
-  console.log(`   ${Object.keys(termIds).length} terms created`);
+  console.log(`   ${Object.keys(termIds).length} terms accounted for`);
 
-  // 3. Classes
+  // 3. Classes (idempotent)
   console.log('\n🏫 Creating classes...');
   const classData = [
     { name: '6ème A', level: '6ème' },
@@ -73,14 +93,23 @@ async function main() {
   ];
   const classMap: Record<string, string> = {};
   for (const c of classData) {
-    const { data: cls } = await admin.from('classes').insert({
-      school_id: schoolId, academic_year_id: yearId, name: c.name, level: c.level, capacity: 45,
-    }).select().single();
+    let { data: cls } = await admin.from('classes')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('academic_year_id', yearId)
+      .eq('name', c.name)
+      .maybeSingle();
+    if (!cls) {
+      const { data: newCls } = await admin.from('classes').insert({
+        school_id: schoolId, academic_year_id: yearId, name: c.name, level: c.level, capacity: 45,
+      }).select().single();
+      cls = newCls || undefined;
+    }
     if (cls) classMap[c.name] = cls.id;
   }
-  console.log(`   ${Object.keys(classMap).length} classes created`);
+  console.log(`   ${Object.keys(classMap).length} classes accounted for`);
 
-  // 4. Subjects
+  // 4. Subjects (idempotent)
   console.log('\n📚 Creating subjects...');
   const subjectData = [
     { name: 'Mathématiques', code: 'MATH', coefficient: 5 },
@@ -98,12 +127,20 @@ async function main() {
   ];
   const subjectMap: Record<string, string> = {};
   for (const s of subjectData) {
-    const { data: subj } = await admin.from('subjects').insert({
-      school_id: schoolId, ...s,
-    }).select().single();
+    let { data: subj } = await admin.from('subjects')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('name', s.name)
+      .maybeSingle();
+    if (!subj) {
+      const { data: newSubj } = await admin.from('subjects').insert({
+        school_id: schoolId, ...s,
+      }).select().single();
+      subj = newSubj || undefined;
+    }
     if (subj) subjectMap[s.name] = subj.id;
   }
-  console.log(`   ${Object.keys(subjectMap).length} subjects created`);
+  console.log(`   ${Object.keys(subjectMap).length} subjects accounted for`);
 
   // 5. Teachers (create auth users + profiles)
   console.log('\n👨‍🏫 Creating teachers...');
@@ -210,7 +247,7 @@ async function main() {
   }
   console.log(`   ${parentCount} parents created`);
 
-  // 8. Teacher-class-subject assignments
+  // 8. Teacher-class-subject assignments (idempotent)
   console.log('\n🔗 Creating assignments...');
   const assignments = [
     { teacherEmail: 'jean.mbokani@lycee-sassou.cd', subject: 'Mathématiques', classes: ['6ème A', '6ème B', '5ème A', '2nde A', '2nde C', '1ère C', 'Tle C'] },
@@ -231,15 +268,26 @@ async function main() {
     for (const className of a.classes) {
       const classId = classMap[className];
       if (!classId) continue;
-      const { error: insErr } = await admin.from('teacher_subjects').insert({
-        teacher_id: teacher.id, subject_id: subjectId, class_id: classId, school_id: schoolId,
-      });
-      if (!insErr) assignmentCount++;
+      const { data: existing } = await admin.from('teacher_subjects')
+        .select('id')
+        .eq('teacher_id', teacher.id)
+        .eq('subject_id', subjectId)
+        .eq('class_id', classId)
+        .eq('school_id', schoolId)
+        .maybeSingle();
+      if (!existing) {
+        const { error: insErr } = await admin.from('teacher_subjects').insert({
+          teacher_id: teacher.id, subject_id: subjectId, class_id: classId, school_id: schoolId,
+        });
+        if (!insErr) assignmentCount++;
+      } else {
+        assignmentCount++;
+      }
     }
   }
-  console.log(`   ${assignmentCount} assignments created`);
+  console.log(`   ${assignmentCount} assignments accounted for`);
 
-  // 9. Tuition fees
+  // 9. Tuition fees (idempotent)
   console.log('\n💰 Creating tuition fees...');
   for (const [clsName, amount] of Object.entries({
     '6ème A': 350000, '6ème B': 350000,
@@ -252,10 +300,18 @@ async function main() {
   })) {
     const classId = classMap[clsName];
     if (!classId) continue;
-    await admin.from('tuition_fees').insert({
-      school_id: schoolId, class_id: classId, academic_year_id: yearId,
-      amount, description: `Frais de scolarité ${clsName} - Année 2025-2026`,
-    });
+    const { data: existing } = await admin.from('tuition_fees')
+      .select('id')
+      .eq('school_id', schoolId)
+      .eq('class_id', classId)
+      .eq('academic_year_id', yearId)
+      .maybeSingle();
+    if (!existing) {
+      await admin.from('tuition_fees').insert({
+        school_id: schoolId, class_id: classId, academic_year_id: yearId,
+        amount, description: `Frais de scolarité ${clsName} - Année 2025-2026`,
+      });
+    }
   }
   console.log(`   Tuition fees set for all classes`);
 

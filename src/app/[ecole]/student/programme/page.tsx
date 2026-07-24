@@ -22,7 +22,6 @@ export default async function StudentProgrammePage({ params, searchParams }: { p
 
   if (!studentRecord) redirect(`/${slug}/student`);
   const nameOf = (v: any) => (Array.isArray(v) ? v[0]?.name : v?.name) || "—";
-  const className = Array.isArray(studentRecord.class) ? (studentRecord.class[0] as any)?.name : (studentRecord.class as any)?.name;
 
   const { data: terms } = await supabase
     .from("terms")
@@ -39,13 +38,13 @@ export default async function StudentProgrammePage({ params, searchParams }: { p
       term:term_id(id, name)
     `)
     .eq("school_id", schoolId)
+    .eq("class_id", studentRecord.class_id)
     .eq("status", "published")
     .order("week_number");
 
   if (filters.term_id) query = query.eq("term_id", filters.term_id);
 
-  const { data: allEntries } = await query;
-  const entries = allEntries?.filter((e: any) => e.class?.name === className) || [];
+  const { data: entries } = await query;
 
   return (
     <div className="space-y-6">

@@ -21,7 +21,7 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
 
   if (!children || children.length === 0) redirect(`/${slug}/parent`);
 
-  const childClassNames = [...new Set(children.map((c: any) => Array.isArray(c.class) ? c.class[0]?.name : (c.class as any)?.name).filter(Boolean))];
+  const classIds = [...new Set(children.map((c) => c.class_id).filter(Boolean))];
   const nameOf = (v: any) => (Array.isArray(v) ? v[0]?.name : v?.name) || "—";
 
   const { data: terms } = await supabase
@@ -39,19 +39,14 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
       term:term_id(id, name)
     `)
     .eq("school_id", schoolId)
+    .in("class_id", classIds)
     .eq("status", "published")
     .order("week_number");
 
   if (filters.term_id) query = query.eq("term_id", filters.term_id);
+  if (filters.class_id) query = query.eq("class_id", filters.class_id);
 
-  const { data: allEntries } = await query;
-  let entries = allEntries?.filter((e: any) => childClassNames.includes(e.class?.name)) || [];
-
-  if (filters.class_id) {
-    const child = children.find((c: any) => c.class_id === filters.class_id);
-    const className = child ? (Array.isArray(child.class) ? child.class[0]?.name : (child.class as any)?.name) : null;
-    if (className) entries = entries.filter((e: any) => e.class?.name === className);
-  }
+  const { data: entries } = await query;
 
   return (
     <div className="space-y-6">

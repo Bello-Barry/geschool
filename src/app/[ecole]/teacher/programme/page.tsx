@@ -38,7 +38,7 @@ export default async function TeacherProgrammePage({ params, searchParams }: { p
     .eq("school_id", schoolId)
     .order("term_number");
 
-  const mySubjectNames = [...new Set(tsList?.map((ts: any) => ts.subject?.name).filter(Boolean))];
+  const subjects = tsList || [];
   const classes = [...new Map(tsList?.map((ts: any) => [ts.class?.id, ts.class])).values()].filter(Boolean);
 
   let query = supabase
@@ -50,18 +50,13 @@ export default async function TeacherProgrammePage({ params, searchParams }: { p
       term:term_id(id, name)
     `)
     .eq("school_id", schoolId)
+    .in("subject_id", (subjects || []).map((s: any) => s.subject?.id).filter(Boolean))
     .order("week_number");
 
   if (filters.term_id) query = query.eq("term_id", filters.term_id);
+  if (filters.class_id) query = query.eq("class_id", filters.class_id);
 
-  const { data: allEntries } = await query;
-
-  let entries = allEntries?.filter((e: any) => mySubjectNames.includes(e.subject?.name)) || [];
-
-  if (filters.class_id) {
-    const className = classes.find((c: any) => c.id === filters.class_id)?.name;
-    if (className) entries = entries.filter((e: any) => e.class?.name === className);
-  }
+  const { data: entries } = await query;
 
   return (
     <div className="space-y-6">
