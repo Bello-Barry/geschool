@@ -49,6 +49,20 @@ export default async function GradeEntryPage({ params }: PageProps) {
         );
     }
 
+    const studentIds = mappedStudents.map((s: any) => s.id);
+    const { data: existingGrades } = await supabaseAdmin
+        .from("grades")
+        .select("student_id, grade_type, score")
+        .eq("subject_id", subjectId)
+        .eq("term_id", academicTerm.data.id)
+        .in("student_id", studentIds);
+
+    const existingGradesByStudent: Record<string, { homework: string; test: string; exam: string }> = {};
+    for (const g of existingGrades ?? []) {
+        if (!existingGradesByStudent[g.student_id]) existingGradesByStudent[g.student_id] = { homework: "", test: "", exam: "" };
+        existingGradesByStudent[g.student_id]![g.grade_type as "homework" | "test" | "exam"] = String(g.score);
+    }
+
     return (
         <GradeEntryForm
             students={mappedStudents}
@@ -57,6 +71,7 @@ export default async function GradeEntryPage({ params }: PageProps) {
             subjectName={subjectData.data?.name ?? ""}
             className={classData.data?.name ?? ""}
             termName={academicTerm.data.name}
+            existingGradesByStudent={existingGradesByStudent}
         />
     );
 }

@@ -98,7 +98,7 @@ export default async function StudentDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link href={`/${ecole}/admin/students`}>
             <Button variant="ghost" size="icon">
@@ -106,8 +106,8 @@ export default async function StudentDetailPage({
             </Button>
           </Link>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold">
                 {userInfo?.first_name} {userInfo?.last_name}
               </h1>
               {userInfo && (
@@ -119,7 +119,7 @@ export default async function StudentDetailPage({
             <p className="text-gray-600 mt-1">{student.matricule}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href={`/${ecole}/admin/students/${id}/edit`}>
             <Button>
               <Pencil className="h-4 w-4 mr-2" />

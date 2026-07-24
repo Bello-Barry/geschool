@@ -30,11 +30,12 @@ interface GradeEntryFormProps {
   subjectName: string;
   className: string;
   termName: string;
+  existingGradesByStudent?: Record<string, { homework: string; test: string; exam: string }>;
 }
 
 type StudentGrades = Record<string, { homework: string; test: string; exam: string }>;
 
-export function GradeEntryForm({ students, subjectId, termId, subjectName, className, termName }: GradeEntryFormProps) {
+export function GradeEntryForm({ students, subjectId, termId, subjectName, className, termName, existingGradesByStudent = {} }: GradeEntryFormProps) {
   const params = useParams();
   const slug = params?.ecole as string;
   const [grades, setGrades] = useState<StudentGrades>({});
@@ -45,10 +46,10 @@ export function GradeEntryForm({ students, subjectId, termId, subjectName, class
   useEffect(() => {
     const initial: StudentGrades = {};
     for (const s of students) {
-      initial[s.id] = { homework: "", test: "", exam: "" };
+      initial[s.id] = existingGradesByStudent[s.id] || { homework: "", test: "", exam: "" };
     }
     setGrades(initial);
-  }, [students]);
+  }, [students, existingGradesByStudent]);
 
   const updateGrade = useCallback((studentId: string, type: "homework" | "test" | "exam", value: string) => {
     setGrades((prev) => ({
