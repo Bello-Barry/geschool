@@ -46,6 +46,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Mes classes", href: "/teacher/classes", icon: "School" },
     { label: "Emploi du temps", href: "/teacher/schedule", icon: "CalendarRange" },
     { label: "Programme", href: "/teacher/programme", icon: "BookOpen" },
+    { label: "Cours", href: "/teacher/courses", icon: "BookOpen" },
     { label: "Messages", href: "/teacher/messages", icon: "MessageSquare" },
   ],
   parent: [
@@ -55,6 +56,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Messages", href: "/parent/messages", icon: "MessageSquare" },
     { label: "Assistant IA", href: "/parent/chatbot", icon: "Bot" },
     { label: "Programme", href: "/parent/programme", icon: "BookOpen" },
+    { label: "Cours", href: "/parent/children", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/parent/schedule", icon: "CalendarRange" },
   ],
   student: [
@@ -62,6 +64,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Mes notes", href: "/student/grades", icon: "ClipboardList" },
     { label: "Programme", href: "/student/programme", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/student/schedule", icon: "CalendarRange" },
+    { label: "Cours", href: "/student/courses", icon: "BookOpen" },
     { label: "Messages", href: "/student/messages", icon: "MessageSquare" },
   ],
 };

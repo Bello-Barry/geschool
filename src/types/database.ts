@@ -272,6 +272,79 @@ export type Database = {
           created_at?: string;
         };
       };
+      courses: {
+        Row: {
+          id: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id: string | null;
+          programme_entry_id: string | null;
+          title: string;
+          key_points: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id?: string | null;
+          programme_entry_id?: string | null;
+          title: string;
+          key_points?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          teacher_id?: string;
+          subject_id?: string;
+          class_id?: string;
+          term_id?: string | null;
+          programme_entry_id?: string | null;
+          title?: string;
+          key_points?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      course_attachments: {
+        Row: {
+          id: string;
+          course_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          file_name?: string;
+          file_type?: string;
+          file_size?: number;
+          storage_path?: string;
+          created_at?: string;
+        };
+      };
       message_attachments: {
         Row: {
           id: string;
