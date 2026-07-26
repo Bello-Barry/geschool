@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
+import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -28,25 +29,30 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
     .single();
   if (!student) redirect(`/${slug}/login`);
 
-  let query = supabaseAdmin
-    .from("courses")
-    .select(`
-      id, title, key_points, status, created_at,
-      teacher:teacher_id(id),
-      subject:subject_id(id, name),
-      class:class_id(id, name)
-    `)
-    .eq("class_id", student.class_id)
-    .eq("status", "published")
-    .order("created_at", { ascending: false });
+  let courses: any[] = [];
 
-  if (subject_id) query = query.eq("subject_id", subject_id);
+  if (student.class_id) {
+    let query = supabaseAdmin
+      .from("courses")
+      .select(`
+        id, title, key_points, status, created_at,
+        teacher:teacher_id(id),
+        subject:subject_id(id, name),
+        class:class_id(id, name)
+      `)
+      .eq("class_id", student.class_id)
+      .eq("status", "published")
+      .order("created_at", { ascending: false });
 
-  if (q) {
-    query = query.textSearch("search_vector", q, { config: "french" });
+    if (subject_id) query = query.eq("subject_id", subject_id);
+
+    if (q) {
+      query = query.textSearch("search_vector", q, { config: "french" });
+    }
+
+    const { data } = await query;
+    courses = data || [];
   }
-
-  const { data: courses } = await query;
 
   const { data: subjects } = await supabaseAdmin
     .from("subjects")
@@ -92,7 +98,17 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
         </Button>
       </form>
 
-      {(!courses || courses.length === 0) && (
+      {!student.class_id && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <p className="text-gray-500">
+              Vous n'avez pas de classe affectée pour le moment. Veuillez contacter l'administration.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {student.class_id && courses.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <p className="text-gray-500">
@@ -105,10 +121,9 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {courses?.map((course: any) => {
-          const subjectName = Array.isArray(course.subject)
-            ? course.subject[0]?.name
-            : course.subject?.name;
+        {courses.map((course: any) => {
+          const subject = unwrapJoin(course.subject) as any;
+          const subjectName = subject?.name;
           return (
             <Card key={course.id} className="flex flex-col">
               <CardHeader>

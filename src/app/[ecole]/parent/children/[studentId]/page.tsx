@@ -4,7 +4,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, GraduationCap } from "lucide-react";
+import { FileText, Calendar, GraduationCap, BookOpen, Compass } from "lucide-react";
 import Link from "next/link";
 
 export default async function StudentDetailPage({
@@ -124,6 +124,18 @@ export default async function StudentDetailPage({
               <Button className="w-full" variant="outline">
                 <Calendar className="h-4 w-4 mr-2" />
                 Voir les présences
+              </Button>
+            </Link>
+            <Link href={`/${ecole}/parent/children/${studentId}/courses`}>
+              <Button className="w-full" variant="outline">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Voir les cours
+              </Button>
+            </Link>
+            <Link href={`/${ecole}/parent/children/${studentId}/programme`}>
+              <Button className="w-full" variant="outline">
+                <Compass className="h-4 w-4 mr-2" />
+                Voir le programme
               </Button>
             </Link>
           </CardContent>
