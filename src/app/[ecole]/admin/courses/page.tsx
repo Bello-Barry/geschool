@@ -4,6 +4,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CourseFilterForm } from "@/components/courses/course-filter-form";
+import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
 
 interface PageProps {
   params: Promise<{ ecole: string }>;
@@ -36,6 +37,25 @@ export default async function AdminCoursesPage({ params, searchParams }: PagePro
   }
 
   const { data: courses } = await query;
+  const courseIds = courses?.map((c) => c.id) || [];
+
+  const { data: allAttachments } = courseIds.length > 0
+    ? await supabaseAdmin
+        .from("course_attachments")
+        .select("*")
+        .in("course_id", courseIds)
+        .order("created_at")
+    : { data: [] };
+
+  const attachmentsByCourse: Record<string, any[]> = {};
+  for (const att of allAttachments || []) {
+    const list = attachmentsByCourse[att.course_id] || [];
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from("course-attachments")
+      .createSignedUrl(att.storage_path, 3600);
+    list.push({ ...att, signed_url: signedUrlData?.signedUrl || null });
+    attachmentsByCourse[att.course_id] = list;
+  }
 
   const { data: subjects } = await supabaseAdmin
     .from("subjects")
@@ -97,6 +117,9 @@ export default async function AdminCoursesPage({ params, searchParams }: PagePro
                     {course.key_points}
                   </div>
                 )}
+                <div className="mt-auto">
+                  <CourseAttachmentList attachments={attachmentsByCourse[course.id] || []} />
+                </div>
               </CardContent>
             </Card>
           );
