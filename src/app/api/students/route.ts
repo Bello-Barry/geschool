@@ -14,6 +14,7 @@ const studentSchema = z.object({
   date_of_birth: z.string().optional(),
   place_of_birth: z.string().optional(),
   gender: z.enum(["M", "F"]).optional(),
+  password: z.string().min(6).optional(),
 });
 
 export async function GET() {
@@ -77,8 +78,8 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
-    // Générer un mot de passe temporaire sécurisé
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    // Mot de passe : fourni par l'admin ou généré automatiquement
+    const tempPassword = validated.password || crypto.randomBytes(12).toString('hex');
 
     // Créer l'utilisateur dans auth
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({

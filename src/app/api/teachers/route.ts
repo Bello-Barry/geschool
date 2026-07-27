@@ -12,6 +12,7 @@ const teacherSchema = z.object({
   specialization: z.string().optional(),
   hire_date: z.string().optional(),
   employee_id: z.string().optional(),
+  password: z.string().min(6).optional(),
 });
 
 export async function GET() {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     const validated = teacherSchema.parse(body);
 
     const adminClient = createAdminClient();
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    const tempPassword = validated.password || crypto.randomBytes(12).toString('hex');
 
     // Créer l'utilisateur dans auth
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({

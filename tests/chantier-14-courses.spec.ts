@@ -24,6 +24,17 @@ async function createEntity(page: any, url: string, data: any) {
   );
 }
 
+async function loginAs(page: any, email: string, password: string, schoolSlug: string) {
+  await page.evaluate(() => { localStorage.clear(); });
+  await page.context().clearCookies();
+  await page.goto(`http://localhost:3000/${schoolSlug}/login`, { waitUntil: "load" });
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
+  await page.click('button[type="submit"]');
+  // Wait for Supabase sign-in + client redirect to complete
+  await page.waitForTimeout(5000);
+}
+
 test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
   test.setTimeout(300000);
 
@@ -109,7 +120,7 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
 
     // Create teacher
     const teacherData = await createEntity(page, `${BASE}/api/teachers`, {
-      first_name: "Marie", last_name: "Prof", email: TEACHER_EMAIL, specialization: "Maths",
+      first_name: "Marie", last_name: "Prof", email: TEACHER_EMAIL, specialization: "Maths", password: "Test123!",
     });
     expect(teacherData).not.toBeNull();
     const teacherId = teacherData.id;
@@ -122,16 +133,11 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
 
     // Create student in same class
     const studentData = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-1`, first_name: "Lucas", last_name: "Eleve", email: STUDENT_EMAIL, class_id: classId,
+      matricule: `STU-${rand}-1`, first_name: "Lucas", last_name: "Eleve", email: STUDENT_EMAIL, class_id: classId, password: "Test123!",
     });
     expect(studentData).not.toBeNull();
 
-    // Login as teacher
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', TEACHER_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/teacher`), { timeout: 15000 });
+    await loginAs(page, TEACHER_EMAIL, "Test123!", SCHOOL);
 
     // Go to courses page and create
     await page.goto(`${BASE}/${SCHOOL}/teacher/courses/new`, { waitUntil: "networkidle" });
@@ -148,16 +154,11 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await expect(page.locator("text=Introduction aux fractions")).toBeVisible();
     await expect(page.locator("text=Publié")).toBeVisible();
 
-    // Login as student
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', STUDENT_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/student`), { timeout: 15000 });
+    await loginAs(page, STUDENT_EMAIL, "Test123!", SCHOOL);
 
     await page.goto(`${BASE}/${SCHOOL}/student/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=Introduction aux fractions")).toBeVisible();
-    await expect(page.locator("text=Mathématiques")).toBeVisible();
+    await expect(page.locator("div.inline-flex:has-text('Mathématiques')")).toBeVisible();
 
     // Search
     await page.fill('input[placeholder*="Rechercher"]', "fractions");
@@ -200,7 +201,7 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     expect(subjectData).not.toBeNull();
 
     const teacherData = await createEntity(page, `${BASE}/api/teachers`, {
-      first_name: "Paul", last_name: "Prof", email: TEACHER_EMAIL, specialization: "Français",
+      first_name: "Paul", last_name: "Prof", email: TEACHER_EMAIL, specialization: "Français", password: "Test123!",
     });
     expect(teacherData).not.toBeNull();
 
@@ -210,20 +211,16 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     });
 
     const studentA = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-a`, first_name: "Alice", last_name: "A", email: STUDENT_A_EMAIL, class_id: classA.id,
+      matricule: `STU-${rand}-a`, first_name: "Alice", last_name: "A", email: STUDENT_A_EMAIL, class_id: classA.id, password: "Test123!",
     });
     const studentB = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-b`, first_name: "Bob", last_name: "B", email: STUDENT_B_EMAIL, class_id: classB.id,
+      matricule: `STU-${rand}-b`, first_name: "Bob", last_name: "B", email: STUDENT_B_EMAIL, class_id: classB.id, password: "Test123!",
     });
     expect(studentA).not.toBeNull();
     expect(studentB).not.toBeNull();
 
-    // Teacher creates course for class A
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', TEACHER_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/teacher`), { timeout: 15000 });
+    // Logout admin, login as teacher
+    await loginAs(page, TEACHER_EMAIL, "Test123!", SCHOOL);
 
     await page.goto(`${BASE}/${SCHOOL}/teacher/courses/new`, { waitUntil: "networkidle" });
     await page.fill("#title", "Grammaire: le sujet");
@@ -237,21 +234,13 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/courses$`), { timeout: 15000 });
 
-    // Student A → sees course
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', STUDENT_A_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/student`), { timeout: 15000 });
+    // Logout teacher, login as student A
+    await loginAs(page, STUDENT_A_EMAIL, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/student/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=Grammaire: le sujet")).toBeVisible();
 
-    // Student B → should NOT see
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', STUDENT_B_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/student`), { timeout: 15000 });
+    // Logout student A, login as student B
+    await loginAs(page, STUDENT_B_EMAIL, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/student/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=Grammaire: le sujet")).not.toBeVisible();
     await expect(page.locator("text=Aucun cours publié")).toBeVisible();
@@ -280,7 +269,7 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     expect(subjectData).not.toBeNull();
 
     const teacherData = await createEntity(page, `${BASE}/api/teachers`, {
-      first_name: "Claire", last_name: "Scientifique", email: TEACHER_EMAIL, specialization: "Sciences",
+      first_name: "Claire", last_name: "Scientifique", email: TEACHER_EMAIL, specialization: "Sciences", password: "Test123!",
     });
     expect(teacherData).not.toBeNull();
 
@@ -289,22 +278,18 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     });
 
     const studentData = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-e`, first_name: "Emma", last_name: "Enfant", email: STUDENT_EMAIL, class_id: classData.id,
+      matricule: `STU-${rand}-e`, first_name: "Emma", last_name: "Enfant", email: STUDENT_EMAIL, class_id: classData.id, password: "Test123!",
     });
     expect(studentData).not.toBeNull();
 
     // Create parent linked to student
     const parentData = await createEntity(page, `${BASE}/api/parents`, {
-      first_name: "Sophie", last_name: "Parent", email: PARENT_EMAIL, children_ids: [studentData.id],
+      first_name: "Sophie", last_name: "Parent", email: PARENT_EMAIL, student_ids: [studentData.id], password: "Test123!",
     });
     expect(parentData).not.toBeNull();
 
-    // Teacher creates published course
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', TEACHER_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/teacher`), { timeout: 15000 });
+    // Logout admin, login as teacher
+    await loginAs(page, TEACHER_EMAIL, "Test123!", SCHOOL);
 
     await page.goto(`${BASE}/${SCHOOL}/teacher/courses/new`, { waitUntil: "networkidle" });
     await page.fill("#title", "La photosynthèse");
@@ -318,16 +303,12 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/courses$`), { timeout: 15000 });
 
-    // Parent logs in and navigates to child's courses
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', PARENT_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/parent`), { timeout: 15000 });
+    // Logout teacher, login as parent
+    await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
 
     await page.goto(`${BASE}/${SCHOOL}/parent/children/${studentData.id}/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=La photosynthèse")).toBeVisible();
-    await expect(page.locator("text=Sciences")).toBeVisible();
+    await expect(page.locator("div.inline-flex:has-text('Sciences')")).toBeVisible();
     await expect(page.locator("text=Emma Enfant")).toBeVisible();
 
     console.log("✅ Test 3 passed");
@@ -353,7 +334,7 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     expect(subjectData).not.toBeNull();
 
     const teacherData = await createEntity(page, `${BASE}/api/teachers`, {
-      first_name: "Hist", last_name: "Orienne", email: TEACHER_EMAIL, specialization: "Histoire",
+      first_name: "Hist", last_name: "Orienne", email: TEACHER_EMAIL, specialization: "Histoire", password: "Test123!",
     });
     expect(teacherData).not.toBeNull();
 
@@ -362,16 +343,12 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     });
 
     const studentData = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-d`, first_name: "Draft", last_name: "Student", email: STUDENT_EMAIL, class_id: classData.id,
+      matricule: `STU-${rand}-d`, first_name: "Draft", last_name: "Student", email: STUDENT_EMAIL, class_id: classData.id, password: "Test123!",
     });
     expect(studentData).not.toBeNull();
 
-    // Teacher creates DRAFT course (default status)
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', TEACHER_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/teacher`), { timeout: 15000 });
+    // Logout admin, login as teacher
+    await loginAs(page, TEACHER_EMAIL, "Test123!", SCHOOL);
 
     await page.goto(`${BASE}/${SCHOOL}/teacher/courses/new`, { waitUntil: "networkidle" });
     await page.fill("#title", "La Révolution française (brouillon)");
@@ -386,14 +363,10 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
 
     // Teacher sees draft
     await expect(page.locator("text=La Révolution française (brouillon)")).toBeVisible();
-    await expect(page.locator("text=Brouillon")).toBeVisible();
+    await expect(page.locator("div.inline-flex:has-text('Brouillon')")).toBeVisible();
 
-    // Student → should NOT see draft
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', STUDENT_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL}/student`), { timeout: 15000 });
+    // Logout teacher, login as student
+    await loginAs(page, STUDENT_EMAIL, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/student/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=La Révolution française (brouillon)")).not.toBeVisible();
 
@@ -420,7 +393,7 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     expect(subjectA).not.toBeNull();
 
     const teacherA = await createEntity(page, `${BASE}/api/teachers`, {
-      first_name: "English", last_name: "Teacher", email: TEACHER_A_EMAIL, specialization: "Anglais",
+      first_name: "English", last_name: "Teacher", email: TEACHER_A_EMAIL, specialization: "Anglais", password: "Test123!",
     });
     expect(teacherA).not.toBeNull();
 
@@ -428,12 +401,8 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
       teacher_id: teacherA.id, subject_id: subjectA.id, class_id: classA.id,
     });
 
-    // Teacher A creates course
-    await page.goto(`${BASE}/${SCHOOL_A}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', TEACHER_A_EMAIL);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL_A}/teacher`), { timeout: 15000 });
+    // Logout admin, login as teacher A
+    await loginAs(page, TEACHER_A_EMAIL, "Test123!", SCHOOL_A);
 
     await page.goto(`${BASE}/${SCHOOL_A}/teacher/courses/new`, { waitUntil: "networkidle" });
     await page.fill("#title", "English Vocabulary");
@@ -501,16 +470,12 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
 
     // Create student in school B
     const studentB = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-x`, first_name: "Cross", last_name: "Student", email: `cross-${rand}@test.com`, class_id: classB.id,
+      matricule: `STU-${rand}-x`, first_name: "Cross", last_name: "Student", email: `cross-${rand}@test.com`, class_id: classB.id, password: "Test123!",
     });
     expect(studentB).not.toBeNull();
 
-    // Login as student B
-    await page.goto(`${BASE}/${SCHOOL_B}/login`, { waitUntil: "load" });
-    await page.fill('input[type="email"]', `cross-${rand}@test.com`);
-    await page.fill('input[type="password"]', "Test123!");
-    await page.click('button[type="submit"]');
-    await page.waitForURL(new RegExp(`${SCHOOL_B}/student`), { timeout: 15000 });
+    // Logout, login as student B
+    await loginAs(page, `cross-${rand}@test.com`, "Test123!", SCHOOL_B);
 
     await page.goto(`${BASE}/${SCHOOL_B}/student/courses`, { waitUntil: "networkidle" });
     await expect(page.locator("text=English Vocabulary")).not.toBeVisible();

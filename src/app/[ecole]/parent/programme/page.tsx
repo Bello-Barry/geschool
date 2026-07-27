@@ -13,13 +13,26 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
   const supabase = createAdminClient();
   const schoolId = auth.schoolId;
 
+  const { data: parentRec } = await supabase
+    .from("parents")
+    .select("id")
+    .eq("user_id", auth.userId)
+    .eq("school_id", schoolId)
+    .single();
+  if (!parentRec) redirect(`/${slug}/parent`);
+
+  const { data: links } = await supabase
+    .from("student_parents")
+    .select("student_id")
+    .eq("parent_id", parentRec.id);
+  const studentIds = links?.map((l) => l.student_id) || [];
+  if (studentIds.length === 0) redirect(`/${slug}/parent`);
+
   const { data: children } = await supabase
     .from("students")
     .select("id, first_name, last_name, class_id, class:class_id(name)")
     .eq("school_id", schoolId)
-    .eq("parent_id", auth.userId);
-
-  if (!children || children.length === 0) redirect(`/${slug}/parent`);
+    .in("id", studentIds);
 
   const classIds = [...new Set(children.map((c) => c.class_id).filter(Boolean))];
   const nameOf = (v: any) => (Array.isArray(v) ? v[0]?.name : v?.name) || "—";
@@ -80,7 +93,7 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
         </form>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">

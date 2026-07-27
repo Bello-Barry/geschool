@@ -70,7 +70,7 @@ export default async function ParentChildCoursesPage({ params, searchParams }: P
         <p className="text-gray-600 mt-2">Consultez les cours publiés pour votre enfant</p>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input

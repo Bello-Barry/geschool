@@ -13,6 +13,7 @@ const parentSchema = z.object({
   relationship: z.string().optional(),
   profession: z.string().optional(),
   student_ids: z.array(z.string().uuid()).optional(),
+  password: z.string().min(6).optional(),
 });
 
 export async function GET() {
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     const validated = parentSchema.parse(body);
 
     const adminClient = createAdminClient();
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    const tempPassword = validated.password || crypto.randomBytes(12).toString('hex');
 
     // Créer l'utilisateur dans auth
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({

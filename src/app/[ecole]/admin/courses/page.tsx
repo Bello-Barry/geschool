@@ -10,21 +10,13 @@ interface PageProps {
   searchParams: Promise<{ q?: string; subject_id?: string }>;
 }
 
-export default async function StudentCoursesPage({ params, searchParams }: PageProps) {
+export default async function AdminCoursesPage({ params, searchParams }: PageProps) {
   const slug = (await params).ecole;
   const { q, subject_id } = await searchParams;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "student") redirect(`/${slug}/login`);
+  if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) redirect(`/${slug}/login`);
 
   const supabaseAdmin = createAdminClient();
-
-  const { data: student } = await supabaseAdmin
-    .from("students")
-    .select("id, class_id")
-    .eq("user_id", auth.userId)
-    .eq("school_id", auth.schoolId)
-    .single();
-  if (!student) redirect(`/${slug}/login`);
 
   let query = supabaseAdmin
     .from("courses")
@@ -34,8 +26,7 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
       subject:subject_id(id, name),
       class:class_id(id, name)
     `)
-    .eq("class_id", student.class_id)
-    .eq("status", "published")
+    .eq("school_id", auth.schoolId)
     .order("created_at", { ascending: false });
 
   if (subject_id) query = query.eq("subject_id", subject_id);
@@ -58,7 +49,7 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Cours</h1>
-        <p className="text-gray-600 mt-2">Consultez les cours de votre classe</p>
+        <p className="text-gray-600 mt-2">Tous les cours de l&apos;établissement</p>
       </div>
 
       <CourseFilterForm subjects={safeSubjects} defaultQ={q} defaultSubjectId={subject_id} />
@@ -69,7 +60,7 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
             <p className="text-gray-500">
               {q
                 ? `Aucun cours trouvé pour "${q}"`
-                : "Aucun cours publié pour le moment"}
+                : "Aucun cours créé pour le moment"}
             </p>
           </CardContent>
         </Card>
@@ -80,15 +71,24 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
           const subjectName = Array.isArray(course.subject)
             ? course.subject[0]?.name
             : course.subject?.name;
+          const className = Array.isArray(course.class)
+            ? course.class[0]?.name
+            : course.class?.name;
           return (
             <Card key={course.id} className="flex flex-col">
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <Badge variant="outline">{subjectName || "—"}</Badge>
+                  <Badge variant={course.status === "published" ? "default" : "secondary"}>
+                    {course.status === "published" ? "Publié" : "Brouillon"}
+                  </Badge>
                 </div>
                 <CardDescription>
-                  {new Date(course.created_at).toLocaleDateString("fr-FR")}
+                  {subjectName && <span>{subjectName}</span>}
+                  {className && <span> — {className}</span>}
+                  <span className="block text-xs mt-1">
+                    {new Date(course.created_at).toLocaleDateString("fr-FR")}
+                  </span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
