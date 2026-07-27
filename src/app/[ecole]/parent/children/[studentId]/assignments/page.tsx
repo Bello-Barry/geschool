@@ -1,0 +1,153 @@
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/utils/auth-utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
+
+const typeLabels: Record<string, string> = {
+  devoir_maison: "Devoir maison",
+  td: "TD",
+  tp: "TP",
+};
+
+const typeColors: Record<string, string> = {
+  devoir_maison: "default",
+  td: "secondary",
+  tp: "outline",
+};
+
+export default async function ParentChildAssignmentsPage({ params }: { params: Promise<{ ecole: string; studentId: string }> }) {
+  const { ecole: slug, studentId } = await params;
+  const auth = await getAuthUser(slug);
+  if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
+
+  const supabaseAdmin = createAdminClient();
+
+  const { data: parent } = await supabaseAdmin
+    .from("parents")
+    .select("id")
+    .eq("user_id", auth.userId)
+    .eq("school_id", auth.schoolId)
+    .single();
+  if (!parent) redirect(`/${slug}/parent/children`);
+
+  const { data: link } = await supabaseAdmin
+    .from("student_parents")
+    .select("student_id")
+    .eq("parent_id", parent.id)
+    .eq("student_id", studentId)
+    .single();
+  if (!link) redirect(`/${slug}/parent/children`);
+
+  const { data: student } = await supabaseAdmin
+    .from("students")
+    .select("id, class_id, user:user_id(first_name, last_name)")
+    .eq("id", studentId)
+    .single();
+  if (!student) redirect(`/${slug}/parent/children`);
+
+  const userInfo = Array.isArray(student.user) ? student.user[0] : student.user;
+
+  const { data: assignments } = await supabaseAdmin
+    .from("assignments")
+    .select(`
+      id, title, description, type, due_date, status, created_at,
+      subject:subject_id(id, name)
+    `)
+    .eq("class_id", student.class_id)
+    .eq("status", "published")
+    .order("due_date", { ascending: true });
+
+  const ids = assignments?.map((a) => a.id) || [];
+
+  const { data: allAttachments } = ids.length > 0
+    ? await supabaseAdmin
+        .from("assignment_attachments")
+        .select("*")
+        .in("assignment_id", ids)
+        .order("created_at")
+    : { data: [] };
+
+  const attachmentsByAssignment: Record<string, any[]> = {};
+  for (const att of allAttachments || []) {
+    const list = attachmentsByAssignment[att.assignment_id] || [];
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from("assignment-attachments")
+      .createSignedUrl(att.storage_path, 3600);
+    list.push({ ...att, signed_url: signedUrlData?.signedUrl || null });
+    attachmentsByAssignment[att.assignment_id] = list;
+  }
+
+  const { data: completions } = await supabaseAdmin
+    .from("assignment_completions")
+    .select("assignment_id, completed_at")
+    .eq("student_id", studentId)
+    .in("assignment_id", ids);
+
+  const completedMap = new Map(completions?.map((c) => [c.assignment_id, c.completed_at]) || []);
+
+  const now = new Date();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Devoirs &amp; TD</h1>
+        <p className="text-gray-600 mt-2">
+          Travaux à rendre pour {userInfo?.first_name} {userInfo?.last_name}
+        </p>
+      </div>
+
+      {(!assignments || assignments.length === 0) && (
+        <Card className="text-center py-12">
+          <CardContent>
+            <p className="text-gray-500">Aucun travail à rendre pour le moment</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        {assignments?.map((a: any) => {
+          const subjectName = Array.isArray(a.subject) ? a.subject[0]?.name : a.subject?.name;
+          const completedAt = completedMap.get(a.id);
+          const isCompleted = !!completedAt;
+          const dueDate = new Date(a.due_date);
+          const isOverdue = !isCompleted && dueDate < now;
+
+          return (
+            <Card key={a.id} className={`${isOverdue ? "border-red-300 bg-red-50/30" : isCompleted ? "border-green-300 bg-green-50/30" : ""}`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={typeColors[a.type] as any}>{typeLabels[a.type]}</Badge>
+                      <Badge variant="outline">{subjectName || "—"}</Badge>
+                      {isOverdue && <Badge variant="destructive">En retard</Badge>}
+                      {isCompleted && <Badge variant="default" className="bg-green-600">Fait</Badge>}
+                    </div>
+                    <CardTitle className="text-lg">{a.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      À rendre le {dueDate.toLocaleDateString("fr-FR")}
+                      {isCompleted && ` — Fait le ${new Date(completedAt).toLocaleDateString("fr-FR")}`}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              {a.description && (
+                <CardContent className="pt-0 pb-3">
+                  <p className="text-sm text-gray-600 whitespace-pre-line">{a.description}</p>
+                  <CourseAttachmentList attachments={attachmentsByAssignment[a.id] || []} />
+                </CardContent>
+              )}
+              {!a.description && (
+                <CardContent className="pt-0 pb-3">
+                  <CourseAttachmentList attachments={attachmentsByAssignment[a.id] || []} />
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

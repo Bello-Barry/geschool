@@ -374,6 +374,102 @@ export type Database = {
           created_at?: string;
         };
       };
+      assignments: {
+        Row: {
+          id: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id: string | null;
+          type: 'devoir_maison' | 'td' | 'tp';
+          title: string;
+          description: string;
+          due_date: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id?: string | null;
+          type: 'devoir_maison' | 'td' | 'tp';
+          title: string;
+          description?: string;
+          due_date: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          teacher_id?: string;
+          subject_id?: string;
+          class_id?: string;
+          term_id?: string | null;
+          type?: 'devoir_maison' | 'td' | 'tp';
+          title?: string;
+          description?: string;
+          due_date?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      assignment_attachments: {
+        Row: {
+          id: string;
+          assignment_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          assignment_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          assignment_id?: string;
+          file_name?: string;
+          file_type?: string;
+          file_size?: number;
+          storage_path?: string;
+          created_at?: string;
+        };
+      };
+      assignment_completions: {
+        Row: {
+          id: string;
+          assignment_id: string;
+          student_id: string;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          assignment_id: string;
+          student_id: string;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          assignment_id?: string;
+          student_id?: string;
+          completed_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };
