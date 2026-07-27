@@ -34,7 +34,7 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
     .eq("school_id", schoolId)
     .in("id", studentIds);
 
-  const classIds = [...new Set(children.map((c) => c.class_id).filter(Boolean))];
+  const classIds = [...new Set(children?.map((c) => c.class_id).filter(Boolean) || [])];
   const nameOf = (v: any) => (Array.isArray(v) ? v[0]?.name : v?.name) || "—";
 
   const { data: terms } = await supabase
@@ -65,7 +65,7 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Programme pédagogique</h1>
       <p className="text-muted-foreground">
-        Programme publié pour {children.map((c) => `${c.first_name} ${c.last_name}`).join(", ")}.
+        Programme publié pour {children?.map((c) => `${c.first_name} ${c.last_name}`).join(", ") || "—"}.
       </p>
 
       <div className="flex flex-wrap gap-4">
@@ -74,7 +74,7 @@ export default async function ParentProgrammePage({ params, searchParams }: { pa
             <label className="text-xs text-muted-foreground">Enfant</label>
             <select name="class_id" className="mt-1 block rounded-md border px-3 py-2 text-sm" defaultValue={filters.class_id || ""}>
               <option value="">Tous</option>
-              {children.filter((c) => c.class_id).map((c) => {
+              {children?.filter((c) => c.class_id).map((c) => {
                 const className = Array.isArray(c.class) ? c.class[0]?.name : (c.class as any)?.name;
                 return (
                   <option key={c.id} value={c.class_id}>{c.first_name} {c.last_name} ({className})</option>

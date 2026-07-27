@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -13,7 +13,6 @@ interface CourseFilterFormProps {
 
 export function CourseFilterForm({ subjects, defaultQ, defaultSubjectId }: CourseFilterFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
