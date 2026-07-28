@@ -34,4 +34,19 @@ jobs:
 
       - run: pnpm test
 
+      - name: Set dummy env vars for build if secrets are missing
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "NEXT_PUBLIC_SUPABASE_URL=https://dummy-project.supabase.co" >> $GITHUB_ENV
+          fi
+          if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1bW15LXByb2plY3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc3MTc1OTM2MCwiZXhwIjoyMDg3MzM1MzYwfQ.dummy-signature" >> $GITHUB_ENV
+          fi
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY=dummy-service-role-key" >> $GITHUB_ENV
+          fi
+          if [ -z "$NEXT_PUBLIC_ROOT_DOMAIN" ]; then
+            echo "NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000" >> $GITHUB_ENV
+          fi
+
       - run: pnpm build
