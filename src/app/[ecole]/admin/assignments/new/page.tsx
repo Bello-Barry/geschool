@@ -4,7 +4,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { AssignmentForm } from "@/components/forms/assignment-form";
+import { TeacherSubjectForm } from "@/components/forms/teacher-subject-form";
 
 export default async function NewAssignmentPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -43,7 +43,7 @@ export default async function NewAssignmentPage({ params }: { params: Promise<{ 
         <h1 className="text-3xl font-bold">Nouvelle affectation</h1>
       </div>
       <div className="max-w-2xl">
-        <AssignmentForm
+        <TeacherSubjectForm
           teachers={(teachersRes.data || []).map((t: any) => ({
             id: t.id,
             user: Array.isArray(t.user) ? t.user[0] : t.user,
