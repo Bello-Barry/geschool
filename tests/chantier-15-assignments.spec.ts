@@ -108,6 +108,14 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
       teacher_id: teacherA.id, subject_id: subjectA.id, class_id: classA.id,
     });
 
+    // Create student BEFORE loginAs(teacher) — admin session required
+    const studentEmail = `student1a-${rand}@test.com`;
+    const studentA = await createEntity(page, `${BASE}/api/students`, {
+      matricule: `STU-${rand}-1`, first_name: "Jane", last_name: "Doe",
+      email: studentEmail, class_id: classA.id, password: "Test123!",
+    });
+    expect(studentA).not.toBeNull();
+
     // Teacher creates assignment
     await loginAs(page, teacherEmail, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/teacher/assignments/new`, { waitUntil: "networkidle" });
@@ -118,7 +126,6 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     await page.click('text=4eme A');
     await page.fill("#due_date", "2026-12-31");
     await page.fill("#description", "Faire les exercices 1 à 5 page 42");
-    // Select type: Devoir maison (default)
     // Publish
     await page.click('text=Brouillon');
     await page.click('text=Publié');
@@ -128,14 +135,6 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     // Verify teacher sees assignment with "0 élève ont coché fait"
     await expect(page.locator("text=Exercices fractions")).toBeVisible();
     await expect(page.locator("text=0 élève ont coché")).toBeVisible();
-
-    // Create student
-    const studentEmail = `student1a-${rand}@test.com`;
-    const studentA = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-1`, first_name: "Jane", last_name: "Doe",
-      email: studentEmail, class_id: classA.id, password: "Test123!",
-    });
-    expect(studentA).not.toBeNull();
 
     // Login as student
     await loginAs(page, studentEmail, "Test123!", SCHOOL);
@@ -149,10 +148,8 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
 
     // Toggle "Fait"
     await page.click('button:has-text("Fait")');
-    await page.waitForTimeout(1000);
-
-    // Should now show "Annuler" (undo) and green "Fait" badge
-    await expect(page.locator("text=Annuler")).toBeVisible();
+    // Wait for toggle API to complete (loading spinner disappears, button shows "Annuler")
+    await expect(page.locator("text=Annuler")).toBeVisible({ timeout: 15000 });
     await expect(page.locator("text=Fait")).toBeVisible();
 
     console.log("✅ Test 1 passed");
@@ -183,6 +180,14 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
       teacher_id: teacherA.id, subject_id: subjectA.id, class_id: classA.id,
     });
 
+    // Create student BEFORE loginAs(teacher) — admin session required
+    const studentEmail = `student2a-${rand}@test.com`;
+    const studentA = await createEntity(page, `${BASE}/api/students`, {
+      matricule: `STU-${rand}-2`, first_name: "Child", last_name: "One",
+      email: studentEmail, class_id: classA.id, password: "Test123!",
+    });
+    expect(studentA).not.toBeNull();
+
     // Teacher creates and publishes assignment
     await loginAs(page, teacherEmail, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/teacher/assignments/new`, { waitUntil: "networkidle" });
@@ -197,25 +202,20 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     await page.click('text=Créer');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/assignments$`), { timeout: 15000 });
 
-    // Create student
-    const studentEmail = `student2a-${rand}@test.com`;
-    const studentA = await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-2`, first_name: "Child", last_name: "One",
-      email: studentEmail, class_id: classA.id, password: "Test123!",
-    });
-    expect(studentA).not.toBeNull();
-
     // Student does the assignment (toggle "Fait")
     await loginAs(page, studentEmail, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/student/assignments`, { waitUntil: "networkidle" });
     await page.click('button:has-text("Fait")');
     await page.waitForTimeout(1000);
 
-    // Create parent linked to this student
+    // Re-login as admin to create parent (requires admin_school role)
+    const adminEmail = `admasg2a-${rand}@test.com`;
+    await loginAs(page, adminEmail, "Test123!", SCHOOL);
+    await page.waitForLoadState("networkidle");
     const parentEmail = `parent2a-${rand}@test.com`;
     const parentA = await createEntity(page, `${BASE}/api/parents`, {
       first_name: "Parent", last_name: "One", email: parentEmail,
-      student_id: studentA.id, password: "Test123!",
+      student_ids: [studentA.id], password: "Test123!",
     });
     expect(parentA).not.toBeNull();
 
@@ -225,7 +225,7 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
 
     // Should see the assignment with "Fait" status
     await expect(page.locator("text=Rédaction")).toBeVisible();
-    await expect(page.locator("text=Fait")).toBeVisible();
+    await expect(page.locator("text=Fait").first()).toBeVisible();
 
     // Also check teacher sees completion count
     await loginAs(page, teacherEmail, "Test123!", SCHOOL);
@@ -265,6 +265,21 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
       teacher_id: teacherA.id, subject_id: subjectA.id, class_id: classA.id,
     });
 
+    // Create students BEFORE loginAs(teacher) — admin session required
+    const studentAEmail = `student3a-a-${rand}@test.com`;
+    const studentA = await createEntity(page, `${BASE}/api/students`, {
+      matricule: `STU-${rand}-a`, first_name: "Alice", last_name: "A",
+      email: studentAEmail, class_id: classA.id, password: "Test123!",
+    });
+    expect(studentA).not.toBeNull();
+
+    const studentBEmail = `student3a-b-${rand}@test.com`;
+    const studentB = await createEntity(page, `${BASE}/api/students`, {
+      matricule: `STU-${rand}-b`, first_name: "Bob", last_name: "B",
+      email: studentBEmail, class_id: classB.id, password: "Test123!",
+    });
+    expect(studentB).not.toBeNull();
+
     // Teacher publishes assignment for class A only
     await loginAs(page, teacherEmail, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/teacher/assignments/new`, { waitUntil: "networkidle" });
@@ -278,20 +293,6 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     await page.click('text=Publié');
     await page.click('text=Créer');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/assignments$`), { timeout: 15000 });
-
-    // Create student in class A
-    const studentAEmail = `student3a-a-${rand}@test.com`;
-    await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-a`, first_name: "Alice", last_name: "A",
-      email: studentAEmail, class_id: classA.id, password: "Test123!",
-    });
-
-    // Create student in class B
-    const studentBEmail = `student3a-b-${rand}@test.com`;
-    await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-b`, first_name: "Bob", last_name: "B",
-      email: studentBEmail, class_id: classB.id, password: "Test123!",
-    });
 
     // Student A can see the assignment
     await loginAs(page, studentAEmail, "Test123!", SCHOOL);
@@ -332,6 +333,14 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
       teacher_id: teacherA.id, subject_id: subjectA.id, class_id: classA.id,
     });
 
+    // Create student BEFORE loginAs(teacher) — admin session required
+    const studentEmail = `student4a-${rand}@test.com`;
+    const studentA = await createEntity(page, `${BASE}/api/students`, {
+      matricule: `STU-${rand}-4`, first_name: "Draft", last_name: "Test",
+      email: studentEmail, class_id: classA.id, password: "Test123!",
+    });
+    expect(studentA).not.toBeNull();
+
     // Teacher creates assignment in DRAFT (default)
     await loginAs(page, teacherEmail, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/teacher/assignments/new`, { waitUntil: "networkidle" });
@@ -347,13 +356,6 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     // Teacher can see it as "Brouillon"
     await expect(page.locator("text=Mécanique (draft)")).toBeVisible();
     await expect(page.locator("text=Brouillon")).toBeVisible();
-
-    // Create student
-    const studentEmail = `student4a-${rand}@test.com`;
-    await createEntity(page, `${BASE}/api/students`, {
-      matricule: `STU-${rand}-4`, first_name: "Draft", last_name: "Test",
-      email: studentEmail, class_id: classA.id, password: "Test123!",
-    });
 
     // Student cannot see it
     await loginAs(page, studentEmail, "Test123!", SCHOOL);
@@ -438,6 +440,10 @@ test.describe("Chantier 15 — Devoirs & TD/TP", () => {
     const rand = Math.random().toString(36).slice(2, 8);
     const { SCHOOL: schoolA, schoolId: schoolAId, academicYearId: ayAId } = await setupSchool(page, rand, "6a");
     const { SCHOOL: schoolB } = await setupSchool(page, rand, "6b");
+
+    // Re-login as school A's admin to create entities for school A
+    const adminAEmail = `admasg6a-${rand}@test.com`;
+    await loginAs(page, adminAEmail, "Test123!", schoolA);
 
     // Create entities in school A
     const classA = await createEntity(page, `${BASE}/api/classes`, {
