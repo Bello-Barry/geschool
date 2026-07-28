@@ -186,7 +186,7 @@ export function AssignmentForm({ slug, subjects, classes, assignment }: Assignme
             <div className="space-y-2">
               <Label>Matière</Label>
               <Select value={subjectId} onValueChange={setSubjectId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une matière" /></SelectTrigger>
                 <SelectContent>
                   {subjects.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -197,7 +197,7 @@ export function AssignmentForm({ slug, subjects, classes, assignment }: Assignme
             <div className="space-y-2">
               <Label>Classe</Label>
               <Select value={classId} onValueChange={setClassId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
