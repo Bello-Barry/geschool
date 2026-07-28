@@ -123,12 +123,20 @@ export default async function ParentChildAssignmentsPage({ params }: { params: P
                       <Badge variant={typeColors[a.type] as any}>{typeLabels[a.type]}</Badge>
                       <Badge variant="outline">{subjectName || "—"}</Badge>
                       {isOverdue && <Badge variant="destructive">En retard</Badge>}
-                      {isCompleted && <Badge variant="default" className="bg-green-600">Fait</Badge>}
+                      {isCompleted && (
+                        <Badge variant="default" className={a.type === "td" || a.type === "tp" ? "bg-green-600" : "bg-green-600"}>
+                          {a.type === "td" || a.type === "tp" ? "Validé par le professeur" : "Fait"}
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-lg">{a.title}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       À rendre le {dueDate.toLocaleDateString("fr-FR")}
-                      {isCompleted && ` — Fait le ${new Date(completedAt).toLocaleDateString("fr-FR")}`}
+                      {isCompleted && (
+                        a.type === "td" || a.type === "tp"
+                          ? " — Validé"
+                          : ` — Fait le ${new Date(completedAt).toLocaleDateString("fr-FR")}`
+                      )}
                     </p>
                   </div>
                 </div>

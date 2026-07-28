@@ -104,14 +104,18 @@ export default async function StudentAssignmentsPage({ params }: { params: Promi
                       <Badge variant={typeColors[a.type] as any}>{typeLabels[a.type]}</Badge>
                       <Badge variant="outline">{subjectName || "—"}</Badge>
                       {isOverdue && <Badge variant="destructive">En retard</Badge>}
-                      {isCompleted && <Badge variant="default" className="bg-green-600">Fait</Badge>}
+                      {isCompleted && (
+                        <Badge variant="default" className="bg-green-600">
+                          {a.type === "td" || a.type === "tp" ? "Validé par le professeur" : "Fait"}
+                        </Badge>
+                      )}
                     </div>
                     <CardTitle className="text-lg">{a.title}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       À rendre le {dueDate.toLocaleDateString("fr-FR")}
                     </p>
                   </div>
-                  <CompletionToggle assignmentId={a.id} isCompleted={isCompleted} />
+                  <CompletionToggle assignmentId={a.id} isCompleted={isCompleted} type={a.type} />
                 </div>
               </CardHeader>
               {a.description && (

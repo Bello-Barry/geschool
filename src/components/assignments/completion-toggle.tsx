@@ -3,28 +3,40 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Check, X, Loader2 } from "lucide-react";
 
-export function CompletionToggle({ assignmentId, isCompleted: initial }: { assignmentId: string; isCompleted: boolean }) {
+interface CompletionToggleProps {
+  assignmentId: string;
+  isCompleted: boolean;
+  type: "devoir_maison" | "td" | "tp";
+}
+
+export function CompletionToggle({ assignmentId, isCompleted: initial, type }: CompletionToggleProps) {
   const [isCompleted, setIsCompleted] = useState(initial);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const isTdTp = type === "td" || type === "tp";
 
   const toggle = async () => {
     setLoading(true);
     try {
-      if (isCompleted) {
-        const res = await fetch(`/api/assignments/${assignmentId}/completions`, { method: "DELETE" });
-        if (res.ok) setIsCompleted(false);
-      } else {
-        const res = await fetch(`/api/assignments/${assignmentId}/completions`, { method: "POST" });
-        if (res.ok) setIsCompleted(true);
-      }
+      const method = isCompleted ? "DELETE" : "POST";
+      const res = await fetch(`/api/assignments/${assignmentId}/completions`, { method });
+      if (res.ok) setIsCompleted(!isCompleted);
       router.refresh();
     } finally {
       setLoading(false);
     }
   };
+
+  if (isTdTp) {
+    return (
+      <Badge variant={isCompleted ? "default" : "outline"} className={`shrink-0 ${isCompleted ? "bg-green-600" : "text-muted-foreground"}`}>
+        {isCompleted ? "Validé par le professeur" : "En attente de validation"}
+      </Badge>
+    );
+  }
 
   return (
     <Button
@@ -35,7 +47,7 @@ export function CompletionToggle({ assignmentId, isCompleted: initial }: { assig
       className={`shrink-0 ${isCompleted ? "border-green-500 text-green-700" : ""}`}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : isCompleted ? (
         <><X className="h-4 w-4 mr-1" /> Annuler</>
       ) : (

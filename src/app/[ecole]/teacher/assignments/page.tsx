@@ -5,7 +5,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Check } from "lucide-react";
 
 const typeLabels: Record<string, string> = {
   devoir_maison: "Devoir maison",
@@ -103,15 +103,27 @@ export default async function TeacherAssignmentsPage({ params }: { params: Promi
                     {subjectName} — {className} • échéance {new Date(a.due_date).toLocaleDateString("fr-FR")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {doneCount} élève{doneCount > 1 ? "s" : ""} ont coché "fait"
+                    {a.type === "td" || a.type === "tp"
+                      ? `${doneCount} élève${doneCount > 1 ? "s" : ""} validé${doneCount > 1 ? "s" : ""}`
+                      : `${doneCount} élève${doneCount > 1 ? "s" : ""} ont coché "fait"`}
                   </p>
                 </div>
-                <Button asChild variant="outline" size="sm" className="ml-4 shrink-0">
-                  <Link href={`/${slug}/teacher/assignments/${a.id}/edit`}>
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Modifier
-                  </Link>
-                </Button>
+                <div className="flex gap-2 ml-4 shrink-0">
+                  {(a.type === "td" || a.type === "tp") && (
+                    <Button asChild variant="secondary" size="sm">
+                      <Link href={`/${slug}/teacher/assignments/${a.id}`}>
+                        <Check className="h-3 w-3 mr-1" />
+                        Élèves
+                      </Link>
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/${slug}/teacher/assignments/${a.id}/edit`}>
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Modifier
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
