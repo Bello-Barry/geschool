@@ -17,7 +17,7 @@ const studentSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -35,7 +35,10 @@ export async function GET() {
   }
 
   try {
-    const { data: students, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const classId = searchParams.get("class_id");
+
+    let query = supabase
       .from("students")
       .select(`
         *,
@@ -44,9 +47,15 @@ export async function GET() {
       `)
       .eq("school_id", schoolId);
 
+    if (classId) {
+      query = query.eq("class_id", classId);
+    }
+
+    const { data: students, error } = await query;
+
     if (error) throw error;
 
-    return NextResponse.json(students);
+    return NextResponse.json({ data: students });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to fetch students" }, { status: 500 });

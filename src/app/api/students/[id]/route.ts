@@ -14,6 +14,29 @@ const updateSchema = z.object({
   gender: z.enum(["M", "F"]).optional(),
 });
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const id = (await params).id;
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: student, error } = await supabase
+    .from("students")
+    .select(`
+      *,
+      user:user_id(*),
+      class:class_id(*)
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ data: student });
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
