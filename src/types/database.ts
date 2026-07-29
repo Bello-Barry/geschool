@@ -382,7 +382,7 @@ export type Database = {
           subject_id: string;
           class_id: string;
           term_id: string | null;
-          type: 'devoir_maison' | 'td' | 'tp';
+          type: 'devoir_maison';
           title: string;
           description: string;
           due_date: string;
@@ -397,7 +397,7 @@ export type Database = {
           subject_id: string;
           class_id: string;
           term_id?: string | null;
-          type: 'devoir_maison' | 'td' | 'tp';
+          type: 'devoir_maison';
           title: string;
           description?: string;
           due_date: string;
@@ -412,13 +412,112 @@ export type Database = {
           subject_id?: string;
           class_id?: string;
           term_id?: string | null;
-          type?: 'devoir_maison' | 'td' | 'tp';
+          type?: 'devoir_maison';
           title?: string;
           description?: string;
           due_date?: string;
           status?: string;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      td_sessions: {
+        Row: {
+          id: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id: string | null;
+          type: 'td' | 'tp';
+          title: string;
+          session_date: string;
+          description: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          term_id?: string | null;
+          type?: 'td' | 'tp';
+          title: string;
+          session_date: string;
+          description?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          teacher_id?: string;
+          subject_id?: string;
+          class_id?: string;
+          term_id?: string | null;
+          type?: 'td' | 'tp';
+          title?: string;
+          session_date?: string;
+          description?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      td_materials: {
+        Row: {
+          id: string;
+          td_session_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          td_session_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          td_session_id?: string;
+          file_name?: string;
+          file_type?: string;
+          file_size?: number;
+          storage_path?: string;
+          created_at?: string;
+        };
+      };
+      td_attendance: {
+        Row: {
+          id: string;
+          td_session_id: string;
+          student_id: string;
+          status: 'present' | 'absent';
+          marked_at: string;
+        };
+        Insert: {
+          id?: string;
+          td_session_id: string;
+          student_id: string;
+          status: 'present' | 'absent';
+          marked_at?: string;
+        };
+        Update: {
+          id?: string;
+          td_session_id?: string;
+          student_id?: string;
+          status?: 'present' | 'absent';
+          marked_at?: string;
         };
       };
       assignment_attachments: {
@@ -468,6 +567,126 @@ export type Database = {
           assignment_id?: string;
           student_id?: string;
           completed_at?: string;
+        };
+      };
+      payments: {
+        Row: {
+          id: string;
+          student_id: string;
+          school_id: string;
+          academic_year_id: string | null;
+          amount: number;
+          payment_date: string;
+          payment_method: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
+          reference_number: string | null;
+          notes: string | null;
+          status: 'pending' | 'confirmed' | 'rejected';
+          declared_by: string | null;
+          confirmed_by: string | null;
+          confirmed_at: string | null;
+          receipt_pdf_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          school_id: string;
+          academic_year_id?: string | null;
+          amount: number;
+          payment_date: string;
+          payment_method?: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
+          reference_number?: string | null;
+          notes?: string | null;
+          status?: 'pending' | 'confirmed' | 'rejected';
+          declared_by?: string | null;
+          confirmed_by?: string | null;
+          confirmed_at?: string | null;
+          receipt_pdf_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          school_id?: string;
+          academic_year_id?: string | null;
+          amount?: number;
+          payment_date?: string;
+          payment_method?: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
+          reference_number?: string | null;
+          notes?: string | null;
+          status?: 'pending' | 'confirmed' | 'rejected';
+          declared_by?: string | null;
+          confirmed_by?: string | null;
+          confirmed_at?: string | null;
+          receipt_pdf_url?: string | null;
+          created_at?: string;
+        };
+      };
+      tuition_fees: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_id: string | null;
+          academic_year_id: string | null;
+          amount: number;
+          description: string | null;
+          due_date: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_id?: string | null;
+          academic_year_id?: string | null;
+          amount: number;
+          description?: string | null;
+          due_date?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_id?: string | null;
+          academic_year_id?: string | null;
+          amount?: number;
+          description?: string | null;
+          due_date?: string | null;
+          created_at?: string;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          school_id: string;
+          title: string;
+          message: string;
+          type: 'info' | 'warning' | 'success' | 'error';
+          is_read: boolean;
+          link: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          school_id: string;
+          title: string;
+          message: string;
+          type: 'info' | 'warning' | 'success' | 'error';
+          is_read?: boolean;
+          link?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          school_id?: string;
+          title?: string;
+          message?: string;
+          type?: 'info' | 'warning' | 'success' | 'error';
+          is_read?: boolean;
+          link?: string | null;
+          created_at?: string;
         };
       };
     Views: {
