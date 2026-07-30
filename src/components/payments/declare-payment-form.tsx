@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { formatCFA } from "@/lib/utils/formatters"
 import { Loader2, HandCoins } from "lucide-react"
 import { toast } from "sonner"
 

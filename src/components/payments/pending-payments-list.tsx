@@ -3,9 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { formatCFA, formatDate } from "@/lib/utils/formatters"
-import { CheckCircle, XCircle, Loader2, Receipt } from "lucide-react"
+import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface PendingPayment {

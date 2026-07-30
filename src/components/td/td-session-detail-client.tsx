@@ -4,18 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Upload, Check, X } from "lucide-react";
+import { ArrowLeft, Loader2, Check, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface Attendance {
   student_id: string;
@@ -32,7 +22,6 @@ interface Props {
 }
 
 export function TdSessionDetailClient({ sessionId }: Props) {
-  const router = useRouter();
   const [session, setSession] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<Record<string, "present" | "absent">>({});

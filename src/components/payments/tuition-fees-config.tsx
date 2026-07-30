@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { formatCFA } from "@/lib/utils/formatters"
 import { Save, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -29,17 +28,16 @@ interface Props {
   classes: ClassInfo[]
   fees: TuitionFee[]
   academicYearId: string
-  slug: string
 }
 
-export default function TuitionFeesConfig({ classes, fees, academicYearId, slug }: Props) {
+export default function TuitionFeesConfig({ classes, fees, academicYearId }: Props) {
   const [config, setConfig] = useState<Record<string, { amount: string; dueDate: string }>>(() => {
     const initial: Record<string, { amount: string; dueDate: string }> = {}
     for (const cls of classes) {
       const existing = fees.find((f) => f.class_id === cls.id)
       initial[cls.id] = {
         amount: existing ? existing.amount.toString() : "",
-        dueDate: existing?.due_date ? existing.due_date.split("T")[0] : "",
+        dueDate: existing ? existing.due_date?.split("T")[0] ?? "" : "",
       }
     }
     return initial
@@ -115,7 +113,7 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId, slug 
                       onChange={(e) =>
                         setConfig((prev) => ({
                           ...prev,
-                          [cls.id]: { ...prev[cls.id], amount: e.target.value },
+                          [cls.id]: { amount: e.target.value, dueDate: prev[cls.id]?.dueDate ?? "" },
                         }))
                       }
                     />
@@ -130,7 +128,7 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId, slug 
                       onChange={(e) =>
                         setConfig((prev) => ({
                           ...prev,
-                          [cls.id]: { ...prev[cls.id], dueDate: e.target.value },
+                          [cls.id]: { amount: prev[cls.id]?.amount ?? "", dueDate: e.target.value },
                         }))
                       }
                     />

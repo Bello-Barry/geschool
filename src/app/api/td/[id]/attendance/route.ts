@@ -8,7 +8,7 @@ const attendanceSchema = z.object({
   status: z.enum(["present", "absent"]),
 });
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();

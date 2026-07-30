@@ -141,7 +141,6 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
           classes={classes}
           fees={fees || []}
           academicYearId={currentAY.id}
-          slug={slug}
         />
       )}
 

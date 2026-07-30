@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const classId = searchParams.get("class_id");
   const teacherId = searchParams.get("teacher_id");
-  const status = searchParams.get("status");
   const studentIdParam = searchParams.get("student_id");
 
   const isStudentOrParent = user.role === "student" || user.role === "parent";

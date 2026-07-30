@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const storagePath = `${tdRec.school_id}/td-materials/${id}/${fileName}`;
 
-    const { data: upload, error: uploadError } = await adminClient.storage
+    const { error: uploadError } = await adminClient.storage
       .from("td-materials")
       .upload(storagePath, file, { upsert: false });
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Calendar, FileText } from "lucide-react";
-import Link from "next/link";
 
 interface TdSession {
   id: string;
@@ -36,7 +35,7 @@ export function TdStudentSessionsClient() {
     if (!session.attendance || session.attendance.length === 0) {
       return <Badge variant="outline">Pas encore marqué</Badge>;
     }
-    const a = session.attendance[0];
+    const a = session.attendance[0]!;
     if (a.status === "present") return <Badge className="bg-green-100 text-green-800">Présent</Badge>;
     return <Badge className="bg-red-100 text-red-800">Absent</Badge>;
   };

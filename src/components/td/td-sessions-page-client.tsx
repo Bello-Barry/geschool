@@ -4,9 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Eye, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,14 +48,11 @@ interface TdSession {
 }
 
 interface Props {
-  teacherId?: string;
-  schoolId?: string;
   classes: { id: string; name: string }[];
   subjects: { id: string; name: string }[];
 }
 
-export function TdSessionsPageClient({ teacherId, schoolId, classes, subjects }: Props) {
-  const router = useRouter();
+export function TdSessionsPageClient({ classes, subjects }: Props) {
   const [sessions, setSessions] = useState<TdSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
