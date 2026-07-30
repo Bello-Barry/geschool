@@ -90,8 +90,9 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
   let totalDue = 0;
   if (students) {
     for (const s of students as any[]) {
-      if (s.class?.id && feeByClass[s.class.id]) {
-        totalDue += feeByClass[s.class.id].amount;
+      const fee = s.class?.id ? feeByClass[s.class.id] : undefined;
+      if (fee) {
+        totalDue += fee.amount;
       }
     }
   }
