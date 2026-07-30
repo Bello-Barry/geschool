@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Save, Loader2 } from "lucide-react"
+import { Save, Loader2, Landmark } from "lucide-react"
 import { toast } from "sonner"
+import { formatCFA } from "@/lib/utils/formatters"
 
 interface ClassInfo {
   id: string
@@ -70,7 +71,7 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
         throw new Error(err.error || "Erreur")
       }
 
-      toast.success("Frais enregistrés")
+      toast.success("Frais enregistrés pour " + (classes.find(c => c.id === classId)?.name || ""))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement")
     } finally {
@@ -78,33 +79,57 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
     }
   }
 
+  if (classes.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Frais de scolarité</CardTitle>
+          <CardDescription>Aucune classe configurée pour cette année scolaire.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <Landmark className="mx-auto h-10 w-10 mb-2 text-muted-foreground/40" />
+            <p>Créez d'abord des classes dans la section dédiée.</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Frais de scolarité par classe</CardTitle>
-        <CardDescription>
-          Définissez le montant mensuel et la date limite pour chaque classe.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {classes.map((cls) => {
-            const isSaving = saving[cls.id] || false
-            return (
-              <div
-                key={cls.id}
-                className="flex items-center gap-4 rounded-lg border p-4"
-              >
-                <div className="w-32 shrink-0">
+    <div className="space-y-6">
+      {classes.map((cls) => {
+        const isSaving = saving[cls.id] || false
+        return (
+          <Card key={cls.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-sm px-3 py-1">
                     {cls.name}
                   </Badge>
                 </div>
-                <div className="flex-1 grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Montant mensuel (FCFA)
-                    </label>
+                <Button
+                  size="sm"
+                  onClick={() => saveFee(cls.id)}
+                  disabled={isSaving || !config[cls.id]?.amount}
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-1" />
+                  )}
+                  Enregistrer
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1.5 block">
+                    Montant mensuel
+                  </label>
+                  <div className="relative">
                     <Input
                       type="number"
                       min="0"
@@ -116,45 +141,41 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
                           [cls.id]: { amount: e.target.value, dueDate: prev[cls.id]?.dueDate ?? "" },
                         }))
                       }
+                      className="pr-16"
                     />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">
-                      Date limite
-                    </label>
-                    <Input
-                      type="date"
-                      value={config[cls.id]?.dueDate || ""}
-                      onChange={(e) =>
-                        setConfig((prev) => ({
-                          ...prev,
-                          [cls.id]: { amount: prev[cls.id]?.amount ?? "", dueDate: e.target.value },
-                        }))
-                      }
-                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground pointer-events-none">
+                      FCFA
+                    </span>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => saveFee(cls.id)}
-                  disabled={isSaving || !config[cls.id]?.amount}
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                </Button>
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1.5 block">
+                    Date limite
+                  </label>
+                  <Input
+                    type="date"
+                    value={config[cls.id]?.dueDate || ""}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        [cls.id]: { amount: prev[cls.id]?.amount ?? "", dueDate: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
               </div>
-            )
-          })}
-          {classes.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">
-              Aucune classe configurée.
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+              {config[cls.id]?.amount && (
+                <p className="text-xs text-muted-foreground mt-3">
+                  Montant configuré : <span className="font-semibold">{formatCFA(Number(config[cls.id].amount))}</span>
+                  {config[cls.id]?.dueDate && (
+                    <> — Date limite : <span className="font-semibold">{new Date(config[cls.id].dueDate + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
+                  )}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
   )
 }

@@ -12,10 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingUp, Users, Receipt } from "lucide-react";
+import { DollarSign, TrendingUp, Receipt, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { formatCFA, formatDate } from "@/lib/utils/formatters";
-import TuitionFeesConfig from "@/components/payments/tuition-fees-config";
 import PendingPaymentsList from "@/components/payments/pending-payments-list";
 
 export default async function AdminPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
@@ -26,33 +25,6 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
   const supabaseAdmin = createAdminClient();
   const schoolId = auth.schoolId;
 
-  // Get current academic year
-  const { data: currentAY } = await supabaseAdmin
-    .from("academic_years")
-    .select("id, name")
-    .eq("school_id", schoolId)
-    .eq("is_current", true)
-    .maybeSingle();
-
-  // Get all classes
-  const { data: classes } = await supabaseAdmin
-    .from("classes")
-    .select("id, name")
-    .eq("school_id", schoolId)
-    .order("name");
-
-  // Get existing tuition fees for current year
-  const { data: fees } = await supabaseAdmin
-    .from("tuition_fees")
-    .select(`
-      *,
-      class:class_id(id, name),
-      academic_year:academic_year_id(id, name)
-    `)
-    .eq("school_id", schoolId)
-    .eq("academic_year_id", currentAY?.id);
-
-  // Get pending payments (declarations)
   const { data: pendingPayments } = await supabaseAdmin
     .from("payments")
     .select(`
@@ -66,7 +38,6 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  // Get recent transactions (confirmed/rejected)
   const { data: recentPayments } = await supabaseAdmin
     .from("payments")
     .select(`
@@ -99,8 +70,14 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestion Financière</h1>
-          <p className="text-muted-foreground">Frais de scolarité, déclarations et paiements.</p>
+          <p className="text-muted-foreground">Suivez les paiements et validez les déclarations.</p>
         </div>
+        <Button variant="outline" asChild>
+          <Link href={`/${slug}/admin/payments/fees`}>
+            <Settings2 className="mr-2 h-4 w-4" />
+            Configurer les frais de scolarité
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -127,7 +104,7 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-            <Users className="h-4 w-4 text-red-600" />
+            <Receipt className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{recentPayments?.length || 0}</div>
@@ -135,14 +112,6 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
           </CardContent>
         </Card>
       </div>
-
-      {currentAY && classes && (
-        <TuitionFeesConfig
-          classes={classes}
-          fees={fees || []}
-          academicYearId={currentAY.id}
-        />
-      )}
 
       <PendingPaymentsList initialPayments={pendingPayments || []} />
 
