@@ -166,9 +166,9 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
               </div>
               {config[cls.id]?.amount && (
                 <p className="text-xs text-muted-foreground mt-3">
-                  Montant configuré : <span className="font-semibold">{formatCFA(Number(config[cls.id].amount))}</span>
+                  Montant configuré : <span className="font-semibold">{formatCFA(Number(config[cls.id]?.amount || 0))}</span>
                   {config[cls.id]?.dueDate && (
-                    <> — Date limite : <span className="font-semibold">{new Date(config[cls.id].dueDate + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
+                    <> — Date limite : <span className="font-semibold">{new Date((config[cls.id]?.dueDate || "") + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
                   )}
                 </p>
               )}
