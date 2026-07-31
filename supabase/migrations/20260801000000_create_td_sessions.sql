@@ -1,9 +1,10 @@
--- Migration: Create TD/TP sessions (replaces old td/tp in assignments)
--- Dependencies: assignments table already exists with td/tp data
--- Dependencies: schools, teachers, subjects, classes, students, terms
+-- Chantier 17: Migrate existing td/tp from assignments to td_sessions
+-- NOTE: Tables (td_sessions, td_materials, td_attendance), RLS policies, indexes,
+-- triggers, and storage bucket were already created manually.
+-- This migration only handles data migration + constraint updates.
 
--- 1. TD SESSIONS TABLE
-CREATE TABLE td_sessions (
+-- 1. Ensure tables exist (in case this runs on a fresh DB)
+CREATE TABLE IF NOT EXISTS td_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   school_id UUID REFERENCES schools(id) NOT NULL,
   teacher_id UUID REFERENCES teachers(id) NOT NULL,
@@ -19,8 +20,7 @@ CREATE TABLE td_sessions (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. TD MATERIALS (exercises/PDFs uploaded by teacher)
-CREATE TABLE td_materials (
+CREATE TABLE IF NOT EXISTS td_materials (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   td_session_id UUID REFERENCES td_sessions(id) ON DELETE CASCADE NOT NULL,
   file_name TEXT NOT NULL,
@@ -30,8 +30,7 @@ CREATE TABLE td_materials (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. TD ATTENDANCE (present/absent per student)
-CREATE TABLE td_attendance (
+CREATE TABLE IF NOT EXISTS td_attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   td_session_id UUID REFERENCES td_sessions(id) ON DELETE CASCADE NOT NULL,
   student_id UUID REFERENCES students(id) ON DELETE CASCADE NOT NULL,
@@ -40,26 +39,34 @@ CREATE TABLE td_attendance (
   UNIQUE(td_session_id, student_id)
 );
 
--- 4. INDEXES
-CREATE INDEX idx_td_sessions_class ON td_sessions(class_id, status, session_date);
-CREATE INDEX idx_td_sessions_teacher ON td_sessions(teacher_id);
-CREATE INDEX idx_td_sessions_school ON td_sessions(school_id);
-CREATE INDEX idx_td_materials_session ON td_materials(td_session_id);
-CREATE INDEX idx_td_attendance_session ON td_attendance(td_session_id);
-CREATE INDEX idx_td_attendance_student ON td_attendance(student_id);
+-- 2. Indexes (IF NOT EXISTS for each)
+CREATE INDEX IF NOT EXISTS idx_td_sessions_class ON td_sessions(class_id, status, session_date);
+CREATE INDEX IF NOT EXISTS idx_td_sessions_teacher ON td_sessions(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_td_sessions_school ON td_sessions(school_id);
+CREATE INDEX IF NOT EXISTS idx_td_materials_session ON td_materials(td_session_id);
+CREATE INDEX IF NOT EXISTS idx_td_attendance_session ON td_attendance(td_session_id);
+CREATE INDEX IF NOT EXISTS idx_td_attendance_student ON td_attendance(student_id);
 
--- 5. UPDATED_AT TRIGGER
-CREATE TRIGGER update_td_sessions_updated_at
-  BEFORE UPDATE ON td_sessions
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- 3. Trigger (IF NOT EXISTS)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_td_sessions_updated_at'
+  ) THEN
+    CREATE TRIGGER update_td_sessions_updated_at
+      BEFORE UPDATE ON td_sessions
+      FOR EACH ROW
+      EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
--- 6. ROW LEVEL SECURITY
+-- 4. RLS (idempotent: drop existing then recreate)
 ALTER TABLE td_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE td_materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE td_attendance ENABLE ROW LEVEL SECURITY;
 
--- td_sessions SELECT: admin (all), teacher (own), student (published, own class), parent (published, child's class)
+-- td_sessions SELECT
+DROP POLICY IF EXISTS "td_sessions_select" ON td_sessions;
 CREATE POLICY "td_sessions_select" ON td_sessions FOR SELECT TO authenticated
 USING (
   private.is_school_admin(school_id)
@@ -80,7 +87,8 @@ USING (
   )
 );
 
--- td_sessions INSERT: teacher must be assigned to this subject+class, or admin
+-- td_sessions INSERT
+DROP POLICY IF EXISTS "td_sessions_insert" ON td_sessions;
 CREATE POLICY "td_sessions_insert" ON td_sessions FOR INSERT TO authenticated
 WITH CHECK (
   private.is_school_admin(school_id)
@@ -92,21 +100,24 @@ WITH CHECK (
   )
 );
 
--- td_sessions UPDATE: owner teacher or school admin
+-- td_sessions UPDATE
+DROP POLICY IF EXISTS "td_sessions_update" ON td_sessions;
 CREATE POLICY "td_sessions_update" ON td_sessions FOR UPDATE TO authenticated
 USING (
   private.is_school_admin(school_id)
   OR teacher_id = (SELECT id FROM teachers WHERE user_id = auth.uid())
 );
 
--- td_sessions DELETE: owner teacher or school admin
+-- td_sessions DELETE
+DROP POLICY IF EXISTS "td_sessions_delete" ON td_sessions;
 CREATE POLICY "td_sessions_delete" ON td_sessions FOR DELETE TO authenticated
 USING (
   private.is_school_admin(school_id)
   OR teacher_id = (SELECT id FROM teachers WHERE user_id = auth.uid())
 );
 
--- td_materials SELECT: admin, teacher (own), student (published session in their class)
+-- td_materials SELECT
+DROP POLICY IF EXISTS "td_materials_select" ON td_materials;
 CREATE POLICY "td_materials_select" ON td_materials FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -122,7 +133,8 @@ USING (
   )
 );
 
--- td_materials INSERT: teacher owner or admin
+-- td_materials INSERT
+DROP POLICY IF EXISTS "td_materials_insert" ON td_materials;
 CREATE POLICY "td_materials_insert" ON td_materials FOR INSERT TO authenticated
 WITH CHECK (
   EXISTS (
@@ -134,7 +146,8 @@ WITH CHECK (
   )
 );
 
--- td_materials DELETE: teacher owner or admin
+-- td_materials DELETE
+DROP POLICY IF EXISTS "td_materials_delete" ON td_materials;
 CREATE POLICY "td_materials_delete" ON td_materials FOR DELETE TO authenticated
 USING (
   EXISTS (
@@ -146,7 +159,8 @@ USING (
   )
 );
 
--- td_attendance SELECT: admin (all), teacher (own sessions), parent (own children only)
+-- td_attendance SELECT
+DROP POLICY IF EXISTS "td_attendance_select" ON td_attendance;
 CREATE POLICY "td_attendance_select" ON td_attendance FOR SELECT TO authenticated
 USING (
   private.is_school_admin((SELECT school_id FROM td_sessions WHERE id = td_session_id))
@@ -162,7 +176,8 @@ USING (
   )
 );
 
--- td_attendance INSERT/UPDATE: ONLY the teacher owner of the session (never the student)
+-- td_attendance INSERT
+DROP POLICY IF EXISTS "td_attendance_insert" ON td_attendance;
 CREATE POLICY "td_attendance_insert" ON td_attendance FOR INSERT TO authenticated
 WITH CHECK (
   EXISTS (
@@ -172,6 +187,8 @@ WITH CHECK (
   )
 );
 
+-- td_attendance UPDATE
+DROP POLICY IF EXISTS "td_attendance_update" ON td_attendance;
 CREATE POLICY "td_attendance_update" ON td_attendance FOR UPDATE TO authenticated
 USING (
   EXISTS (
@@ -181,6 +198,8 @@ USING (
   )
 );
 
+-- td_attendance DELETE
+DROP POLICY IF EXISTS "td_attendance_delete" ON td_attendance;
 CREATE POLICY "td_attendance_delete" ON td_attendance FOR DELETE TO authenticated
 USING (
   EXISTS (
@@ -190,7 +209,7 @@ USING (
   )
 );
 
--- 7. STORAGE BUCKET for td materials
+-- 5. Storage bucket (idempotent)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'td-materials',
@@ -201,23 +220,25 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Storage policies
+DROP POLICY IF EXISTS "td_materials_upload" ON storage.objects;
 CREATE POLICY "td_materials_upload" ON storage.objects
 FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'td-materials');
 
+DROP POLICY IF EXISTS "td_materials_download" ON storage.objects;
 CREATE POLICY "td_materials_download" ON storage.objects
 FOR SELECT TO authenticated
 USING (bucket_id = 'td-materials');
 
--- 8. MIGRATE EXISTING td/tp FROM ASSIGNMENTS
--- Migrate existing td/tp assignments to td_sessions
-INSERT INTO td_sessions (id, school_id, teacher_id, subject_id, class_id, term_id, type, title, session_date, description, status, created_at, updated_at)
-SELECT id, school_id, teacher_id, subject_id, class_id, term_id, type, title, due_date, description, status, created_at, updated_at
-FROM assignments
-WHERE type IN ('td', 'tp')
-ON CONFLICT (id) DO NOTHING;
+-- 6. Migrate existing td/tp from assignments to td_sessions
+-- Order matters: DELETE old rows BEFORE updating constraint (existing td/tp violate new CHECK)
 
--- Migrate attachments
+-- First migrate completions data (will be deleted after migration)
+DELETE FROM assignment_completions
+WHERE assignment_id IN (SELECT id FROM assignments WHERE type IN ('td', 'tp'));
+
+-- Migrate materials to td_materials
 INSERT INTO td_materials (td_session_id, file_name, file_type, file_size, storage_path, created_at)
 SELECT aa.assignment_id, aa.file_name, aa.file_type, aa.file_size, aa.storage_path, aa.created_at
 FROM assignment_attachments aa
@@ -225,16 +246,20 @@ JOIN assignments a ON a.id = aa.assignment_id
 WHERE a.type IN ('td', 'tp')
 ON CONFLICT DO NOTHING;
 
--- 9. Remove td/tp from assignments CHECK constraint
--- First drop old constraint, add new one
+-- Delete old attachments (materials now in td_materials)
+DELETE FROM assignment_attachments
+WHERE assignment_id IN (SELECT id FROM assignments WHERE type IN ('td', 'tp'));
+
+-- Migrate sessions to td_sessions
+INSERT INTO td_sessions (id, school_id, teacher_id, subject_id, class_id, term_id, type, title, session_date, description, status, created_at, updated_at)
+SELECT id, school_id, teacher_id, subject_id, class_id, term_id, type, title, due_date, description, status, created_at, updated_at
+FROM assignments
+WHERE type IN ('td', 'tp')
+ON CONFLICT (id) DO NOTHING;
+
+-- Delete old td/tp from assignments (now in td_sessions)
+DELETE FROM assignments WHERE type IN ('td', 'tp');
+
+-- 7. Update assignments type constraint (safe now because no td/tp rows remain)
 ALTER TABLE assignments DROP CONSTRAINT IF EXISTS assignments_type_check;
 ALTER TABLE assignments ADD CONSTRAINT assignments_type_check CHECK (type IN ('devoir_maison'));
-
--- 10. Clean up: remove old td/tp assignments (data now in td_sessions)
-DELETE FROM assignment_attachments
-WHERE assignment_id IN (SELECT id FROM assignments WHERE type = 'td' OR type = 'tp');
-
-DELETE FROM assignment_completions
-WHERE assignment_id IN (SELECT id FROM assignments WHERE type = 'td' OR type = 'tp');
-
-DELETE FROM assignments WHERE type IN ('td', 'tp');

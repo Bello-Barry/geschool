@@ -1,6 +1,8 @@
--- Chantier 18: Paiements de scolarite - flux manuel (declaration parent -> validation admin -> recu)
+-- Chantier 18: Paiements de scolarité - flux manuel (déclaration parent -> validation admin -> reçu)
+-- NOTE: Most columns and RLS policies were already applied manually.
+-- This migration is idempotent and will only add missing pieces.
 
--- Add columns to payments table
+-- 1. Add columns to payments table (IF NOT EXISTS)
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'
   CHECK (status IN ('pending', 'confirmed', 'rejected'));
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS declared_by UUID REFERENCES users(id);
@@ -10,13 +12,15 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_pdf_url TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method TEXT
   CHECK (payment_method IN ('cash', 'mobile_money', 'bank_transfer', 'check'));
 
--- Add due_date to tuition_fees
+-- 2. Add due_date to tuition_fees (IF NOT EXISTS)
 ALTER TABLE tuition_fees ADD COLUMN IF NOT EXISTS due_date DATE;
 
--- Receipt bucket
+-- 3. Receipt bucket (idempotent)
 INSERT INTO storage.buckets (id, name, public, allowed_mime_types)
 VALUES ('receipts', 'receipts', false, ARRAY['application/pdf'])
 ON CONFLICT (id) DO NOTHING;
+
+-- 4. RLS policies (idempotent: drop then create)
 
 -- RLS: parents can INSERT payments (declare)
 DROP POLICY IF EXISTS "payments_parent_insert" ON payments;

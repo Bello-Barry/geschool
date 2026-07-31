@@ -25,13 +25,21 @@ async function createEntity(page: any, url: string, data: any) {
 }
 
 async function loginAs(page: any, email: string, password: string, schoolSlug: string) {
+  // Navigate to login page first (stabilizes page context), then clear state
+  await page.goto(`http://localhost:3000/${schoolSlug}/login`, { waitUntil: "load" });
+  await page.waitForTimeout(500);
   await page.evaluate(() => { localStorage.clear(); });
   await page.context().clearCookies();
   await page.goto(`http://localhost:3000/${schoolSlug}/login`, { waitUntil: "load" });
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForTimeout(5000);
+  // Wait for redirect chain to complete: login → /school → /school/dashboard
+  await page.waitForURL(
+    (url: URL) => /^\/(?:[^\/]+)\/(?:admin|teacher|parent|student)/.test(url.pathname),
+    { timeout: 30000 }
+  );
+  await page.waitForTimeout(2000);
 }
 
 async function setupSchool(page: any, rand: string, label: string) {
@@ -207,9 +215,9 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
 
     // Fill form
     // Select child
-    await page.click('button:has-text("Sélectionnez un enfant")');
+    await page.locator('[role="combobox"]').first().click();
     await page.waitForTimeout(500);
-    await page.click(`text=Bob Pay`);
+    await page.getByRole('option', { name: /Bob Pay/ }).click();
     await page.waitForTimeout(500);
 
     // Fill amount
@@ -217,16 +225,17 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     await amountInput.fill('30000');
 
     // Select payment method
-    await page.locator('button:has-text("Espèces")').first().click();
+    await page.locator('[role="combobox"]').nth(1).click();
     await page.waitForTimeout(500);
-    await page.click('text=Mobile Money');
+    await page.getByRole('option', { name: /Mobile Money/ }).click();
 
     // Submit
     await page.click('text=Déclarer le paiement');
-    await page.waitForTimeout(3000);
+    // Page reloads after successful declaration
+    await page.waitForTimeout(5000);
 
-    // Should see success toast
-    await expect(page.locator("text=En attente de validation").first()).toBeVisible({ timeout: 5000 });
+    // Should see the payment in the history table with "En attente" status
+    await expect(page.locator("text=En attente").first()).toBeVisible({ timeout: 5000 });
 
     // Verify via API that payment is pending
     const { data: payments } = await supabaseAdmin
@@ -280,19 +289,21 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     await page.waitForTimeout(2000);
     await page.click('text=J\'ai payé');
     await page.waitForTimeout(1000);
-    await page.click('button:has-text("Sélectionnez un enfant")');
+    await page.locator('[role="combobox"]').first().click();
     await page.waitForTimeout(500);
-    await page.click(`text=Claire Valid`);
+    await page.getByRole('option', { name: /Claire Valid/ }).click();
     await page.waitForTimeout(500);
     const amountInput = page.locator('#amount');
     await amountInput.fill('25000');
-    await page.locator('button:has-text("Espèces")').first().click();
+    await page.locator('[role="combobox"]').nth(1).click();
     await page.waitForTimeout(500);
-    await page.click('text=Espèces');
+    await page.getByRole('option', { name: /Espèces/ }).click();
     await page.click('text=Déclarer le paiement');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle', { timeout: 20000 });
+    await page.waitForTimeout(1000);
 
-    // Get the payment ID
+    // Get the payment ID from DB
     const { data: pending } = await supabaseAdmin
       .from("payments")
       .select("id")
@@ -302,23 +313,14 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     expect(pending).not.toBeNull();
     const paymentId = pending!.id;
 
-    // Admin validates via API (using admin client directly for reliability)
-    const validateRes = await page.evaluate(
-      async (pid) => {
-        const r = await fetch(`/api/payments/${pid}/validate`, { method: "POST" });
-        if (!r.ok) {
-          const err = await r.json();
-          throw new Error(err.error || "Validation failed");
-        }
-        return await r.json();
-      },
-      paymentId
-    );
+    // Login as admin to call validate API
+    await loginAs(page, ADMIN_EMAIL, "Test123!", SCHOOL);
+    const validateResp = await page.request.post(`/api/payments/${paymentId}/validate`);
+    expect(validateResp.ok()).toBeTruthy();
+    const validateRes = await validateResp.json();
     expect(validateRes).not.toBeNull();
     expect(validateRes.status).toBe("confirmed");
     expect(validateRes.confirmed_by).toBeDefined();
-
-    // Verify receipt_pdf_url is set
     expect(validateRes.receipt_pdf_url).toBeTruthy();
 
     // Verify receipt PDF exists in storage
@@ -327,35 +329,27 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
       .download(validateRes.receipt_pdf_url);
     expect(fileData).not.toBeNull();
     const pdfBytes = await fileData!.arrayBuffer();
-    expect(pdfBytes.byteLength).toBeGreaterThan(1000); // Non-empty PDF
+    expect(pdfBytes.byteLength).toBeGreaterThan(1000);
 
     // Login as parent and check status
     await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
     await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "networkidle" });
     await page.waitForTimeout(2000);
-
-    // Should see "Confirmé" status badge
     await expect(page.locator("text=Confirmé").first()).toBeVisible({ timeout: 5000 });
-    // Should see Télécharger link
     await expect(page.locator('a:has-text("Télécharger")').first()).toBeVisible({ timeout: 5000 });
 
-    // Verify the receipt download returns non-empty PDF
-    const downloadUrl = `/api/payments/${paymentId}/receipt`;
-    const receiptRes = await page.evaluate(async (url) => {
-      const r = await fetch(url);
-      if (!r.ok) return { ok: false, error: r.status };
-      const blob = await r.blob();
-      return { ok: true, size: blob.size };
-    }, downloadUrl);
-    expect(receiptRes.ok).toBeTruthy();
-    expect(receiptRes.size).toBeGreaterThan(1000);
+    // Verify receipt download
+    const receiptRes = await page.request.get(`/api/payments/${paymentId}/receipt`);
+    expect(receiptRes.ok()).toBeTruthy();
+    const receiptBody = await receiptRes.body();
+    expect(receiptBody.byteLength).toBeGreaterThan(1000);
 
     console.log("✅ Test 3 passed: admin validated → receipt generated → parent downloads");
   });
 
   test("4: admin rejects payment → parent sees rejeté, no receipt", async ({ page }) => {
     const rand = Math.random().toString(36).slice(2, 8);
-    const { SCHOOL, academicYearId } = await setupSchool(page, rand, "4");
+    const { SCHOOL, ADMIN_EMAIL, academicYearId } = await setupSchool(page, rand, "4");
     const PARENT_EMAIL = `parent4-${rand}@test.com`;
     const STUDENT_EMAIL = `student4-${rand}@test.com`;
 
@@ -386,42 +380,27 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
       }
     );
 
-    // Parent declares payment
-    await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
-    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(2000);
-    await page.click('text=J\'ai payé');
-    await page.waitForTimeout(1000);
-    await page.click('button:has-text("Sélectionnez un enfant")');
-    await page.waitForTimeout(500);
-    await page.click(`text=David Reject`);
-    await page.waitForTimeout(500);
-    await page.locator('#amount').fill('20000');
-    await page.locator('button:has-text("Espèces")').first().click();
-    await page.waitForTimeout(500);
-    await page.click('text=Espèces');
-    await page.click('text=Déclarer le paiement');
-    await page.waitForTimeout(3000);
-
-    // Get the payment ID
-    const { data: pending } = await supabaseAdmin
+    // Create pending payment directly (declaration flow tested in Test 2)
+    const { data: pendingPay } = await supabaseAdmin
       .from("payments")
+      .insert({
+        student_id: studentData.id,
+        school_id: (await supabaseAdmin.from("schools").select("id").eq("subdomain", SCHOOL).single()).data!.id,
+        academic_year_id: academicYearId,
+        amount: 20000,
+        payment_method: "cash",
+        status: "pending",
+        payment_date: new Date().toISOString().split("T")[0],
+      })
       .select("id")
-      .eq("student_id", studentData.id)
-      .eq("status", "pending")
       .single();
-    expect(pending).not.toBeNull();
-    const paymentId = pending!.id;
+    expect(pendingPay).not.toBeNull();
+    const paymentId = pendingPay!.id;
 
-    // Admin rejects via API
-    const rejectRes = await page.evaluate(
-      async (pid) => {
-        const r = await fetch(`/api/payments/${pid}/reject`, { method: "POST" });
-        return { ok: r.ok };
-      },
-      paymentId
-    );
-    expect(rejectRes.ok).toBeTruthy();
+    // Admin rejects via API — login as admin first
+    await loginAs(page, ADMIN_EMAIL, "Test123!", SCHOOL);
+    const rejectRes = await page.request.post(`/api/payments/${paymentId}/reject`);
+    expect(rejectRes.ok()).toBeTruthy();
 
     // Verify in DB
     const { data: check } = await supabaseAdmin
@@ -526,7 +505,7 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
 
   test("6: security — inter-école isolation", async ({ page }) => {
     const rand = Math.random().toString(36).slice(2, 8);
-    const { SCHOOL: schoolA, academicYearId: ayA } = await setupSchool(page, rand, "6a");
+    const { SCHOOL: schoolA, ADMIN_EMAIL: ADMIN_A_EMAIL, academicYearId: ayA } = await setupSchool(page, rand, "6a");
     const SCHOOL_B = `pay6b-${rand}`;
     const ADMIN_B_EMAIL = `admin6b-${rand}@test.com`;
 
@@ -546,22 +525,29 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     const PARENT_EMAIL = `parent6-${rand}@test.com`;
     const STUDENT_EMAIL = `student6-${rand}@test.com`;
 
+    // Registering school B overwrites the auth session — re-auth as school A's admin
+    await loginAs(page, ADMIN_A_EMAIL, "Test123!", schoolA);
+
     // Create class + student + parent in school A only
     const classA = await createEntity(page, `${BASE}/api/classes`, {
       name: "6eme A", level: "6eme", academic_year_id: ayA,
     });
+    expect(classA).not.toBeNull();
     const studentA = await createEntity(page, `${BASE}/api/students`, {
       matricule: `STU-${rand}-a`, first_name: "Grace", last_name: "SchoolA",
       email: STUDENT_EMAIL, class_id: classA.id, password: "Test123!",
     });
-    await createEntity(page, `${BASE}/api/parents`, {
+    expect(studentA).not.toBeNull();
+    const parentRec = await createEntity(page, `${BASE}/api/parents`, {
       first_name: "Parent", last_name: "SchoolA", email: PARENT_EMAIL,
       student_ids: [studentA.id], password: "Test123!",
     });
+    expect(parentRec).not.toBeNull();
 
     // Login as parent in school A
     await loginAs(page, PARENT_EMAIL, "Test123!", schoolA);
-    await page.waitForTimeout(2000);
+    const urlAfterLogin = page.url();
+    expect(urlAfterLogin).toContain(`/${schoolA}/parent`);
 
     // Verify parent can see their own child's info
     await page.goto(`${BASE}/${schoolA}/parent/payments`, { waitUntil: "networkidle" });
