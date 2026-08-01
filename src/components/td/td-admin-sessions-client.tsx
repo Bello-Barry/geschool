@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,8 @@ interface TdSession {
 }
 
 export function TdAdminSessionsClient() {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [sessions, setSessions] = useState<TdSession[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,7 +82,7 @@ export function TdAdminSessionsClient() {
               </CardHeader>
               <CardContent>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/admin/td/${session.id}`}><Eye className="mr-1 h-4 w-4" />Détails</Link>
+                  <Link href={`/${ecole}/admin/td/${session.id}`}><Eye className="mr-1 h-4 w-4" />Détails</Link>
                 </Button>
               </CardContent>
             </Card>

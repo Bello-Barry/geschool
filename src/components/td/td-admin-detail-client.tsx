@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function TdAdminDetailClient({ sessionId }: Props) {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +44,7 @@ export function TdAdminDetailClient({ sessionId }: Props) {
     return (
       <div className="container mx-auto p-6">
         <p className="text-muted-foreground">Session introuvable</p>
-        <Button variant="outline" asChild><Link href="/admin/td"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link></Button>
+        <Button variant="outline" asChild><Link href={`/${ecole}/admin/td`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link></Button>
       </div>
     );
   }
@@ -52,7 +55,7 @@ export function TdAdminDetailClient({ sessionId }: Props) {
   return (
     <div className="container mx-auto p-6">
       <Button variant="ghost" asChild className="mb-4">
-        <Link href="/admin/td"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
+        <Link href={`/${ecole}/admin/td`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
       </Button>
 
       <div className="mb-6">

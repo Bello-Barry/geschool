@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
     *,
     subject:subject_id(name),
     class:class_id(name),
-    teacher:teacher_id(id, user:user_id(first_name, last_name))
+    teacher:teacher_id(id, user:user_id(first_name, last_name)),
+    materials:td_materials(id, file_name, file_type, file_size)
   `);
 
   if (user.role === "teacher") {
@@ -83,14 +84,14 @@ export async function GET(request: NextRequest) {
     const sessionIds = data.map(s => s.id);
     const { data: attendance } = await adminClient
       .from("td_attendance")
-      .select("td_session_id, status, marked_at")
+      .select("td_session_id, student_id, status, marked_at")
       .in("td_session_id", sessionIds)
       .eq("student_id", lookupStudentId);
 
     const attMap = new Map<string, any>();
     (attendance || []).forEach(a => {
       const arr = attMap.get(a.td_session_id) || [];
-      arr.push({ status: a.status, marked_at: a.marked_at });
+      arr.push({ student_id: a.student_id, status: a.status, marked_at: a.marked_at });
       attMap.set(a.td_session_id, arr);
     });
 

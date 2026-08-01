@@ -64,9 +64,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Messages", href: "/parent/messages", icon: "MessageSquare" },
     { label: "Assistant IA", href: "/parent/chatbot", icon: "Bot" },
     { label: "Programme", href: "/parent/programme", icon: "BookOpen" },
-    { label: "Devoirs", href: "/parent/children", icon: "ClipboardCheck" },
     { label: "TD/TP", href: "/parent/td", icon: "CalendarCheck" },
-    { label: "Cours", href: "/parent/children", icon: "BookOpen" },
     { label: "Emploi du temps", href: "/parent/schedule", icon: "CalendarRange" },
   ],
   student: [

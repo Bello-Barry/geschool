@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireTdManager } from "@/lib/utils/auth-utils";
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -25,7 +26,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     .select(`
       *,
       subject:subject_id(name),
-      class:class_id(name),
+      class:class_id(id, name),
       teacher:teacher_id(id, user:user_id(first_name, last_name)),
       materials:td_materials(*),
       attendance:td_attendance(student_id, status, marked_at)
@@ -40,9 +41,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const guard = await requireTdManager(id);
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   try {
     const body = await request.json();
@@ -69,9 +70,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const guard = await requireTdManager(id);
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   const adminClient = createAdminClient();
   const { error } = await adminClient.from("td_sessions").delete().eq("id", id);

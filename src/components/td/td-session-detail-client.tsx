@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export function TdSessionDetailClient({ sessionId }: Props) {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [session, setSession] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<Record<string, "present" | "absent">>({});
@@ -87,7 +90,7 @@ export function TdSessionDetailClient({ sessionId }: Props) {
     return (
       <div className="container mx-auto p-6">
         <p className="text-muted-foreground">Session introuvable</p>
-        <Button variant="outline" asChild><Link href="/teacher/td"><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link></Button>
+        <Button variant="outline" asChild><Link href={`/${ecole}/teacher/td`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link></Button>
       </div>
     );
   }
@@ -97,7 +100,7 @@ export function TdSessionDetailClient({ sessionId }: Props) {
   return (
     <div className="container mx-auto p-6">
       <Button variant="ghost" asChild className="mb-4">
-        <Link href="/teacher/td"><ArrowLeft className="mr-2 h-4 w-4" />Retour aux TD/TP</Link>
+        <Link href={`/${ecole}/teacher/td`}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux TD/TP</Link>
       </Button>
 
       <div className="mb-6">

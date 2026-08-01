@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireTdManager } from "@/lib/utils/auth-utils";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const guard = await requireTdManager(id);
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   try {
     const formData = await request.formData();

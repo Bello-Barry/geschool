@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,8 @@ interface Props {
 }
 
 export function TdSessionsPageClient({ classes, subjects }: Props) {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [sessions, setSessions] = useState<TdSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -226,7 +229,7 @@ export function TdSessionsPageClient({ classes, subjects }: Props) {
               )}
               <CardContent className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/teacher/td/${session.id}`}><Eye className="mr-1 h-4 w-4" />Détails</Link>
+                  <Link href={`/${ecole}/teacher/td/${session.id}`}><Eye className="mr-1 h-4 w-4" />Détails</Link>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

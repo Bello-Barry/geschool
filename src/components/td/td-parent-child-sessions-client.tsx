@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,23 +24,29 @@ interface Props {
 }
 
 export function TdParentChildSessionsClient({ studentId }: Props) {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [sessions, setSessions] = useState<TdSession[]>([]);
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [sessionsRes, studentRes] = await Promise.all([
-        fetch("/api/td?status=published"),
-        fetch(`/api/students/${studentId}`),
-      ]);
-      if (sessionsRes.ok) {
-        const json = await sessionsRes.json();
-        setSessions(json.data || []);
-      }
-      if (studentRes.ok) {
-        const json = await studentRes.json();
-        setStudent(json.data);
+      try {
+        const [sessionsRes, studentRes] = await Promise.all([
+          fetch(`/api/td?status=published&student_id=${studentId}`),
+          fetch(`/api/students/${studentId}`),
+        ]);
+        if (sessionsRes.ok) {
+          const json = await sessionsRes.json();
+          setSessions(json.data || []);
+        }
+        if (studentRes.ok) {
+          const json = await studentRes.json();
+          setStudent(json.data);
+        }
+      } catch (e) {
+        console.error("TdParentChildSessionsClient fetch error:", e);
       }
       setLoading(false);
     })();
@@ -58,7 +65,7 @@ export function TdParentChildSessionsClient({ studentId }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center gap-2 mb-6">
-        <Button variant="ghost" asChild><Link href="/parent/children"><User className="mr-1 h-4 w-4" />Mes enfants</Link></Button>
+        <Button variant="ghost" asChild><Link href={`/${ecole}/parent/children`}><User className="mr-1 h-4 w-4" />Mes enfants</Link></Button>
         <span className="text-muted-foreground">/</span>
         <h1 className="text-2xl font-bold">TD/TP de {student?.user?.first_name} {student?.user?.last_name}</h1>
       </div>

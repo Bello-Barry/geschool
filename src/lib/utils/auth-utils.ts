@@ -92,6 +92,49 @@ export function requireRole(allowedRoles: string[]) {
   };
 }
 
+export async function requireTdManager(sessionId: string) {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { ok: false as const, status: 401, error: "Unauthorized" };
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("role, school_id")
+    .eq("id", session.user.id)
+    .single();
+  if (!user) return { ok: false as const, status: 404, error: "User not found" };
+
+  const adminClient = createAdminClient();
+  const { data: tdRec } = await adminClient
+    .from("td_sessions")
+    .select("teacher_id, school_id")
+    .eq("id", sessionId)
+    .single();
+  if (!tdRec) return { ok: false as const, status: 404, error: "Session introuvable" };
+
+  if (user.role === "super_admin" || user.role === "admin_school") {
+    if (tdRec.school_id !== user.school_id) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+    return { ok: true as const };
+  }
+
+  if (user.role === "teacher") {
+    const { data: teacherRec } = await adminClient
+      .from("teachers")
+      .select("id")
+      .eq("user_id", session.user.id)
+      .eq("school_id", user.school_id)
+      .single();
+    if (!teacherRec || teacherRec.id !== tdRec.teacher_id) {
+      return { ok: false as const, status: 403, error: "Forbidden" };
+    }
+    return { ok: true as const };
+  }
+
+  return { ok: false as const, status: 403, error: "Forbidden" };
+}
+
 export async function getSchoolHeaders() {
   const headersList = await headers();
   return {

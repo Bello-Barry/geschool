@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, User } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function ParentTdPage() {
+  const params = useParams();
+  const ecole = params?.ecole as string;
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +60,7 @@ export default function ParentTdPage() {
                   {child.class?.name || "Classe non assignée"}
                 </p>
                 <Button asChild className="w-full">
-                  <Link href={`/parent/children/${child.id}/td`}>
+                  <Link href={`/${ecole}/parent/children/${child.id}/td`}>
                     Voir les TD/TP
                   </Link>
                 </Button>
