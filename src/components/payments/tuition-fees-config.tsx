@@ -175,8 +175,6 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
                   </p>
                 )
               })()}
-                </p>
-              )}
             </CardContent>
           </Card>
         )
