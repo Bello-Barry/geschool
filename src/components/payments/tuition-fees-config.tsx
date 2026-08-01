@@ -164,8 +164,9 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
                   />
                 </div>
               </div>
-              {config[cls.id]?.amount && (() => {
+              {(() => {
                 const entry = config[cls.id]
+                if (!entry?.amount) return null
                 return (
                   <p className="text-xs text-muted-foreground mt-3">
                     Montant configuré : <span className="font-semibold">{formatCFA(Number(entry.amount))}</span>
