@@ -164,12 +164,17 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
                   />
                 </div>
               </div>
-              {config[cls.id]?.amount && (
-                <p className="text-xs text-muted-foreground mt-3">
-                  Montant configuré : <span className="font-semibold">{formatCFA(Number(config[cls.id].amount))}</span>
-                  {config[cls.id]?.dueDate && (
-                    <> — Date limite : <span className="font-semibold">{new Date(config[cls.id].dueDate + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
-                  )}
+              {config[cls.id]?.amount && (() => {
+                const entry = config[cls.id]
+                return (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Montant configuré : <span className="font-semibold">{formatCFA(Number(entry.amount))}</span>
+                    {entry.dueDate && (
+                      <> — Date limite : <span className="font-semibold">{new Date(entry.dueDate + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
+                    )}
+                  </p>
+                )
+              })()}
                 </p>
               )}
             </CardContent>
