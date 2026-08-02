@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { formatCurrency } from "@/lib/utils/format-currency";
 
 export interface ReceiptData {
   schoolName: string;
@@ -204,7 +205,7 @@ export default function ReceiptPDF({ data }: { data: ReceiptData }) {
         <View style={styles.amountSection}>
           <Text style={styles.amountLabel}>Montant payé</Text>
           <Text style={styles.amountValue}>
-            {data.amount.toLocaleString("fr-FR")} ₣
+            {formatCurrency(data.amount)}
           </Text>
         </View>
 

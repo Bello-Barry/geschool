@@ -575,6 +575,7 @@ export type Database = {
           student_id: string;
           school_id: string;
           academic_year_id: string | null;
+          monthly_due_id: string | null;
           amount: number;
           payment_date: string;
           payment_method: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
@@ -592,6 +593,7 @@ export type Database = {
           student_id: string;
           school_id: string;
           academic_year_id?: string | null;
+          monthly_due_id?: string | null;
           amount: number;
           payment_date: string;
           payment_method?: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
@@ -609,6 +611,7 @@ export type Database = {
           student_id?: string;
           school_id?: string;
           academic_year_id?: string | null;
+          monthly_due_id?: string | null;
           amount?: number;
           payment_date?: string;
           payment_method?: 'cash' | 'mobile_money' | 'bank_transfer' | 'check' | null;
@@ -619,6 +622,47 @@ export type Database = {
           confirmed_by?: string | null;
           confirmed_at?: string | null;
           receipt_pdf_url?: string | null;
+          created_at?: string;
+        };
+      };
+      monthly_dues: {
+        Row: {
+          id: string;
+          school_id: string;
+          student_id: string;
+          class_id: string;
+          academic_year_id: string | null;
+          period_year: number;
+          period_month: number;
+          amount: number;
+          due_date: string;
+          status: 'paid' | 'unpaid';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          student_id: string;
+          class_id: string;
+          academic_year_id?: string | null;
+          period_year: number;
+          period_month: number;
+          amount: number;
+          due_date: string;
+          status?: 'paid' | 'unpaid';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          student_id?: string;
+          class_id?: string;
+          academic_year_id?: string | null;
+          period_year?: number;
+          period_month?: number;
+          amount?: number;
+          due_date?: string;
+          status?: 'paid' | 'unpaid';
           created_at?: string;
         };
       };

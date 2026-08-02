@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { createNotification } from "@/lib/notifications/create";
+import { formatCurrency } from "@/lib/utils/format-currency";
 
 export async function POST(
   _request: NextRequest,
@@ -63,7 +64,7 @@ export async function POST(
             userId: pu.user_id,
             schoolId: auth.schoolId,
             title: "Paiement rejeté",
-            message: `Votre déclaration de paiement de ${payment.amount.toLocaleString("fr-FR")} ₣ a été rejetée. Veuillez contacter l'administration.`,
+            message: `Votre déclaration de paiement de ${formatCurrency(payment.amount)} a été rejetée. Veuillez contacter l'administration.`,
             type: "error",
           }).catch(() => {});
         }

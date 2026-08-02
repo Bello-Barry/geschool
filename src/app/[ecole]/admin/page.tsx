@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, Copy, ExternalLink, UserPlus } from "lucide-react";
 import { AIInsights } from "@/components/dashboard/ai-insights";
+import { formatCurrency } from "@/lib/utils/format-currency";
 
 export default async function AdminDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const supabaseAdmin = createAdminClient();
@@ -100,7 +101,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
             <DollarSign className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent className="px-3 md:px-6">
-            <div className="text-xl md:text-2xl font-bold">{totalRevenue.toLocaleString()}₣</div>
+            <div className="text-xl md:text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
             <p className="text-[11px] text-muted-foreground">Total</p>
           </CardContent>
         </Card>

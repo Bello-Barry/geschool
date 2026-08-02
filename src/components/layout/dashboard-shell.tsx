@@ -49,8 +49,8 @@ export function DashboardShell({
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                <div className="flex items-center gap-3 px-6 h-16 border-b">
+              <SheetContent side="left" className="w-72 p-0 flex flex-col">
+                <div className="flex items-center gap-3 px-6 h-16 border-b shrink-0">
                   {logoUrl ? (
                     <img src={logoUrl} alt={schoolName} className="h-8 w-8 rounded object-cover" />
                   ) : (
@@ -63,7 +63,9 @@ export function DashboardShell({
                   )}
                   <span className="font-bold truncate">{schoolName}</span>
                 </div>
-                <SidebarNav items={navItems} onNavClick={() => setMenuOpen(false)} />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <SidebarNav items={navItems} onNavClick={() => setMenuOpen(false)} />
+                </div>
               </SheetContent>
             </Sheet>
 

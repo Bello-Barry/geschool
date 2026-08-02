@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { formatCFA, formatDate } from "@/lib/utils/formatters"
+import { formatDate } from "@/lib/utils/formatters"
+import { formatCurrency } from "@/lib/utils/format-currency"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -113,7 +114,7 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
                   )}
                 </div>
                 <div className="text-right flex items-center gap-3">
-                  <div className="font-bold text-lg">{formatCFA(payment.amount)}</div>
+                  <div className="font-bold text-lg">{formatCurrency(payment.amount)}</div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"

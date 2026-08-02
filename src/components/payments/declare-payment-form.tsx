@@ -14,6 +14,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Loader2, HandCoins } from "lucide-react"
 import { toast } from "sonner"
+import { formatCurrency } from "@/lib/utils/format-currency"
 
 interface Student {
   id: string
@@ -21,8 +22,19 @@ interface Student {
   class: { id: string; name: string } | null
 }
 
+interface MonthlyDue {
+  id: string
+  student_id: string
+  amount: number
+  period_month: number
+  period_year: number
+  status: string
+  due_date: string
+}
+
 interface Props {
   students: Student[]
+  monthlyDues?: MonthlyDue[]
   slug: string
 }
 
@@ -33,9 +45,10 @@ const paymentMethods = [
   { value: "check", label: "Chèque" },
 ]
 
-export default function DeclarePaymentForm({ students }: Props) {
+export default function DeclarePaymentForm({ students, monthlyDues = [] }: Props) {
   const [open, setOpen] = useState(false)
   const [studentId, setStudentId] = useState("")
+  const [monthlyDueId, setMonthlyDueId] = useState("")
   const [amount, setAmount] = useState("")
   const [method, setMethod] = useState("cash")
   const [reference, setReference] = useState("")
@@ -60,6 +73,7 @@ export default function DeclarePaymentForm({ students }: Props) {
           amount: Number(amount),
           payment_method: method,
           reference_number: reference || undefined,
+          monthly_due_id: monthlyDueId || undefined,
         }),
       })
 
@@ -71,6 +85,7 @@ export default function DeclarePaymentForm({ students }: Props) {
       toast.success("Paiement déclaré avec succès ! En attente de validation par l'administration.")
       setOpen(false)
       setStudentId("")
+      setMonthlyDueId("")
       setAmount("")
       setMethod("cash")
       setReference("")
@@ -112,7 +127,7 @@ export default function DeclarePaymentForm({ students }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="student">Enfant concerné *</Label>
-            <Select value={studentId} onValueChange={setStudentId}>
+            <Select value={studentId} onValueChange={(v) => { setStudentId(v); setMonthlyDueId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionnez un enfant" />
               </SelectTrigger>
@@ -125,6 +140,38 @@ export default function DeclarePaymentForm({ students }: Props) {
               </SelectContent>
             </Select>
           </div>
+
+          {(() => {
+            const availableDues = monthlyDues.filter(
+              (d) => d.student_id === studentId && d.status !== "paid"
+            )
+            if (availableDues.length === 0) return null
+            return (
+              <div className="space-y-2">
+                <Label htmlFor="due">Échéance mensuelle (optionnelle)</Label>
+                <Select
+                  value={monthlyDueId || "none"}
+                  onValueChange={(v) => setMonthlyDueId(v === "none" ? "" : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une échéance" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sans échéance spécifique</SelectItem>
+                    {availableDues.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {new Date(d.period_year, d.period_month - 1, 1).toLocaleDateString("fr-FR", {
+                          month: "long",
+                          year: "numeric",
+                        })}{" "}
+                        — {formatCurrency(d.amount)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
+          })()}
 
           <div className="space-y-2">
             <Label htmlFor="amount">Montant (FCFA) *</Label>

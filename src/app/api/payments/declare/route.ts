@@ -9,6 +9,7 @@ const declareSchema = z.object({
   payment_method: z.enum(["cash", "mobile_money", "bank_transfer", "check"]),
   reference_number: z.string().optional(),
   notes: z.string().optional(),
+  monthly_due_id: z.string().uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -56,12 +57,30 @@ export async function POST(request: NextRequest) {
     .eq("is_current", true)
     .maybeSingle();
 
+  // If a monthly due is provided, validate it belongs to the student and school
+  let monthlyDueId: string | null = parsed.data.monthly_due_id || null;
+  if (monthlyDueId) {
+    const { data: due } = await supabaseAdmin
+      .from("monthly_dues")
+      .select("id, school_id, student_id, status")
+      .eq("id", monthlyDueId)
+      .single();
+
+    if (!due || due.school_id !== auth.schoolId || due.student_id !== parsed.data.student_id) {
+      return NextResponse.json({ error: "Échéance invalide" }, { status: 400 });
+    }
+    if (due.status === "paid") {
+      return NextResponse.json({ error: "Cette échéance est déjà payée" }, { status: 400 });
+    }
+  }
+
   const payment = await supabaseAdmin
     .from("payments")
     .insert({
       student_id: parsed.data.student_id,
       school_id: auth.schoolId,
       academic_year_id: currentAY?.id || null,
+      monthly_due_id: monthlyDueId,
       amount: parsed.data.amount,
       payment_date: new Date().toISOString().split("T")[0],
       payment_method: parsed.data.payment_method,

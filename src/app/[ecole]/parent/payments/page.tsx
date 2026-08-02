@@ -3,8 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCFA, formatDate } from "@/lib/utils/formatters";
+import { formatDate } from "@/lib/utils/formatters";
+import { formatCurrency } from "@/lib/utils/format-currency";
 import DeclarePaymentForm from "@/components/payments/declare-payment-form";
+import { ensureMonthlyDuesForStudents } from "@/lib/utils/monthly-dues";
 
 export default async function ParentPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -46,6 +48,24 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
     .eq("school_id", auth.schoolId)
     .eq("is_current", true)
     .maybeSingle();
+
+  // Generate current-month dues on demand (no retroactive, no duplicates)
+  await ensureMonthlyDuesForStudents(childrenIds);
+
+  // Get monthly dues for children (current month first)
+  const { data: monthlyDues } = await supabaseAdmin
+    .from("monthly_dues")
+    .select(`
+      *,
+      student:student_id(
+        user:user_id(first_name, last_name),
+        class:class_id(name)
+      )
+    `)
+    .in("student_id", childrenIds)
+    .eq("academic_year_id", currentAY?.id || "00000000-0000-0000-0000-000000000000")
+    .order("period_year", { ascending: false })
+    .order("period_month", { ascending: false });
 
   // Get tuition fees for each child's class
   let feeByClass: Record<string, { amount: number; due_date: string | null }> = {};
@@ -119,10 +139,10 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Payé</CardTitle>
-            <span className="text-green-600 font-bold">{formatCFA(totalPaid)}</span>
+            <span className="text-green-600 font-bold">{formatCurrency(totalPaid)}</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">{formatCFA(totalPaid)}</div>
+            <div className="text-2xl font-bold text-green-700">{formatCurrency(totalPaid)}</div>
             <p className="text-xs text-gray-600">Total confirmé</p>
           </CardContent>
         </Card>
@@ -130,10 +150,10 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">En attente</CardTitle>
-            <span className="text-blue-600 font-bold">{formatCFA(totalPending)}</span>
+            <span className="text-blue-600 font-bold">{formatCurrency(totalPending)}</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{formatCFA(totalPending)}</div>
+            <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalPending)}</div>
             <p className="text-xs text-gray-600">En cours de validation</p>
           </CardContent>
         </Card>
@@ -141,10 +161,10 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Dû</CardTitle>
-            <span className="text-red-600 font-bold">{formatCFA(Math.max(0, totalDue - totalPaid))}</span>
+            <span className="text-red-600 font-bold">{formatCurrency(Math.max(0, totalDue - totalPaid))}</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">{formatCFA(Math.max(0, totalDue - totalPaid))}</div>
+            <div className="text-2xl font-bold text-red-700">{formatCurrency(Math.max(0, totalDue - totalPaid))}</div>
             <p className="text-xs text-gray-600">Solde restant</p>
           </CardContent>
         </Card>
@@ -173,7 +193,7 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
                     <div className="text-right">
                       {fee ? (
                         <>
-                          <div className="font-bold">{formatCFA(fee.amount)}</div>
+                          <div className="font-bold">{formatCurrency(fee.amount)}</div>
                           {fee.due_date && (
                             <div className="text-xs text-muted-foreground">
                               Date limite: {formatDate(fee.due_date)}
@@ -192,9 +212,51 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
         </Card>
       )}
 
+      {/* Monthly dues */}
+      {monthlyDues && monthlyDues.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Échéances mensuelles</CardTitle>
+            <CardDescription>Suivi de vos mensualités de scolarité</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {(monthlyDues as any[]).map((due) => {
+                const userName = due.student?.user
+                  ? `${due.student.user.first_name} ${due.student.user.last_name}`
+                  : "Inconnu";
+                const monthLabel = new Date(due.period_year, due.period_month - 1, 1).toLocaleDateString("fr-FR", {
+                  month: "long",
+                  year: "numeric",
+                });
+                return (
+                  <div key={due.id} className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <div className="font-medium">{userName}</div>
+                      <div className="text-sm text-muted-foreground capitalize">{monthLabel}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold">{formatCurrency(due.amount)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {due.status === "paid" ? (
+                          <span className="text-green-600">Payée</span>
+                        ) : (
+                          <span className="text-amber-600">En attente</span>
+                        )}
+                        {" · "}Échéance {formatDate(due.due_date)}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Declare payment */}
       {students && students.length > 0 && (
-        <DeclarePaymentForm students={students as any[]} slug={slug} />
+        <DeclarePaymentForm students={students as any[]} monthlyDues={(monthlyDues as any[]) || []} slug={slug} />
       )}
 
       {/* History */}
@@ -223,7 +285,7 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
                       <td className="py-3 px-4">
                         {payment.student?.user?.first_name} {payment.student?.user?.last_name}
                       </td>
-                      <td className="py-3 px-4 font-semibold">{formatCFA(payment.amount)}</td>
+                      <td className="py-3 px-4 font-semibold">{formatCurrency(payment.amount)}</td>
                       <td className="py-3 px-4">{formatDate(payment.payment_date)}</td>
                       <td className="py-3 px-4">{payment.payment_method || "-"}</td>
                       <td className="py-3 px-4">{statusBadge(payment.status)}</td>

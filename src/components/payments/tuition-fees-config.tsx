@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Save, Loader2, Landmark } from "lucide-react"
 import { toast } from "sonner"
-import { formatCFA } from "@/lib/utils/formatters"
+import { formatCurrency } from "@/lib/utils/format-currency"
 
 interface ClassInfo {
   id: string
@@ -169,7 +169,7 @@ export default function TuitionFeesConfig({ classes, fees, academicYearId }: Pro
                 if (!entry?.amount) return null
                 return (
                   <p className="text-xs text-muted-foreground mt-3">
-                    Montant configuré : <span className="font-semibold">{formatCFA(Number(entry.amount))}</span>
+                    Montant configuré : <span className="font-semibold">{formatCurrency(Number(entry.amount))}</span>
                     {entry.dueDate && (
                       <> — Date limite : <span className="font-semibold">{new Date(entry.dueDate + "T00:00:00").toLocaleDateString("fr-FR")}</span></>
                     )}

@@ -14,8 +14,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, Receipt, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { formatCFA, formatDate } from "@/lib/utils/formatters";
+import { formatDate } from "@/lib/utils/formatters";
+import { formatCurrency } from "@/lib/utils/format-currency";
 import PendingPaymentsList from "@/components/payments/pending-payments-list";
+import { ensureMonthlyDuesForStudents } from "@/lib/utils/monthly-dues";
 
 export default async function AdminPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -54,6 +56,41 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
 
   const totalCollected = recentPayments?.reduce((sum: number, p: any) => sum + (p.status === "confirmed" ? p.amount : 0), 0) || 0;
 
+  // Current academic year + generate monthly dues on demand
+  const { data: currentAY } = await supabaseAdmin
+    .from("academic_years")
+    .select("id")
+    .eq("school_id", schoolId)
+    .eq("is_current", true)
+    .maybeSingle();
+
+  const { data: allStudents } = await supabaseAdmin
+    .from("students")
+    .select("id")
+    .eq("school_id", schoolId);
+
+  const allStudentIds = (allStudents || []).map((s) => s.id);
+  if (currentAY && allStudentIds.length > 0) {
+    await ensureMonthlyDuesForStudents(allStudentIds);
+  }
+
+  const { data: monthlyDues } = await supabaseAdmin
+    .from("monthly_dues")
+    .select(`
+      *,
+      student:student_id(
+        user:user_id(first_name, last_name),
+        class:class_id(name)
+      )
+    `)
+    .eq("school_id", schoolId)
+    .eq("academic_year_id", currentAY?.id || "00000000-0000-0000-0000-000000000000")
+    .order("period_year", { ascending: false })
+    .order("period_month", { ascending: false });
+
+  const unpaidDues = (monthlyDues || []).filter((d: any) => d.status === "unpaid");
+  const unpaidTotal = unpaidDues.reduce((sum: number, d: any) => sum + (d.amount || 0), 0);
+
   const statusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -87,7 +124,7 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCFA(totalCollected)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalCollected)}</div>
             <p className="text-xs text-muted-foreground">Paiements confirmés</p>
           </CardContent>
         </Card>
@@ -114,6 +151,64 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
       </div>
 
       <PendingPaymentsList initialPayments={pendingPayments || []} />
+
+      {/* Monthly dues overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Échéances mensuelles</CardTitle>
+          <CardDescription>
+            {unpaidDues.length > 0
+              ? `${unpaidDues.length} échéance(s) non réglée(s) — ${formatCurrency(unpaidTotal)} attendu`
+              : "Toutes les échéances du mois sont réglées."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-3 px-4 font-semibold">Élève</th>
+                  <th className="text-left py-3 px-4 font-semibold">Classe</th>
+                  <th className="text-left py-3 px-4 font-semibold">Période</th>
+                  <th className="text-right py-3 px-4 font-semibold">Montant</th>
+                  <th className="text-left py-3 px-4 font-semibold">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(monthlyDues || []).map((due: any) => (
+                  <tr key={due.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      {due.student?.user?.first_name} {due.student?.user?.last_name}
+                    </td>
+                    <td className="py-3 px-4">{due.student?.class?.name || "N/A"}</td>
+                    <td className="py-3 px-4 capitalize">
+                      {new Date(due.period_year, due.period_month - 1, 1).toLocaleDateString("fr-FR", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="py-3 px-4 text-right font-semibold">{formatCurrency(due.amount)}</td>
+                    <td className="py-3 px-4">
+                      {due.status === "paid" ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Payée</Badge>
+                      ) : (
+                        <Badge variant="secondary">Non réglée</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {(!monthlyDues || monthlyDues.length === 0) && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-10 text-muted-foreground">
+                      Aucune échéance générée. Configurez les frais de scolarité pour commencer.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -148,7 +243,7 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
                   </TableCell>
                   <TableCell>{statusBadge(payment.status)}</TableCell>
                   <TableCell className="text-right font-bold text-green-700">
-                    {formatCFA(payment.amount)}
+                    {formatCurrency(payment.amount)}
                   </TableCell>
                   <TableCell className="text-right">
                     {payment.status === "confirmed" && payment.receipt_pdf_url && (

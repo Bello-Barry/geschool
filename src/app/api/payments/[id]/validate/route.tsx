@@ -4,6 +4,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { generatePDFBuffer } from "@/lib/utils/pdf-generator";
 import ReceiptPDF from "@/components/pdf/receipt-template";
 import { createNotification } from "@/lib/notifications/create";
+import { formatCurrency } from "@/lib/utils/format-currency";
 
 export async function POST(
   _request: NextRequest,
@@ -119,6 +120,15 @@ export async function POST(
 
   if (updateErr) throw updateErr;
 
+  // Mark the linked monthly due as paid
+  if (payment.monthly_due_id) {
+    await supabaseAdmin
+      .from("monthly_dues")
+      .update({ status: "paid" })
+      .eq("id", payment.monthly_due_id)
+      .eq("school_id", auth.schoolId);
+  }
+
   const { data: parents } = await supabaseAdmin
     .from("student_parents")
     .select("parent_id")
@@ -139,7 +149,7 @@ export async function POST(
             userId: pu.user_id,
             schoolId: auth.schoolId,
             title: "Paiement confirmé",
-            message: `Votre paiement de ${payment.amount.toLocaleString("fr-FR")} ₣ a été confirmé. Téléchargez votre reçu.`,
+            message: `Votre paiement de ${formatCurrency(payment.amount)} a été confirmé. Téléchargez votre reçu.`,
             type: "success",
             link: receiptUrl,
           }).catch(() => {});
