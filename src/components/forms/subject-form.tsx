@@ -39,6 +39,7 @@ export function SubjectForm({ initialData }: SubjectFormProps) {
   const isEditing = !!initialData;
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema) as any,
     defaultValues: initialData ? {
       name: initialData.name,

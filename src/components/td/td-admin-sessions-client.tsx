@@ -5,8 +5,10 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Loader2 } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Eye } from "lucide-react";
 import Link from "next/link";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 interface TdSession {
   id: string;
@@ -40,9 +42,7 @@ export function TdAdminSessionsClient() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <ListSkeleton />
       </div>
     );
   }
@@ -73,9 +73,7 @@ export function TdAdminSessionsClient() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={session.status === "published" ? "default" : "outline"}>
-                      {session.status === "published" ? "Publié" : "Brouillon"}
-                    </Badge>
+                    <StatusBadge status={session.status === "published" ? "published" : "draft"} />
                     <Badge variant="secondary">{session.type.toUpperCase()}</Badge>
                   </div>
                 </div>

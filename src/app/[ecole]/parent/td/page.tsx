@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, User } from "lucide-react";
+import { User } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 export default function ParentTdPage() {
   const params = useParams();
@@ -27,9 +28,7 @@ export default function ParentTdPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <ListSkeleton rows={3} />
       </div>
     );
   }

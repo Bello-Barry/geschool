@@ -50,6 +50,7 @@ export function TeacherForm({ isLoading: externalLoading, initialData }: Teacher
     handleSubmit,
     formState: { errors },
   } = useForm<TeacherFormData>({
+    mode: "onTouched",
     resolver: zodResolver(teacherSchema),
     defaultValues: initialData ? {
       firstName: initialData.firstName,

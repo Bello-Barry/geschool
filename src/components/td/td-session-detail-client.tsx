@@ -5,8 +5,10 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ArrowLeft, Loader2, Check, X } from "lucide-react";
 import Link from "next/link";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 interface Attendance {
   student_id: string;
@@ -79,9 +81,7 @@ export function TdSessionDetailClient({ sessionId }: Props) {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <DetailSkeleton />
       </div>
     );
   }
@@ -109,9 +109,7 @@ export function TdSessionDetailClient({ sessionId }: Props) {
           {session.subject?.name} • {session.class?.name} • {new Date(session.session_date).toLocaleDateString("fr-FR")}
         </p>
         <div className="flex gap-2 mt-2">
-          <Badge variant={session.status === "published" ? "default" : "outline"}>
-            {session.status === "published" ? "Publié" : "Brouillon"}
-          </Badge>
+          <StatusBadge status={session.status === "published" ? "published" : "draft"} />
           <Badge variant="secondary">{session.type.toUpperCase()}</Badge>
         </div>
       </div>

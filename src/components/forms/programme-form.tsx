@@ -59,6 +59,7 @@ export function ProgrammeForm({ subjects, classes, terms, initialData }: Program
   const slug = params?.ecole as string;
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema) as any,
     defaultValues: initialData ? {
       subject_id: initialData.subject_id,

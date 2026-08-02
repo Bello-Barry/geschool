@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AIInsights() {
   const [data, setData] = useState<{ analysis: string, atRiskCount?: number } | null>(null);
@@ -53,8 +54,10 @@ export function AIInsights() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary/40" />
+          <div className="space-y-3 py-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
           </div>
         ) : error ? (
           <p className="text-sm text-red-500">{error}</p>

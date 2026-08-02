@@ -8,6 +8,7 @@ import {
   Loader2, Send, MessageSquare, Plus, ArrowLeft,
   Paperclip, FileText, FileImage, File, X, Download,
 } from "lucide-react";
+import { InboxSkeleton } from "@/components/ui/skeletons";
 
 interface UserProfile {
   id: string;
@@ -269,11 +270,7 @@ export function InboxLayout({
         )}
 
         <div className="flex-1 overflow-y-auto">
-          {loading && (
-            <div className="flex items-center justify-center p-6">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          )}
+          {loading && <InboxSkeleton />}
           {!loading && conversations.length === 0 && (
             <p className="text-sm text-muted-foreground p-4 text-center">Aucune conversation</p>
           )}

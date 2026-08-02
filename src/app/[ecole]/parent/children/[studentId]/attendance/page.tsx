@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
 
@@ -52,20 +53,6 @@ export default async function StudentAttendancePage({
   const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
   const classInfo = unwrapJoin(student.class) as { name: string } | null;
 
-  const statusLabels: Record<string, string> = {
-    present: "Présent",
-    absent: "Absent",
-    late: "Retard",
-    excused: "Excusé",
-  };
-
-  const statusColors: Record<string, string> = {
-    present: "text-green-700 bg-green-50 border-green-200",
-    absent: "text-red-700 bg-red-50 border-red-200",
-    late: "text-yellow-700 bg-yellow-50 border-yellow-200",
-    excused: "text-blue-700 bg-blue-50 border-blue-200",
-  };
-
   const totalRecords = attendanceRecords?.length || 0;
   const absences = attendanceRecords?.filter(r => r.status === "absent").length || 0;
   const lates = attendanceRecords?.filter(r => r.status === "late").length || 0;
@@ -93,34 +80,34 @@ export default async function StudentAttendancePage({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-500">Présences</CardTitle>
+              <CardTitle className="text-sm text-neutral-500">Présences</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-green-600">{presents}</p>
+              <p className="text-2xl font-bold text-success-600">{presents}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-500">Absences</CardTitle>
+              <CardTitle className="text-sm text-neutral-500">Absences</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-red-600">{absences}</p>
+              <p className="text-2xl font-bold text-danger-600">{absences}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-500">Retards</CardTitle>
+              <CardTitle className="text-sm text-neutral-500">Retards</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-yellow-600">{lates}</p>
+              <p className="text-2xl font-bold text-warning-600">{lates}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-500">Excusés</CardTitle>
+              <CardTitle className="text-sm text-neutral-500">Excusés</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-blue-600">{excused}</p>
+              <p className="text-2xl font-bold text-info-600">{excused}</p>
             </CardContent>
           </Card>
         </div>
@@ -141,16 +128,16 @@ export default async function StudentAttendancePage({
               {attendanceRecords.map((rec: any) => (
                 <div
                   key={rec.id}
-                  className={`flex items-center justify-between p-3 rounded-lg border ${statusColors[rec.status] || ""}`}
+                  className="flex justify-between items-center p-3 rounded-lg border bg-card"
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-sm">{formatDate(rec.date)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {rec.reason && (
-                      <span className="text-sm text-gray-600 italic">{rec.reason}</span>
+                      <span className="text-sm text-neutral-600 italic">{rec.reason}</span>
                     )}
-                    <span className="text-sm font-semibold">{statusLabels[rec.status] || rec.status}</span>
+                    <StatusBadge status={rec.status as any} />
                   </div>
                 </div>
               ))}

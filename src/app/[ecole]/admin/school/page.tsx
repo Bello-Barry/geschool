@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, Loader2, Upload, X } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function SchoolSettingsPage() {
   const { ecole } = useParams<{ ecole: string }>();
-  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,13 +51,13 @@ export default function SchoolSettingsPage() {
 
     const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast({ title: "Format non supporté", description: "Utilisez PNG, JPEG ou WebP.", variant: "destructive" });
+      toast.error("Format non supporté", { description: "Utilisez PNG, JPEG ou WebP." });
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "Fichier trop volumineux", description: "Taille maximum : 2 Mo.", variant: "destructive" });
+      toast.error("Fichier trop volumineux", { description: "Taille maximum : 2 Mo." });
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
@@ -83,10 +82,10 @@ export default function SchoolSettingsPage() {
 
       const { logo_url } = await res.json();
       setForm((f) => ({ ...f, logo_url }));
-      toast({ title: "Logo uploadé", description: "Le logo a été mis à jour." });
+      toast.success("Logo uploadé", { description: "Le logo a été mis à jour." });
     } catch (err) {
       setForm((f) => ({ ...f, logoPreview: f.logo_url }));
-      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Échec de l'upload", variant: "destructive" });
+      toast.error("Erreur", { description: err instanceof Error ? err.message : "Échec de l'upload" });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -119,9 +118,9 @@ export default function SchoolSettingsPage() {
         throw new Error(err.error || "Erreur de sauvegarde");
       }
 
-      toast({ title: "Paramètres mis à jour", description: "Les informations de l'école ont été sauvegardées." });
+      toast.success("Paramètres mis à jour", { description: "Les informations de l'école ont été sauvegardées." });
     } catch (err) {
-      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Échec de la sauvegarde", variant: "destructive" });
+      toast.error("Erreur", { description: err instanceof Error ? err.message : "Échec de la sauvegarde" });
     } finally {
       setSaving(false);
     }

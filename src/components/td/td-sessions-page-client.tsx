@@ -5,8 +5,11 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Eye, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +83,14 @@ export function TdSessionsPageClient({ classes, subjects }: Props) {
     setLoading(false);
   }, []);
 
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/td");
+    if (res.ok) {
+      const json = await res.json();
+      setSessions(json.data || []);
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
@@ -106,18 +117,19 @@ export function TdSessionsPageClient({ classes, subjects }: Props) {
   };
 
   const statusBadge = (status: string) => {
-    if (status === "published") return <Badge className="bg-green-100 text-green-800">Publié</Badge>;
-    return <Badge variant="outline">Brouillon</Badge>;
+    if (status === "published") return <StatusBadge status="published" />;
+    return <StatusBadge status="draft" />;
   };
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">TD/TP</h1>
-          <p className="text-muted-foreground">Gérez vos séances de travaux dirigés et pratiques</p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+      <PullToRefresh onRefresh={refresh}>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">TD/TP</h1>
+            <p className="text-muted-foreground">Gérez vos séances de travaux dirigés et pratiques</p>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" />Nouvelle séance</Button>
           </DialogTrigger>
@@ -192,9 +204,7 @@ export function TdSessionsPageClient({ classes, subjects }: Props) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <ListSkeleton />
       ) : sessions.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -251,6 +261,7 @@ export function TdSessionsPageClient({ classes, subjects }: Props) {
           ))}
         </div>
       )}
+      </PullToRefresh>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/utils/formatters"
 import { formatCurrency } from "@/lib/utils/format-currency"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { ExitRow } from "@/components/ui/exit-row"
 
 interface PendingPayment {
   id: string
@@ -37,6 +38,7 @@ const methodLabels: Record<string, string> = {
 export default function PendingPaymentsList({ initialPayments }: Props) {
   const [payments, setPayments] = useState(initialPayments)
   const [loading, setLoading] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<string | null>(null)
 
   async function handleAction(id: string, action: "validate" | "reject") {
     setLoading(id)
@@ -51,13 +53,18 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
         throw new Error(err.error || "Erreur")
       }
 
-      setPayments((prev) => prev.filter((p) => p.id !== id))
+      setRemoving(id)
       toast.success(action === "validate" ? "Paiement confirmé" : "Paiement rejeté")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur")
     } finally {
       setLoading(null)
     }
+  }
+
+  function handleRemoved(id: string) {
+    setRemoving(null)
+    setPayments((prev) => prev.filter((p) => p.id !== id))
   }
 
   if (payments.length === 0) {
@@ -98,10 +105,12 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
             const method = methodLabels[payment.payment_method as string] || payment.payment_method || "N/A"
 
             return (
-              <div
+              <ExitRow
                 key={payment.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+                removing={removing === payment.id}
+                onExited={() => handleRemoved(payment.id)}
               >
+                <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-1 flex-1">
                   <div className="font-medium">{userName}</div>
                   <div className="text-sm text-muted-foreground">
@@ -121,7 +130,7 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
                       variant="outline"
                       className="text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => handleAction(payment.id, "reject")}
-                      disabled={loading === payment.id}
+                      disabled={loading === payment.id || removing === payment.id}
                     >
                       {loading === payment.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -134,7 +143,7 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                       onClick={() => handleAction(payment.id, "validate")}
-                      disabled={loading === payment.id}
+                      disabled={loading === payment.id || removing === payment.id}
                     >
                       {loading === payment.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -145,7 +154,8 @@ export default function PendingPaymentsList({ initialPayments }: Props) {
                     </Button>
                   </div>
                 </div>
-              </div>
+                </div>
+              </ExitRow>
             )
           })}
         </div>

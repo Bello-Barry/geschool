@@ -30,6 +30,7 @@ export default function SetPasswordPage() {
   const [sessionLoading, setSessionLoading] = useState(true);
 
   const { register, handleSubmit, formState: { errors } } = useForm<PasswordFormData>({
+    mode: "onTouched",
     resolver: zodResolver(passwordSchema),
   });
 

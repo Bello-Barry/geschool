@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar, User, Check, X } from "lucide-react";
+import { Calendar, User, Check, X } from "lucide-react";
 import Link from "next/link";
+import { ListSkeleton } from "@/components/ui/skeletons";
 
 interface TdSession {
   id: string;
@@ -55,9 +57,7 @@ export function TdParentChildSessionsClient({ studentId }: Props) {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <ListSkeleton />
       </div>
     );
   }
@@ -97,13 +97,13 @@ export function TdParentChildSessionsClient({ studentId }: Props) {
                       {!att ? (
                         <Badge variant="outline">Pas encore marqué</Badge>
                       ) : att.status === "present" ? (
-                        <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                        <StatusBadge status="present" className="flex items-center gap-1">
                           <Check className="h-3 w-3" /> Présent
-                        </Badge>
+                        </StatusBadge>
                       ) : (
-                        <Badge className="bg-red-100 text-red-800 flex items-center gap-1">
+                        <StatusBadge status="absent" className="flex items-center gap-1">
                           <X className="h-3 w-3" /> Absent
-                        </Badge>
+                        </StatusBadge>
                       )}
                       <Badge variant="secondary">{session.type.toUpperCase()}</Badge>
                     </div>

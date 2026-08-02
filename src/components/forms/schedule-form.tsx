@@ -69,6 +69,7 @@ export function ScheduleForm({ classes, teacherSubjects, initialData }: Schedule
   const isEditing = !!initialData;
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema) as any,
     defaultValues: initialData ? {
       class_id: initialData.class_id,

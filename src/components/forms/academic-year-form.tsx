@@ -28,6 +28,7 @@ export function AcademicYearForm() {
   const params = useParams();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: { is_current: false, name: "", start_date: "", end_date: "" },
   });

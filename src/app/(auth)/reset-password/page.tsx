@@ -24,6 +24,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<ResetFormData>({
+    mode: "onTouched",
     resolver: zodResolver(resetSchema),
   });
 

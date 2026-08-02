@@ -12,6 +12,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Calendar, Plus, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
@@ -89,7 +90,7 @@ export default async function AcademicYearsPage({ params }: { params: Promise<{ 
                                                 <TableCell>{formatDate(term.end_date)}</TableCell>
                                                 <TableCell className="text-right">
                                                     {term.is_current ? (
-                                                        <Badge variant="outline" className="text-green-600 border-green-600 bg-green-50">Actuel</Badge>
+                                                        <StatusBadge status="active" label="Actuel" />
                                                     ) : (
                                                         <span className="text-muted-foreground text-sm">Passé/Futur</span>
                                                     )}

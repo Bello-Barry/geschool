@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import { DeleteProgrammeButton } from "./delete-programme-button";
@@ -126,9 +127,7 @@ export default async function AdminProgrammePage({ params, searchParams }: { par
                   <td className="p-3">{entry.term?.name || "—"}</td>
                   <td className="p-3 text-muted-foreground">{teacherName}</td>
                   <td className="p-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${entry.status === "published" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                      {entry.status === "published" ? "Publié" : "Brouillon"}
-                    </span>
+                    <StatusBadge status={entry.status === "published" ? "published" : "draft"} />
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">

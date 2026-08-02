@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DollarSign, TrendingUp, Receipt, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatters";
@@ -94,11 +95,11 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
   const statusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Confirmé</Badge>;
+        return <StatusBadge status="confirmed" />;
       case "rejected":
-        return <Badge variant="destructive">Rejeté</Badge>;
+        return <StatusBadge variant="danger">Rejeté</StatusBadge>;
       default:
-        return <Badge variant="secondary">En attente</Badge>;
+        return <StatusBadge status="pending" />;
     }
   };
 
@@ -190,9 +191,9 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
                     <td className="py-3 px-4 text-right font-semibold">{formatCurrency(due.amount)}</td>
                     <td className="py-3 px-4">
                       {due.status === "paid" ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Payée</Badge>
+                        <StatusBadge status="paid" />
                       ) : (
-                        <Badge variant="secondary">Non réglée</Badge>
+                        <StatusBadge status="pending" label="Non réglée" />
                       )}
                     </td>
                   </tr>

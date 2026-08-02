@@ -5,8 +5,10 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { DetailSkeleton } from "@/components/ui/skeletons";
 
 interface Props {
   sessionId: string;
@@ -33,9 +35,7 @@ export function TdAdminDetailClient({ sessionId }: Props) {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <DetailSkeleton />
       </div>
     );
   }
@@ -65,9 +65,7 @@ export function TdAdminDetailClient({ sessionId }: Props) {
           {session.teacher && <> • {session.teacher.user?.first_name} {session.teacher.user?.last_name}</>}
         </p>
         <div className="flex gap-2 mt-2">
-          <Badge variant={session.status === "published" ? "default" : "outline"}>
-            {session.status === "published" ? "Publié" : "Brouillon"}
-          </Badge>
+          <StatusBadge status={session.status === "published" ? "published" : "draft"} />
           <Badge variant="secondary">{session.type.toUpperCase()}</Badge>
         </div>
       </div>
@@ -88,9 +86,7 @@ export function TdAdminDetailClient({ sessionId }: Props) {
                 {session.attendance.map((a: any, i: number) => (
                   <div key={i} className="flex justify-between text-sm p-2 border-b last:border-0">
                     <span>Élève #{a.student_id?.slice(0, 8)}</span>
-                    <Badge variant={a.status === "present" ? "default" : "destructive"}>
-                      {a.status === "present" ? "Présent" : "Absent"}
-                    </Badge>
+                    <StatusBadge status={a.status === "present" ? "present" : "absent"} />
                   </div>
                 ))}
               </div>

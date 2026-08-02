@@ -46,6 +46,7 @@ export function ClassForm({ academicYears, initialData }: ClassFormProps) {
     : (academicYears.find(y => y.is_current)?.id || "");
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: initialData ? {
       name: initialData.name,

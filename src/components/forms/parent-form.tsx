@@ -50,6 +50,7 @@ export function ParentForm({ isLoading: externalLoading, initialData }: ParentFo
     handleSubmit,
     formState: { errors },
   } = useForm<ParentFormData>({
+    mode: "onTouched",
     resolver: zodResolver(parentSchema),
     defaultValues: initialData ? {
       firstName: initialData.firstName,

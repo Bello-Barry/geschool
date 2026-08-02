@@ -2,10 +2,15 @@
 
 import { DataTable, SearchableGrid } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Users, Pencil, Trash2 } from "lucide-react";
+
+function ActiveBadge({ active }: { active: boolean }) {
+  return <StatusBadge status={active ? "active" : "inactive"} />;
+}
 
 export function ClassesGrid({ data, slug }: { data: any[]; slug: string }) {
   return (
@@ -16,26 +21,26 @@ export function ClassesGrid({ data, slug }: { data: any[]; slug: string }) {
       gridCols="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       renderItem={(cls: any) => (
         <Link key={cls.id} href={`/${slug}/admin/classes/${cls.id}`} className="block">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow tap-scale">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle>{cls.name}</CardTitle>
                   <CardDescription>{cls.level}</CardDescription>
                 </div>
-                <Users className="h-5 w-5 text-gray-400" />
+                <Users className="h-5 w-5 text-neutral-400" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Élèves</span>
+                <span className="text-sm text-neutral-600">Élèves</span>
                 <span className="font-semibold">
                   {cls.students?.[0]?.count || 0}/{cls.capacity || "-"}
                 </span>
               </div>
               {cls.room_number && (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Salle</span>
+                  <span className="text-sm text-neutral-600">Salle</span>
                   <span className="font-semibold">{cls.room_number}</span>
                 </div>
               )}
@@ -63,9 +68,7 @@ export function StudentsTable({ data, slug }: { data: any[]; slug: string }) {
         {
           key: "status", label: "Statut",
           render: (s: any) => (
-            <Badge variant={s.is_active === false ? "secondary" : "outline"}>
-              {s.is_active === false ? "Inactif" : "Actif"}
-            </Badge>
+            <ActiveBadge active={s.is_active !== false} />
           ),
         },
         {
@@ -78,16 +81,14 @@ export function StudentsTable({ data, slug }: { data: any[]; slug: string }) {
         },
       ]}
       renderMobileCard={(s: any) => (
-        <Card className="border">
+        <Card className="border tap-scale">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="font-semibold">{s.user?.first_name} {s.user?.last_name}</p>
                 <p className="text-sm text-muted-foreground">{s.matricule}</p>
               </div>
-              <Badge variant={s.is_active === false ? "secondary" : "outline"}>
-                {s.is_active === false ? "Inactif" : "Actif"}
-              </Badge>
+              <ActiveBadge active={s.is_active !== false} />
             </div>
             <div className="text-sm space-y-1">
               <p><span className="text-muted-foreground">Classe:</span> {s.class?.name || "-"}</p>
@@ -120,9 +121,7 @@ export function ParentsTable({ data, slug }: { data: any[]; slug: string }) {
         {
           key: "status", label: "Statut",
           render: (p: any) => (
-            <Badge variant={p.is_active === false ? "secondary" : "outline"}>
-              {p.is_active === false ? "Inactif" : "Actif"}
-            </Badge>
+            <ActiveBadge active={p.is_active !== false} />
           ),
         },
         {
@@ -135,16 +134,14 @@ export function ParentsTable({ data, slug }: { data: any[]; slug: string }) {
         },
       ]}
       renderMobileCard={(p: any) => (
-        <Card className="border">
+        <Card className="border tap-scale">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="font-semibold">{p.user?.first_name} {p.user?.last_name}</p>
                 <p className="text-sm text-muted-foreground">{p.user?.email}</p>
               </div>
-              <Badge variant={p.is_active === false ? "secondary" : "outline"}>
-                {p.is_active === false ? "Inactif" : "Actif"}
-              </Badge>
+              <ActiveBadge active={p.is_active !== false} />
             </div>
             <div className="text-sm space-y-1">
               {p.user?.phone && <p><span className="text-muted-foreground">Tél:</span> {p.user.phone}</p>}
@@ -183,7 +180,7 @@ export function SubjectsTable({ data, slug }: { data: any[]; slug: string }) {
                   <Pencil className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50">
+              <Button variant="ghost" size="icon" className="text-danger-600 hover:text-danger-700 hover:bg-danger-50">
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -191,7 +188,7 @@ export function SubjectsTable({ data, slug }: { data: any[]; slug: string }) {
         },
       ]}
       renderMobileCard={(s: any) => (
-        <Card className="border">
+        <Card className="border tap-scale">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
@@ -232,7 +229,7 @@ export function TeachersGrid({ data, slug }: { data: any[]; slug: string }) {
                 <CardTitle className="text-base">
                   {teacher.user?.first_name} {teacher.user?.last_name}
                   {teacher.is_active === false && (
-                    <Badge variant="secondary" className="ml-2">Inactif</Badge>
+                    <StatusBadge status="inactive" className="ml-2" />
                   )}
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -252,7 +249,7 @@ export function TeachersGrid({ data, slug }: { data: any[]; slug: string }) {
                 <strong>Classes:</strong>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {teacher.teacher_subjects.map((ts: any, i: number) => (
-                    <span key={i} className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                    <span key={i} className="bg-info-100 text-info-700 text-xs px-2 py-1 rounded">
                       {ts.class?.name}
                     </span>
                   ))}

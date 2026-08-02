@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/utils/formatters";
 import { formatCurrency } from "@/lib/utils/format-currency";
 import DeclarePaymentForm from "@/components/payments/declare-payment-form";
@@ -120,11 +120,11 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
   const statusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-green-100 text-green-800">Confirmé</Badge>;
+        return <StatusBadge status="confirmed" />;
       case "rejected":
-        return <Badge variant="destructive">Rejeté</Badge>;
+        return <StatusBadge variant="danger">Rejeté</StatusBadge>;
       default:
-        return <Badge variant="secondary">En attente</Badge>;
+        return <StatusBadge status="pending" />;
     }
   };
 
@@ -239,9 +239,9 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
                       <div className="font-bold">{formatCurrency(due.amount)}</div>
                       <div className="text-xs text-muted-foreground">
                         {due.status === "paid" ? (
-                          <span className="text-green-600">Payée</span>
+                          <StatusBadge status="paid" />
                         ) : (
-                          <span className="text-amber-600">En attente</span>
+                          <StatusBadge status="pending" />
                         )}
                         {" · "}Échéance {formatDate(due.due_date)}
                       </div>

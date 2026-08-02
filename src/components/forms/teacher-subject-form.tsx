@@ -33,6 +33,7 @@ export function TeacherSubjectForm({ teachers, subjects, classes }: TeacherSubje
   const params = useParams();
 
   const { handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+    mode: "onTouched",
     resolver: zodResolver(schema),
   });
 

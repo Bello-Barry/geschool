@@ -124,7 +124,7 @@ const config: Config = {
         full: "9999px",
       },
       boxShadow: {
-        card: "0 1px 3px rgba(26,26,46,0.08)",
+        card: "0 1px 3px rgba(26,26,46,0.10), 0 1px 2px rgba(26,26,46,0.06)",
         elevated: "0 4px 12px rgba(26,26,46,0.12)",
         modal: "0 12px 32px rgba(26,26,46,0.20)",
         "brand-glow": "0 4px 14px rgba(255,102,0,0.35)",

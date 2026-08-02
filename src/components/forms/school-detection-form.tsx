@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,9 +15,9 @@ const formSchema = z.object({
 
 export function SchoolDetectionForm() {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
+    mode: "onTouched",
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
@@ -41,8 +41,7 @@ export function SchoolDetectionForm() {
       }
 
       if (data.subdomain) {
-        toast({
-          title: 'École trouvée !',
+        toast.success('École trouvée !', {
           description: `Redirection vers ${data.schoolName}...`,
         });
         setTimeout(() => {
@@ -52,10 +51,8 @@ export function SchoolDetectionForm() {
         throw new Error('École non associée');
       }
     } catch (error) {
-      toast({
-        title: 'Erreur',
+      toast.error('Erreur', {
         description: error instanceof Error ? error.message : 'Erreur de détection',
-        variant: 'destructive',
       });
     } finally {
       setLoading(false);

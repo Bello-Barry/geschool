@@ -64,6 +64,7 @@ export function StudentForm({ classes, isLoading: externalLoading, initialData }
     watch,
     formState: { errors },
   } = useForm<StudentFormData>({
+    mode: "onTouched",
     resolver: zodResolver(studentSchema),
     defaultValues: initialData ? {
       matricule: initialData.matricule,

@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, FileText } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Calendar, FileText } from "lucide-react";
+import { ListSkeleton } from "@/components/ui/skeletons";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 
 interface TdSession {
   id: string;
@@ -31,37 +34,44 @@ export function TdStudentSessionsClient() {
     })();
   }, []);
 
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/td?status=published");
+    if (res.ok) {
+      const json = await res.json();
+      setSessions(json.data || []);
+    }
+  }, []);
+
   const attendanceBadge = (session: TdSession) => {
     if (!session.attendance || session.attendance.length === 0) {
       return <Badge variant="outline">Pas encore marqué</Badge>;
     }
     const a = session.attendance[0]!;
-    if (a.status === "present") return <Badge className="bg-green-100 text-green-800">Présent</Badge>;
-    return <Badge className="bg-red-100 text-red-800">Absent</Badge>;
+    if (a.status === "present") return <StatusBadge status="present" />;
+    return <StatusBadge status="absent" />;
   };
 
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <ListSkeleton />
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-2">Mes TD/TP</h1>
-      <p className="text-muted-foreground mb-6">Consultez vos séances de travaux dirigés et pratiques</p>
+      <PullToRefresh onRefresh={refresh}>
+        <h1 className="text-2xl font-bold mb-2">Mes TD/TP</h1>
+        <p className="text-muted-foreground mb-6">Consultez vos séances de travaux dirigés et pratiques</p>
 
-      {sessions.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Aucune séance publiée pour le moment</p>
-          </CardContent>
-        </Card>
-      ) : (
+        {sessions.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Aucune séance publiée pour le moment</p>
+            </CardContent>
+          </Card>
+        ) : (
         <div className="space-y-4">
           {sessions.map(session => (
             <Card key={session.id}>
@@ -97,6 +107,7 @@ export function TdStudentSessionsClient() {
           ))}
         </div>
       )}
+      </PullToRefresh>
     </div>
   );
 }

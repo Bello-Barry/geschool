@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/utils/formatters";
 
 export default async function AdminAttendancePage({ params }: { params: Promise<{ ecole: string }> }) {
@@ -124,30 +125,16 @@ export default async function AdminAttendancePage({ params }: { params: Promise<
                   recentAttendance.map((rec: any) => {
                     const studentInfo = rec.student as unknown as { matricule: string; user: { first_name: string; last_name: string } | null } | null;
                     const classInfo = rec.class as unknown as { name: string } | null;
-                    const statusColors: Record<string, string> = {
-                      present: "text-green-600 bg-green-50",
-                      absent: "text-red-600 bg-red-50",
-                      late: "text-yellow-600 bg-yellow-50",
-                      excused: "text-blue-600 bg-blue-50",
-                    };
-                    const statusLabels: Record<string, string> = {
-                      present: "Présent",
-                      absent: "Absent",
-                      late: "Retard",
-                      excused: "Excusé",
-                    };
                     return (
-                      <tr key={rec.id} className="border-b hover:bg-gray-50">
+                      <tr key={rec.id} className="border-b hover:bg-neutral-50">
                         <td className="py-3 px-4">{formatDate(rec.date)}</td>
                         <td className="py-3 px-4">
                           {studentInfo?.user?.last_name} {studentInfo?.user?.first_name}
-                          <span className="text-xs text-gray-400 ml-2">{studentInfo?.matricule}</span>
+                          <span className="text-xs text-neutral-400 ml-2">{studentInfo?.matricule}</span>
                         </td>
                         <td className="py-3 px-4">{classInfo?.name}</td>
                         <td className="py-3 px-4">
-                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${statusColors[rec.status] || ""}`}>
-                            {statusLabels[rec.status] || rec.status}
-                          </span>
+                          <StatusBadge status={rec.status as any} />
                         </td>
                       </tr>
                     );

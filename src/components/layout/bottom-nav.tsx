@@ -27,7 +27,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
           const Icon = iconMap[item.icon] || LayoutDashboard;
           return (
             <Link key={item.href} href={href}
-              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full px-1
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 h-full px-1 transition-transform active:scale-95
                 ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
               <Icon className="h-5 w-5 shrink-0" />
               <span className="text-[10px] font-medium truncate max-w-full text-center leading-tight">

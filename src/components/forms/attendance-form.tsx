@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, X, Clock, AlertCircle, Save, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { formatDate } from "@/lib/utils/formatters";
 
 type Status = "present" | "absent" | "late" | "excused";
@@ -58,7 +58,6 @@ const STATUS_OUTLINES: Record<Status, string> = {
 };
 
 export function AttendanceForm({ classId, date, students, existingRecords }: AttendanceFormProps) {
-  const { toast } = useToast();
   const dateStr = date.toISOString().split("T")[0];
   const [saving, setSaving] = useState(false);
 
@@ -112,9 +111,9 @@ export function AttendanceForm({ classId, date, students, existingRecords }: Att
         throw new Error(err.error || "Failed to save");
       }
 
-      toast({ title: "Présences enregistrées", description: `Appel du ${formatDate(date)} sauvegardé.` });
+      toast.success("Présences enregistrées", { description: `Appel du ${formatDate(date)} sauvegardé.` });
     } catch (err) {
-      toast({ title: "Erreur", description: err instanceof Error ? err.message : "Échec de la sauvegarde", variant: "destructive" });
+      toast.error("Erreur", { description: err instanceof Error ? err.message : "Échec de la sauvegarde" });
     } finally {
       setSaving(false);
     }
@@ -133,7 +132,7 @@ export function AttendanceForm({ classId, date, students, existingRecords }: Att
               key={s}
               size="sm"
               variant="outline"
-              className={`h-8 w-8 p-0 shadow-none ${active ? STATUS_COLORS[s] : STATUS_OUTLINES[s]}`}
+              className={`h-8 w-8 p-0 shadow-none active:scale-90 ${active ? STATUS_COLORS[s] : STATUS_OUTLINES[s]}`}
               onClick={() => setStatus(studentId, s)}
               title={STATUS_LABELS[s]}
               type="button"

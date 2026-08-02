@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
+import { PageTransition } from "./page-transition";
 import { navItemsByRole } from "@/lib/navigation";
 import type { NavItem } from "@/lib/navigation";
 
@@ -101,7 +102,7 @@ export function DashboardShell({
       {/* Main content */}
       <main className="pt-14 md:pl-64 pb-20 md:pb-8 min-h-screen">
         <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </div>
       </main>
 
