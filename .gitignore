@@ -46,6 +46,7 @@ playwright-report/
 # runtime/temp logs
 .dev.log
 prod.log
+prod-*.log
 server.log
 Result.txt
 .tmp-att-*/

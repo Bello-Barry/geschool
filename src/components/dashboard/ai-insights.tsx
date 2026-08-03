@@ -63,8 +63,8 @@ export function AIInsights() {
           <p className="text-sm text-red-500">{error}</p>
         ) : (
           <div className="space-y-4">
-            <div className="bg-white/50 p-4 rounded-lg border border-primary/10">
-              <p className="text-sm leading-relaxed text-gray-700 italic">
+            <div className="bg-muted/50 p-4 rounded-lg border border-primary/10">
+              <p className="text-sm leading-relaxed text-foreground italic">
                 "{data?.analysis}"
               </p>
             </div>

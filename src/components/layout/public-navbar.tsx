@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Menu } from "lucide-react";
 import {
   Sheet,
@@ -24,7 +25,7 @@ export function Header() {
   );
 
   return (
-    <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
+    <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50 safe-area-top">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold flex items-center gap-1 font-heading">
           <span className="text-primary text-3xl">GE</span>School
@@ -34,6 +35,7 @@ export function Header() {
         <nav className="hidden md:flex gap-8 items-center">
           <NavItems />
           <div className="flex gap-2 items-center border-l pl-8 ml-4">
+            <ThemeToggle />
             <Button asChild variant="ghost">
               <Link href="/#detect-school">Connexion</Link>
             </Button>
@@ -45,6 +47,7 @@ export function Header() {
 
         {/* Mobile Navigation */}
         <div className="md:hidden flex items-center gap-4">
+          <ThemeToggle />
           <Button asChild size="sm" variant="outline">
             <Link href="/#detect-school">Connexion</Link>
           </Button>

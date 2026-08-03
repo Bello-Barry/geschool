@@ -7,6 +7,7 @@ import { Menu, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
@@ -41,7 +42,7 @@ export function DashboardShell({
   return (
     <div className="min-h-screen bg-background">
       {/* Sticky top bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-top">
         <div className="flex items-center justify-between h-14 px-4 md:px-6">
           <div className="flex items-center gap-2">
             <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -84,6 +85,7 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <NotificationBell />
             <Button variant="ghost" size="icon" onClick={handleSignOut} title="Déconnexion" className="h-9 w-9">
               <LogOut className="h-4 w-4" />
@@ -100,7 +102,7 @@ export function DashboardShell({
       </aside>
 
       {/* Main content */}
-      <main className="pt-14 md:pl-64 pb-20 md:pb-8 min-h-screen">
+      <main className="pt-[calc(3.5rem+env(safe-area-inset-top))] md:pl-64 pb-20 md:pb-8 min-h-screen">
         <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
           <PageTransition>{children}</PageTransition>
         </div>

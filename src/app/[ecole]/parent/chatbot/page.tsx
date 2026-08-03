@@ -77,7 +77,7 @@ export default async function ParentChatbotPage({ params }: { params: Promise<{ 
           </div>
         </CardContent>
 
-        <div className="p-4 border-t bg-white">
+        <div className="p-4 border-t bg-card">
           <form className="flex gap-2">
             <Input
               placeholder="Écrivez votre message ici..."

@@ -1,5 +1,6 @@
 import { Header } from '@/components/layout/public-navbar';
 import { Footer } from '@/components/layout/footer';
+import { PageTransition } from '@/components/layout/page-transition';
 import { SchoolDetectionForm } from '@/components/forms/school-detection-form';
 import { StatsShowcase } from '@/components/dashboard/stats-showcase';
 import { Features } from '@/components/layout/features';
@@ -11,8 +12,9 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
+      <PageTransition>
+        <Header />
+        <main className="flex-1">
         <section className="container px-4 py-24 md:py-36 text-center relative">
           <HeroBackground />
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border bg-muted/50 text-sm text-muted-foreground mb-8 animate-fade-in">
@@ -52,7 +54,8 @@ export default function HomePage() {
         <SectionDivider />
         <StatsShowcase />
       </main>
-      <Footer />
+        <Footer />
+      </PageTransition>
     </div>
   );
 }

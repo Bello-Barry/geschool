@@ -12,6 +12,20 @@ export const metadata: Metadata = {
   title: 'GESchool — Gérer, Apprendre, Réussir',
   description: 'Application de gestion scolaire pour les établissements du Congo-Brazzaville',
   manifest: '/manifest.json',
+  metadataBase: new URL('https://ecole-congo.com'),
+  openGraph: {
+    title: 'GESchool — Gérer, Apprendre, Réussir',
+    description: 'Application de gestion scolaire pour les établissements du Congo-Brazzaville',
+    type: 'website',
+    locale: 'fr_FR',
+    images: [{ url: '/icon-512x512.png', width: 512, height: 512, alt: 'GESchool' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'GESchool — Gérer, Apprendre, Réussir',
+    description: 'Application de gestion scolaire pour les établissements du Congo-Brazzaville',
+    images: ['/icon-512x512.png'],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -48,8 +62,8 @@ export default function RootLayout({
       <body className={`font-sans ${outfit.variable}`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <AuthProvider>
