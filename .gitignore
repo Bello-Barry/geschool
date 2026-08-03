@@ -40,7 +40,18 @@ yarn-error.log*
 dev-*.log
 test-*.js
 test-results/
+playwright-report/
 *.ps1
+
+# runtime/temp logs
+.dev.log
+prod.log
+server.log
+Result.txt
+.tmp-att-*/
+
+# done markers
+.done/
 
 # typescript
 *.tsbuildinfo
