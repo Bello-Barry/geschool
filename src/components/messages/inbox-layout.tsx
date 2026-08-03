@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Loader2, Send, MessageSquare, Plus, ArrowLeft,
   Paperclip, FileText, FileImage, File, X, Download,
@@ -19,6 +18,8 @@ interface UserProfile {
 }
 
 interface Participant {
+  user_id?: string;
+  last_read_at?: string | null;
   user: UserProfile;
 }
 
@@ -45,6 +46,53 @@ interface Conversation {
   created_at: string;
   updated_at: string;
   participants: Participant[];
+  last_message?: Message | null;
+  unread_count?: number;
+}
+
+function getAvatarColorAndInitials(name: string) {
+  const cleanName = name.replace(/,/g, "").trim();
+  const parts = cleanName.split(/\s+/);
+  let initials = "";
+  if (parts.length > 0 && parts[0]) {
+    initials += parts[0][0];
+    if (parts.length > 1 && parts[1]) {
+      initials += parts[1][0];
+    }
+  }
+  initials = initials.toUpperCase() || "?";
+
+  let hash = 0;
+  for (let i = 0; i < cleanName.length; i++) {
+    hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  const s = 65;
+  const l = 40;
+  return {
+    initials,
+    style: { backgroundColor: `hsl(${h}, ${s}%, ${l}%)`, color: "#ffffff" },
+  };
+}
+
+function formatRelativeTime(dateStr: string) {
+  const d = new Date(dateStr);
+  const now = new Date();
+
+  const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = nowDate.getTime() - dDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  } else if (diffDays === 1) {
+    return "Hier";
+  } else if (diffDays < 7) {
+    return d.toLocaleDateString("fr-FR", { weekday: "long" }).replace(/^\w/, (c) => c.toUpperCase());
+  } else {
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
 }
 
 const ALLOWED_TYPES = [
@@ -93,6 +141,7 @@ export function InboxLayout({
   const [uploadProgress, setUploadProgress] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -134,6 +183,7 @@ export function InboxLayout({
               attachments: [],
             }];
           });
+          fetchConversations();
         }
       )
       .subscribe();
@@ -142,8 +192,28 @@ export function InboxLayout({
   }, [activeConv, fetchMessages, userId, role]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
+
+  // Auto-scroll on active conversation select
+  useEffect(() => {
+    if (activeConv) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 50);
+    }
+  }, [activeConv]);
+
+  // Auto-grow logic for input textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    }
+  }, [newMsg]);
 
   const startConversation = async () => {
     if (selectedUsers.length === 0) return;
@@ -227,11 +297,22 @@ export function InboxLayout({
     return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   }
 
-  function formatDate(dateStr: string) {
+  function getDateSeparatorLabel(dateStr: string) {
     const d = new Date(dateStr);
-    const today = new Date();
-    if (d.toDateString() === today.toDateString()) return formatTime(dateStr);
-    return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    const now = new Date();
+
+    const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = nowDate.getTime() - dDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return "Aujourd'hui";
+    } else if (diffDays === 1) {
+      return "Hier";
+    } else {
+      return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    }
   }
 
   return (
@@ -275,21 +356,57 @@ export function InboxLayout({
             <p className="text-sm text-muted-foreground p-4 text-center">Aucune conversation</p>
           )}
           {conversations.map((conv) => {
-            const others = conv.participants.filter((p) => p.user.id !== userId);
-            const names = others.map((p) => `${p.user.first_name} ${p.user.last_name}`).join(", ");
+            const others = conv.participants.filter((p) => p.user?.id !== userId);
+            const names = others.map((p) => `${p.user?.first_name || ""} ${p.user?.last_name || ""}`).join(", ").trim() || conv.title || "Discussion";
+            const avatarInfo = getAvatarColorAndInitials(names);
+
+            // Last message snippet preview
+            let lastMsgText = "Pas encore de message";
+            if (conv.last_message) {
+              const isMe = conv.last_message.sender_id === userId;
+              const senderName = isMe ? "Vous" : (conv.participants.find((p) => (p.user_id === conv.last_message?.sender_id || p.user?.id === conv.last_message?.sender_id))?.user?.first_name || "");
+              lastMsgText = senderName ? `${senderName}: ${conv.last_message.content}` : conv.last_message.content;
+            }
+
+            const isUnread = conv.unread_count && conv.unread_count > 0;
+
             return (
               <button
                 key={conv.id}
-                onClick={() => { setActiveConv(conv.id); setMessages([]); }}
+                onClick={() => {
+                  setActiveConv(conv.id);
+                  setMessages([]);
+                  // Instantly clear unread count locally for UI responsiveness
+                  setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unread_count: 0 } : c));
+                }}
                 className={`w-full text-left p-3 border-b hover:bg-muted/50 transition-colors ${activeConv === conv.id ? "bg-muted" : ""}`}
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div
+                    style={avatarInfo.style}
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold shadow-sm"
+                  >
+                    {avatarInfo.initials}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{names || conv.title || "Discussion"}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(conv.updated_at)}</p>
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm font-semibold truncate text-marine-900 ${isUnread ? "font-bold" : "font-medium"}`}>
+                        {names}
+                      </p>
+                      <span className="text-xs text-neutral-600 flex-shrink-0 ml-2">
+                        {formatRelativeTime(conv.updated_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className={`text-xs truncate max-w-[85%] ${isUnread ? "text-marine-900 font-medium" : "text-neutral-600"}`}>
+                        {lastMsgText}
+                      </p>
+                      {isUnread && (
+                        <span className="flex-shrink-0 min-w-5 h-5 px-1 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm">
+                          {conv.unread_count}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </button>
@@ -328,52 +445,107 @@ export function InboxLayout({
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((msg) => {
+            <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-[#f0f2f5] dark:bg-zinc-950">
+              {messages.map((msg, idx) => {
                 const isMe = msg.sender_id === userId;
+                const prevMsg = idx > 0 ? messages[idx - 1] : null;
+
+                // Date separator logic
+                const msgDate = new Date(msg.created_at);
+                const prevDate = prevMsg ? new Date(prevMsg.created_at) : null;
+                const isNewDay = !prevDate ||
+                  msgDate.getFullYear() !== prevDate.getFullYear() ||
+                  msgDate.getMonth() !== prevDate.getMonth() ||
+                  msgDate.getDate() !== prevDate.getDate();
+
+                // Group message consecutive block logic
+                const isConsecutive = prevMsg && prevMsg.sender_id === msg.sender_id && !isNewDay;
+
+                // Sender name logic (group chats with > 2 participants, only for others, and only on first message of block)
+                const isGroup = activeConvData && activeConvData.participants && activeConvData.participants.length > 2;
+                const showSenderName = isGroup && !isMe && !isConsecutive;
+
+                // Display sender name
+                const senderName = msg.sender?.first_name
+                  ? `${msg.sender.first_name} ${msg.sender.last_name || ""}`.trim()
+                  : "";
+
                 return (
-                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                      {!isMe && msg.sender?.first_name && (
-                        <p className="text-xs font-medium mb-1 opacity-70">{msg.sender.first_name} {msg.sender.last_name}</p>
-                      )}
-                      <p>{msg.content}</p>
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="mt-2 space-y-1.5">
-                          {msg.attachments.map((att) => {
-                            const isImage = att.file_type.startsWith("image/");
-                            return (
-                              <div key={att.id}>
-                                {isImage && att.signed_url ? (
-                                  <a href={att.signed_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
-                                    <img
-                                      src={att.signed_url}
-                                      alt={att.file_name}
-                                      className="max-w-full rounded-md max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                    />
+                  <div key={msg.id} className="w-full flex flex-col">
+                    {/* Date Separator */}
+                    {isNewDay && (
+                      <div className="flex justify-center my-4">
+                        <span className="bg-white/90 dark:bg-zinc-800 text-neutral-600 dark:text-neutral-300 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                          {getDateSeparatorLabel(msg.created_at)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Message Bubble Container */}
+                    <div className={`flex ${isMe ? "justify-end" : "justify-start"} ${isConsecutive ? "mt-1" : "mt-3"}`}>
+                      <div
+                        className={`max-w-[70%] sm:max-w-[60%] px-3.5 py-2 text-sm shadow-sm transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-2 ${
+                          isMe
+                            ? "bg-primary text-white rounded-2xl rounded-tr-none"
+                            : "bg-white dark:bg-zinc-800 text-marine-900 dark:text-neutral-100 rounded-2xl rounded-tl-none"
+                        }`}
+                      >
+                        {showSenderName && senderName && (
+                          <p className="text-xs font-semibold text-primary/90 dark:text-primary-foreground mb-1">
+                            {senderName}
+                          </p>
+                        )}
+
+                        <p className="leading-relaxed break-words">{msg.content}</p>
+
+                        {/* Attachments */}
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-2 space-y-1.5">
+                            {msg.attachments.map((att) => {
+                              const isImage = att.file_type.startsWith("image/");
+                              return (
+                                <div key={att.id}>
+                                  {isImage && att.signed_url ? (
+                                    <a href={att.signed_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+                                      <img
+                                        src={att.signed_url}
+                                        alt={att.file_name}
+                                        className="max-w-full rounded-md max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                      />
+                                    </a>
+                                  ) : null}
+                                  <a
+                                    href={att.signed_url || "#"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-2 rounded-md p-2 text-xs ${
+                                      isMe
+                                        ? "bg-white/10 hover:bg-white/20 text-white"
+                                        : "bg-neutral-50 dark:bg-zinc-900 hover:bg-neutral-100 text-marine-900"
+                                    } transition-colors`}
+                                  >
+                                    <FileIcon type={att.file_type} />
+                                    <span className="flex-1 truncate">{att.file_name}</span>
+                                    <span className="opacity-60">{formatFileSize(att.file_size)}</span>
+                                    <Download className="h-3 w-3 shrink-0" />
                                   </a>
-                                ) : null}
-                                <a
-                                  href={att.signed_url || "#"}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`flex items-center gap-2 rounded-md p-2 text-xs ${
-                                    isMe ? "bg-primary-foreground/10 hover:bg-primary-foreground/20" : "bg-background hover:bg-muted"
-                                  } transition-colors`}
-                                >
-                                  <FileIcon type={att.file_type} />
-                                  <span className="flex-1 truncate">{att.file_name}</span>
-                                  <span className="opacity-60">{formatFileSize(att.file_size)}</span>
-                                  <Download className="h-3 w-3 shrink-0" />
-                                </a>
-                              </div>
-                            );
-                          })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Timing indicator */}
+                        <div className="flex justify-end mt-1">
+                          <span
+                            className={`text-[10px] font-medium leading-none ${
+                              isMe ? "text-white/75" : "text-neutral-500"
+                            }`}
+                          >
+                            {formatTime(msg.created_at)}
+                          </span>
                         </div>
-                      )}
-                      <p className={`text-xs mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                        {formatTime(msg.created_at)}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -411,8 +583,8 @@ export function InboxLayout({
             )}
 
             {/* Input */}
-            <div className="p-3 border-t">
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+            <div className="p-3 border-t bg-white dark:bg-zinc-900">
+              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex items-end gap-2">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -421,17 +593,34 @@ export function InboxLayout({
                   className="hidden"
                   multiple
                 />
-                <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={sending || uploading}>
-                  <Paperclip className="h-4 w-4" />
+                <Button type="button" size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={sending || uploading} className="rounded-full shrink-0">
+                  <Paperclip className="h-5 w-5" />
                 </Button>
-                <Input
+                <textarea
+                  ref={textareaRef}
                   value={newMsg}
                   onChange={(e) => setNewMsg(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
                   placeholder="Écrivez un message..."
                   disabled={sending || uploading}
-                  className="flex-1"
+                  rows={1}
+                  className="flex-1 resize-none bg-neutral-100 dark:bg-zinc-800 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary max-h-32 min-h-[40px] leading-relaxed border-none outline-none"
                 />
-                <Button type="submit" size="icon" disabled={sending || uploading || (!newMsg.trim() && files.length === 0)}>
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={sending || uploading || (!newMsg.trim() && files.length === 0)}
+                  className={`rounded-full shrink-0 h-10 w-10 transition-all duration-300 ${
+                    (sending || uploading || (!newMsg.trim() && files.length === 0))
+                      ? "bg-neutral-200 text-neutral-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed opacity-60 shadow-none border-none"
+                      : "bg-primary text-white hover:bg-primary/95 hover:scale-105 shadow-md shadow-primary/20"
+                  }`}
+                >
                   {sending || uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </form>

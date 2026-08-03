@@ -5,6 +5,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Plus, Pencil, Check } from "lucide-react";
 
 const typeLabels: Record<string, string> = {
@@ -55,18 +56,18 @@ export default async function TeacherAssignmentsPage({ params }: { params: Promi
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Devoirs &amp; TD</h1>
-          <p className="text-gray-600 mt-2">Créez et gérez les travaux à rendre</p>
-        </div>
-        <Button asChild>
-          <Link href={`/${slug}/teacher/assignments/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Devoirs & TD"
+        description="Créez et gérez les travaux à rendre"
+        actions={
+          <Button asChild>
+            <Link href={`/${slug}/teacher/assignments/new`}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau
+            </Link>
+          </Button>
+        }
+      />
 
       {(!assignments || assignments.length === 0) && (
         <Card className="text-center py-12">

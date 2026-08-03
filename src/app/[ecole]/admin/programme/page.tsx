@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Pencil } from "lucide-react";
 import Link from "next/link";
@@ -44,18 +45,18 @@ export default async function AdminProgrammePage({ params, searchParams }: { par
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Programme pédagogique</h1>
-          <p className="text-muted-foreground">Planification annuelle et trimestrielle des enseignements.</p>
-        </div>
-        <Button asChild>
-          <Link href={`/${slug}/admin/programme/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle entrée
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Programme pédagogique"
+        description="Planification annuelle et trimestrielle des enseignements."
+        actions={
+          <Button asChild>
+            <Link href={`/${slug}/admin/programme/new`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvelle entrée
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4">

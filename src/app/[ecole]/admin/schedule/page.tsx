@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import { DeleteScheduleButton } from "./delete-schedule-button";
@@ -43,18 +44,18 @@ export default async function AdminSchedulePage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Emploi du temps</h1>
-          <p className="text-muted-foreground">Gérez les créneaux horaires des classes.</p>
-        </div>
-        <Button asChild>
-          <Link href={`/${slug}/admin/schedule/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau créneau
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Emploi du temps"
+        description="Gérez les créneaux horaires des classes."
+        actions={
+          <Button asChild>
+            <Link href={`/${slug}/admin/schedule/new`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau créneau
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Desktop: grid */}
       <div className="hidden md:grid md:grid-cols-5 gap-4">
