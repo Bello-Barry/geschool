@@ -13,17 +13,17 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        <section className="container px-4 py-24 md:py-36 text-center relative">
+        <section className="container mx-auto px-4 py-16 md:py-28 text-center relative overflow-x-hidden">
           <HeroBackground />
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border bg-muted/50 text-sm text-muted-foreground mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-muted/50 text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 animate-fade-in">
             <span className="w-2 h-2 rounded-full bg-primary" />
             Plateforme #1 au Congo-Brazzaville
           </div>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 font-heading">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 font-heading leading-tight max-w-4xl mx-auto text-marine-900">
             Gestion Scolaire
-            <span className="text-primary block mt-2">Simplifiée. Intelligente. Congolaise.</span>
+            <span className="text-primary block mt-1 sm:mt-2">Simplifiée. Intelligente. Congolaise.</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
             Notes, présences, paiements, communication parents-enseignants et IA
             &mdash; le tout dans une plateforme unique conçue pour le Congo.
           </p>

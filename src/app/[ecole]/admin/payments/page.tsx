@@ -19,6 +19,7 @@ import { formatDate } from "@/lib/utils/formatters";
 import { formatCurrency } from "@/lib/utils/format-currency";
 import PendingPaymentsList from "@/components/payments/pending-payments-list";
 import { ensureMonthlyDuesForStudents } from "@/lib/utils/monthly-dues";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function AdminPaymentsPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -105,18 +106,18 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestion Financière</h1>
-          <p className="text-muted-foreground">Suivez les paiements et validez les déclarations.</p>
-        </div>
-        <Button variant="outline" asChild>
-          <Link href={`/${slug}/admin/payments/fees`}>
-            <Settings2 className="mr-2 h-4 w-4" />
-            Configurer les frais de scolarité
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Gestion Financière"
+        description="Suivez les paiements et validez les déclarations."
+        actions={
+          <Button variant="outline" asChild>
+            <Link href={`/${slug}/admin/payments/fees`}>
+              <Settings2 className="mr-2 h-4 w-4" />
+              Configurer les frais de scolarité
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>

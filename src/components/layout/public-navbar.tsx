@@ -44,26 +44,28 @@ export function Header() {
         </nav>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center gap-4">
-          <Button asChild size="sm" variant="outline">
-            <Link href="/#detect-school">Connexion</Link>
-          </Button>
+        <div className="md:hidden flex items-center gap-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" aria-label="Menu principal">
+                <Menu className="h-6 w-6 text-marine-900" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="right" className="w-[280px]">
               <SheetHeader className="text-left">
-                <SheetTitle>Menu</SheetTitle>
+                <SheetTitle className="font-heading text-lg text-marine-900">Menu principal</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-6 mt-8">
                 <NavItems />
-                <hr />
-                <Button asChild className="w-full">
-                  <Link href="/register">Créer mon établissement</Link>
-                </Button>
+                <hr className="border-neutral-200" />
+                <div className="flex flex-col gap-3">
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/#detect-school">Connexion</Link>
+                  </Button>
+                  <Button asChild className="w-full bg-brand-500 hover:bg-brand-600 text-white">
+                    <Link href="/register">Créer mon établissement</Link>
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
