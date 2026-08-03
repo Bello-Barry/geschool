@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Button } from "@/components/ui/button";
 import { ClassesGrid } from "@/components/ui/tables";
+import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -29,18 +30,18 @@ export default async function ClassesPage({ params }: { params: Promise<{ ecole:
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des classes</h1>
-          <p className="text-gray-600 mt-1">Organisez vos classes et sections</p>
-        </div>
-        <Link href={`/${slug}/admin/classes/new`}>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle classe
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Gestion des classes"
+        description="Organisez vos classes et sections"
+        actions={
+          <Link href={`/${slug}/admin/classes/new`}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle classe
+            </Button>
+          </Link>
+        }
+      />
 
       <ClassesGrid data={classes || []} slug={slug} />
     </div>

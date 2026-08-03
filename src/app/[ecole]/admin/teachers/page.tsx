@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeachersGrid } from "@/components/ui/tables";
+import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -42,18 +43,18 @@ export default async function TeachersPage({ params }: { params: Promise<{ ecole
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion des enseignants</h1>
-          <p className="text-gray-600 mt-1">Gérez votre équipe pédagogique</p>
-        </div>
-        <Link href={`/${slug}/admin/teachers/new`}>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvel enseignant
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Gestion des enseignants"
+        description="Gérez votre équipe pédagogique"
+        actions={
+          <Link href={`/${slug}/admin/teachers/new`}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvel enseignant
+            </Button>
+          </Link>
+        }
+      />
 
       <Card>
         <CardHeader>

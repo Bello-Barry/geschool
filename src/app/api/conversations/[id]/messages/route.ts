@@ -23,6 +23,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   }
 
+  // Update last_read_at for this participant
+  await supabase
+    .from("conversation_participants")
+    .update({ last_read_at: new Date().toISOString() })
+    .eq("conversation_id", id)
+    .eq("user_id", auth.userId);
+
   const { data: messages, error } = await supabase
     .from("messages")
     .select(`

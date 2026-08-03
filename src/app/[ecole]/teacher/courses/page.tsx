@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
@@ -35,18 +36,18 @@ export default async function TeacherCoursesPage({ params }: { params: Promise<{
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Mes cours</h1>
-          <p className="text-gray-600 mt-2">Créez et gérez vos contenus pédagogiques</p>
-        </div>
-        <Button asChild>
-          <Link href={`/${slug}/teacher/courses/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau cours
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Mes cours"
+        description="Créez et gérez vos contenus pédagogiques"
+        actions={
+          <Button asChild>
+            <Link href={`/${slug}/teacher/courses/new`}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau cours
+            </Link>
+          </Button>
+        }
+      />
 
       {(!courses || courses.length === 0) && (
         <Card className="text-center py-12">

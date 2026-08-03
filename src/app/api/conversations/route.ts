@@ -13,9 +13,11 @@ export async function GET() {
     .select(`
       id, title, created_at, updated_at,
       participants:conversation_participants(
+        user_id,
+        last_read_at,
         user:user_id(id, first_name, last_name, role, email)
       ),
-      last_message:messages(id, content, sender_id, created_at)
+      messages:messages(id, content, sender_id, created_at)
     `)
     .eq("school_id", auth.schoolId)
     .in("id", (
@@ -26,7 +28,36 @@ export async function GET() {
     ).data?.map((r: any) => r.conversation_id) || [])
     .order("updated_at", { ascending: false });
 
-  return NextResponse.json(conversations || []);
+  const formatted = (conversations || []).map((conv: any) => {
+    // Find current user's participant record to get last_read_at
+    const myPart = conv.participants?.find((p: any) => p.user_id === auth.userId || p.user?.id === auth.userId);
+    const lastReadAt = myPart?.last_read_at ? new Date(myPart.last_read_at) : null;
+
+    // Sort messages by created_at descending to find the last message
+    const sortedMsgs = [...(conv.messages || [])].sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const lastMsg = sortedMsgs[0] || null;
+
+    // Calculate unread count
+    const unreadCount = (conv.messages || []).filter((m: any) => {
+      if (m.sender_id === auth.userId) return false;
+      if (!lastReadAt) return true;
+      return new Date(m.created_at) > lastReadAt;
+    }).length;
+
+    return {
+      id: conv.id,
+      title: conv.title,
+      created_at: conv.created_at,
+      updated_at: conv.updated_at,
+      participants: conv.participants,
+      last_message: lastMsg,
+      unread_count: unreadCount,
+    };
+  });
+
+  return NextResponse.json(formatted);
 }
 
 export async function POST(request: NextRequest) {
