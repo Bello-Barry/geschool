@@ -16,12 +16,25 @@ export default async function StudentGradesPage({ params }: { params: Promise<{ 
 
   const { data: student } = await supabase
     .from("students")
-    .select("id")
+    .select("id, class_id")
     .eq("user_id", auth.userId)
     .eq("school_id", auth.schoolId)
     .single();
 
   if (!student) redirect(`/${slug}/login`);
+
+  // Coefficients réels (matière, classe) pour la classe de l'élève
+  const classCoefficients = new Map<string, number>();
+  if (student.class_id) {
+    const { data: tsList } = await supabase
+      .from("teacher_subjects")
+      .select("subject_id, coefficient")
+      .eq("class_id", student.class_id)
+      .eq("school_id", auth.schoolId);
+    for (const ts of tsList || []) {
+      classCoefficients.set(ts.subject_id, (ts as any).coefficient ?? null);
+    }
+  }
 
   const { data: allGrades } = await supabase
     .from("grades")
@@ -31,7 +44,7 @@ export default async function StudentGradesPage({ params }: { params: Promise<{ 
       max_score,
       grade_type,
       date,
-      subject:subject_id(name, coefficient),
+      subject:subject_id(id, name, coefficient),
       term:term_id(name, is_current, term_number)
     `)
     .eq("student_id", student.id)
@@ -39,9 +52,15 @@ export default async function StudentGradesPage({ params }: { params: Promise<{ 
 
   const grades = allGrades as unknown as Array<{
     id: string; score: number; max_score: number; grade_type: string; date: string;
-    subject: { name: string; coefficient: number } | null;
+    subject: { id: string; name: string; coefficient: number } | null;
     term: { name: string; is_current: boolean; term_number: number } | null;
   }> | null;
+
+  const effectiveCoefficient = (subject: { id: string; name: string; coefficient: number } | null): number => {
+    if (!subject) return 1;
+    const perClass = classCoefficients.get(subject.id);
+    return perClass ?? subject.coefficient ?? 1;
+  };
 
   // Group by subject
   const bySubject = new Map<string, NonNullable<typeof grades>>();
@@ -96,7 +115,7 @@ export default async function StudentGradesPage({ params }: { params: Promise<{ 
                 <div>
                   <CardTitle>{subjectName}</CardTitle>
                   <CardDescription>
-                    Coefficient : {subjectGrades[0]?.subject?.coefficient || 1}
+                    Coefficient : {effectiveCoefficient(subjectGrades[0]?.subject ?? null)}
                     {subjectAverages.has(subjectName) && (
                       <span className="ml-4 font-semibold text-blue-700">
                         Moyenne : {subjectAverages.get(subjectName)}/20

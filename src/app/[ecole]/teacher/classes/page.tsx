@@ -26,6 +26,7 @@ export default async function TeacherClassesPage({ params }: { params: Promise<{
     .from("teacher_subjects")
     .select(`
       id,
+      coefficient,
       subject:subject_id(id, name, coefficient),
       class:class_id(id, name)
     `)
@@ -39,7 +40,10 @@ export default async function TeacherClassesPage({ params }: { params: Promise<{
     if (!classesMap.has(classObj.id)) {
       classesMap.set(classObj.id, { name: classObj.name, subjects: [] });
     }
-    classesMap.get(classObj.id)!.subjects.push(subjectObj!);
+    classesMap.get(classObj.id)!.subjects.push({
+      ...subjectObj,
+      coefficient: (ts as any).coefficient ?? subjectObj.coefficient ?? 1,
+    });
   }
 
   const entries = Array.from(classesMap.entries());

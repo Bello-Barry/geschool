@@ -33,7 +33,8 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
       ),
       teacher_subjects(
         id,
-        subject:subject_id(name),
+        coefficient,
+        subject:subject_id(name, coefficient),
         class:class_id(name)
       )
     `)
@@ -44,7 +45,7 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
   if (!teacher) notFound();
 
   const userData = teacher.user as unknown as { first_name: string; last_name: string; email: string; is_active: boolean } | null;
-  const subjects = teacher.teacher_subjects as unknown as Array<{ id: string; subject: { name: string } | null; class: { name: string } | null }> | null;
+  const subjects = teacher.teacher_subjects as unknown as Array<{ id: string; coefficient: number | null; subject: { name: string; coefficient: number } | null; class: { name: string } | null }> | null;
   const teacherUserId = (teacher as any).user_id as string | null;
 
   return (
@@ -131,6 +132,7 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
                       <tr className="border-b">
                         <th className="text-left py-3 px-4 font-semibold">Matière</th>
                         <th className="text-left py-3 px-4 font-semibold">Classe</th>
+                        <th className="text-left py-3 px-4 font-semibold">Coefficient</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -140,6 +142,7 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
                             <Badge variant="outline">{ts.subject?.name || "-"}</Badge>
                           </td>
                           <td className="py-3 px-4">{ts.class?.name || "-"}</td>
+                          <td className="py-3 px-4">{ts.coefficient ?? ts.subject?.coefficient ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>

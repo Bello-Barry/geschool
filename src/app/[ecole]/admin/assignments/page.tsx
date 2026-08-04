@@ -12,9 +12,10 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Plus, Search } from "lucide-react";
+import { UserCog, Plus, Search, Pencil } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { DeleteAssignmentButton } from "@/components/forms/delete-assignment-button";
 
 export default async function AssignmentsPage({ params }: { params: Promise<{ ecole: string }> }) {
@@ -29,29 +30,30 @@ export default async function AssignmentsPage({ params }: { params: Promise<{ ec
         .from("teacher_subjects")
         .select(`
       id,
+      coefficient,
       teacher:teacher_id(
         id,
         user:user_id(first_name, last_name)
       ),
-      subject:subject_id(name, code),
+      subject:subject_id(name, code, coefficient),
       class:class_id(name)
     `)
         .eq("school_id", schoolId);
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Affectations</h1>
-                    <p className="text-muted-foreground">Associez les enseignants aux matières et aux classes.</p>
-                </div>
+            <PageHeader
+              title="Affectations"
+              description="Associez les enseignants aux matières et aux classes."
+              actions={
                 <Button asChild>
-                    <Link href={`/${slug}/admin/assignments/new`}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nouvelle affectation
-                    </Link>
+                  <Link href={`/${slug}/admin/assignments/new`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nouvelle affectation
+                  </Link>
                 </Button>
-            </div>
+              }
+            />
 
             <div className="flex items-center gap-4">
                 <div className="relative flex-1 max-w-sm">
@@ -68,6 +70,7 @@ export default async function AssignmentsPage({ params }: { params: Promise<{ ec
                                 <TableHead>Enseignant</TableHead>
                                 <TableHead>Matière</TableHead>
                                 <TableHead>Classe</TableHead>
+                                <TableHead className="text-center">Coefficient</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -86,14 +89,26 @@ export default async function AssignmentsPage({ params }: { params: Promise<{ ec
                                     <TableCell>
                                         <Badge variant="outline">{assignment.class?.name}</Badge>
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <Badge variant={assignment.coefficient ? "default" : "secondary"}>
+                                            {assignment.coefficient ?? assignment.subject?.coefficient ?? "—"}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right">
-                                        <DeleteAssignmentButton id={assignment.id} />
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="icon" asChild>
+                                                <Link href={`/${slug}/admin/assignments/${assignment.id}/edit`}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Link>
+                                            </Button>
+                                            <DeleteAssignmentButton id={assignment.id} />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {(!assignments || assignments.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-20">
+                                    <TableCell colSpan={5} className="text-center py-20">
                                         <div className="space-y-3">
                                             <UserCog className="mx-auto h-12 w-12 text-muted-foreground/30" />
                                             <p className="text-muted-foreground">Aucune affectation configurée.</p>

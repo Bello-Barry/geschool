@@ -112,6 +112,35 @@ export type Database = {
           created_at?: string;
         };
       };
+      teacher_subjects: {
+        Row: {
+          id: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          school_id: string;
+          coefficient: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          teacher_id: string;
+          subject_id: string;
+          class_id: string;
+          school_id: string;
+          coefficient?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          teacher_id?: string;
+          subject_id?: string;
+          class_id?: string;
+          school_id?: string;
+          coefficient?: number | null;
+          created_at?: string;
+        };
+      };
       schedule_slots: {
         Row: {
           id: string;

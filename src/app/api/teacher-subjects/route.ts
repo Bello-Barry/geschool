@@ -6,6 +6,7 @@ const schema = z.object({
   teacher_id: z.string().uuid("Enseignant requis"),
   subject_id: z.string().uuid("Matière requise"),
   class_id: z.string().uuid("Classe requise"),
+  coefficient: z.coerce.number().int().positive("Le coefficient doit être un entier positif").nullish(),
 });
 
 export async function POST(request: NextRequest) {
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
         subject_id: validated.subject_id,
         class_id: validated.class_id,
         school_id: schoolId,
+        coefficient: validated.coefficient ?? null,
       })
       .select(`
         id,

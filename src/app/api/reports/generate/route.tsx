@@ -114,6 +114,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aucune matière trouvée" }, { status: 404 });
     }
 
+    // Coefficients réels (matière, classe) via teacher_subjects pour la classe de l'élève
+    const classCoefficients = new Map<string, number>();
+    if (student.class_id) {
+      const { data: tsList } = await supabaseAdmin
+        .from("teacher_subjects")
+        .select("subject_id, coefficient")
+        .eq("class_id", student.class_id)
+        .eq("school_id", student.school_id);
+      for (const ts of tsList || []) {
+        classCoefficients.set(ts.subject_id, (ts as any).coefficient ?? null);
+      }
+    }
+    const effectiveCoefficient = (subjectId: string, fallback: number | null): number => {
+      const perClass = classCoefficients.get(subjectId);
+      return perClass ?? fallback ?? 1;
+    };
+
     // 6. Calculate averages per subject using SQL function
     const subjectAverages: ReportCardData["subjectAverages"] = [];
 
@@ -127,7 +144,7 @@ export async function POST(request: NextRequest) {
       const avg = typeof avgData === "number" ? avgData : 0;
       subjectAverages.push({
         subjectName: sub.name,
-        coefficient: sub.coefficient ?? 1,
+        coefficient: effectiveCoefficient(sub.id, sub.coefficient),
         average: avg,
         maxScore: 20,
         appreciation: "",
