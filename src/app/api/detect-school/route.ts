@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const { data: users, error } = await supabaseAdmin
       .from('users')
       .select('school_id, schools(subdomain, name)')
-      .eq('email', email);
+      .ilike('email', email);
 
     if (error || !users || users.length === 0) {
       return NextResponse.json(
