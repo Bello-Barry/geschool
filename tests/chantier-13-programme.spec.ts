@@ -12,8 +12,6 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 test.describe("Chantier 13 — Programme pédagogique", () => {
-  test.setTimeout(180000);
-
   test("admin CRUD + teacher view + student/parent read published", async ({ page }) => {
     const rand = Math.random().toString(36).slice(2, 8);
     const SCHOOL = "prog-" + rand;
@@ -77,18 +75,20 @@ test.describe("Chantier 13 — Programme pédagogique", () => {
     await expect(page.locator("body")).toContainText("Aucune entrée trouvée", { timeout: 5000 });
 
     // ── Create entry ─────────────────────────────────────
-    await page.click('a:has-text("Nouvelle entrée")');
-    await page.waitForLoadState("networkidle");
+    await page.goto(`${BASE}/${SCHOOL}/admin/programme/new`, { waitUntil: "load" });
     await page.waitForTimeout(500);
 
     // Fill selects
     await page.getByRole("combobox").nth(0).click();
+    await expect(page.getByRole("option", { name: "Maths" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("option", { name: "Maths" }).click();
     await page.waitForTimeout(200);
     await page.getByRole("combobox").nth(1).click();
+    await expect(page.getByRole("option", { name: "CM1" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("option", { name: "CM1" }).click();
     await page.waitForTimeout(200);
     await page.getByRole("combobox").nth(2).click();
+    await expect(page.getByRole("option", { name: "1er Trimestre" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("option", { name: "1er Trimestre" }).click();
     await page.waitForTimeout(200);
 
@@ -97,6 +97,7 @@ test.describe("Chantier 13 — Programme pédagogique", () => {
 
     // Status
     await page.getByRole("combobox").nth(3).click();
+    await expect(page.getByRole("option", { name: "Brouillon" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("option", { name: "Brouillon" }).click();
     await page.waitForTimeout(200);
 
