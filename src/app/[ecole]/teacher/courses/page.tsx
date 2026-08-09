@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
+import { MathContent } from "@/components/math/math-content";
 
 export default async function TeacherCoursesPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -79,7 +80,7 @@ export default async function TeacherCoursesPage({ params }: { params: Promise<{
               </CardHeader>
               <CardContent>
                 {course.key_points && (
-                  <p className="text-sm text-gray-600 line-clamp-3 mb-4">{course.key_points}</p>
+                  <MathContent text={course.key_points} className="mb-4 text-sm text-gray-600 line-clamp-3" />
                 )}
                 <div className="flex gap-2">
                   <Button asChild variant="outline" size="sm">

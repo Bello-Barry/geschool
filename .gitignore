@@ -50,6 +50,8 @@ prod-*.log
 server.log
 Result.txt
 .tmp-att-*/
+e2e-*.log
+tests-isolation-*.txt
 
 # done markers
 .done/

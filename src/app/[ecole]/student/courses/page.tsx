@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CourseFilterForm } from "@/components/courses/course-filter-form";
 import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
+import { MathContent } from "@/components/math/math-content";
 
 interface PageProps {
   params: Promise<{ ecole: string }>;
@@ -113,9 +114,10 @@ export default async function StudentCoursesPage({ params, searchParams }: PageP
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 {course.key_points && (
-                  <div className="text-sm text-gray-600 mb-4 line-clamp-4 whitespace-pre-line">
-                    {course.key_points}
-                  </div>
+                  <MathContent
+                    text={course.key_points}
+                    className="mb-4 text-sm text-gray-600 line-clamp-4"
+                  />
                 )}
                 <div className="mt-auto">
                   <CourseAttachmentList attachments={attachmentsByCourse[course.id] || []} />

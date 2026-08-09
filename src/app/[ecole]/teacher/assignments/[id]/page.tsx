@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { TeacherCompletionList } from "@/components/assignments/teacher-completion-list";
 import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
+import { MathContent } from "@/components/math/math-content";
 
 const typeLabels: Record<string, string> = {
   devoir_maison: "Devoir maison",
@@ -116,8 +117,10 @@ export default async function TeacherAssignmentDetailPage({ params }: { params: 
       {a.description && (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-gray-600 whitespace-pre-line">{a.description}</p>
-            <CourseAttachmentList attachments={withUrls} />
+            <MathContent text={a.description} className="text-sm text-gray-600" />
+            <div className="mt-3">
+              <CourseAttachmentList attachments={withUrls} />
+            </div>
           </CardContent>
         </Card>
       )}

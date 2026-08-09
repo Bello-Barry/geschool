@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { MathEditor } from "@/components/math/math-editor";
 import {
   Select,
   SelectContent,
@@ -218,10 +218,10 @@ export function CourseForm({ slug, subjects, classes, course }: CourseFormProps)
 
           <div className="space-y-2">
             <Label htmlFor="key_points">Points clés</Label>
-            <Textarea
+            <MathEditor
               id="key_points"
               value={keyPoints}
-              onChange={(e) => setKeyPoints(e.target.value)}
+              onChange={setKeyPoints}
               placeholder="Saisissez les points clés du cours (un par ligne ou en markdown)"
               rows={6}
             />

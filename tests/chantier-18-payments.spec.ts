@@ -97,7 +97,6 @@ async function setupSchool(page: any, rand: string, label: string) {
 }
 
 test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → validation → reçu)", () => {
-  test.setTimeout(300000);
 
   test("1: admin configure tuition fee (amount + due date), parent sees it", async ({ page }) => {
     const rand = Math.random().toString(36).slice(2, 8);
@@ -206,12 +205,11 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
 
     // Go to payments page and declare
-    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(2000);
+    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "load" });
+    await expect(page.locator("text=J'ai payé").first()).toBeVisible({ timeout: 15000 });
 
     // Click "J'ai payé"
     await page.click('text=J\'ai payé');
-    await page.waitForTimeout(1000);
 
     // Fill form
     // Select child
@@ -225,8 +223,8 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
     await amountInput.fill('30000');
 
     // Select payment method
-    await page.locator('[role="combobox"]').nth(1).click();
-    await page.waitForTimeout(500);
+    await page.locator('[role="combobox"]').last().click();
+    await page.getByRole('option', { name: /Mobile Money/ }).first().waitFor({ state: "visible", timeout: 10000 });
     await page.getByRole('option', { name: /Mobile Money/ }).click();
 
     // Submit
@@ -285,18 +283,17 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
 
     // Parent declares payment
     await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
-    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(2000);
+    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "load" });
+    await expect(page.locator("text=J'ai payé").first()).toBeVisible({ timeout: 15000 });
     await page.click('text=J\'ai payé');
-    await page.waitForTimeout(1000);
     await page.locator('[role="combobox"]').first().click();
     await page.waitForTimeout(500);
     await page.getByRole('option', { name: /Claire Valid/ }).click();
     await page.waitForTimeout(500);
     const amountInput = page.locator('#amount');
     await amountInput.fill('25000');
-    await page.locator('[role="combobox"]').nth(1).click();
-    await page.waitForTimeout(500);
+    await page.locator('[role="combobox"]').last().click();
+    await page.getByRole('option', { name: /Espèces/ }).first().waitFor({ state: "visible", timeout: 10000 });
     await page.getByRole('option', { name: /Espèces/ }).click();
     await page.click('text=Déclarer le paiement');
     await page.waitForTimeout(2000);
@@ -333,9 +330,8 @@ test.describe("Chantier 18 — Paiements de scolarité (flux déclaration → va
 
     // Login as parent and check status
     await loginAs(page, PARENT_EMAIL, "Test123!", SCHOOL);
-    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(2000);
-    await expect(page.locator("text=Confirmé").first()).toBeVisible({ timeout: 5000 });
+    await page.goto(`${BASE}/${SCHOOL}/parent/payments`, { waitUntil: "load" });
+    await expect(page.locator("text=Confirmé").first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator('a:has-text("Télécharger")').first()).toBeVisible({ timeout: 5000 });
 
     // Verify receipt download

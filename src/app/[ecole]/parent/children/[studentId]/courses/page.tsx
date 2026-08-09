@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
+import { MathContent } from "@/components/math/math-content";
 
 interface PageProps {
   params: Promise<{ ecole: string; studentId: string }>;
@@ -135,9 +136,10 @@ export default async function ParentChildCoursesPage({ params, searchParams }: P
               </CardHeader>
               <CardContent className="flex-1 flex flex-col">
                 {course.key_points && (
-                  <div className="text-sm text-gray-600 mb-4 line-clamp-4 whitespace-pre-line">
-                    {course.key_points}
-                  </div>
+                  <MathContent
+                    text={course.key_points}
+                    className="mb-4 text-sm text-gray-600 line-clamp-4"
+                  />
                 )}
                 <div className="mt-auto">
                   <CourseAttachmentList attachments={attachmentsByCourse[course.id] || []} />

@@ -4,6 +4,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CourseAttachmentList } from "@/components/courses/course-attachment-list";
+import { MathContent } from "@/components/math/math-content";
 
 const typeLabels: Record<string, string> = {
   devoir_maison: "Devoir maison",
@@ -143,7 +144,7 @@ export default async function ParentChildAssignmentsPage({ params }: { params: P
               </CardHeader>
               {a.description && (
                 <CardContent className="pt-0 pb-3">
-                  <p className="text-sm text-gray-600 whitespace-pre-line">{a.description}</p>
+                  <MathContent text={a.description} className="mb-3 text-sm text-gray-600" />
                   <CourseAttachmentList attachments={attachmentsByAssignment[a.id] || []} />
                 </CardContent>
               )}

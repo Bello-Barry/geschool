@@ -171,13 +171,20 @@ test.describe("Parents CRUD", () => {
 
     async function reg(slug: string, email: string) {
       await page.goto(`${BASE}/register`, { waitUntil: "load" });
-      const r = await page.evaluate(async ({ data, base }) => {
-        const resp = await fetch(`${base}/api/auth/register`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
-        });
-        return resp.ok;
-      }, { data: { firstName: "Admin", lastName: "Test", email, password: PASSWORD, schoolName: "S", subdomain: slug }, base: BASE });
-      expect(r).toBeTruthy();
+      let ok = false;
+      for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+        ok = await page.evaluate(async ({ base, data }) => {
+          const resp = await fetch(`${base}/api/auth/register`, {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+          });
+          return resp.ok;
+        }, { base: BASE, data: { firstName: "Admin", lastName: "Test", email, password: PASSWORD, schoolName: "S", subdomain: slug } });
+        if (!ok && attempt < 3) {
+          console.log(`  register attempt ${attempt} failed, retrying...`);
+          await page.waitForTimeout(1500);
+        }
+      }
+      expect(ok).toBeTruthy();
       await page.goto(`${BASE}/${slug}/admin`, { waitUntil: "networkidle" });
       expect(page.url()).toContain(`/${slug}/admin`);
     }
