@@ -61,19 +61,21 @@ test.describe("Marketing Demo Videos", () => {
     }, { url: `${BASE}/api/classes`, data: { name: "Terminale D", level: "Terminale", academic_year_id: yd.id, capacity: 30 } });
     
     // Créer Parent, Prof et Élève via API Admin
-    await page.evaluate(async ({ url, data }) => {
-      await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    }, { url: `${BASE}/api/users/parents`, data: { firstName: "Amina", lastName: "Parent", email: PARENT_EMAIL, phone: "060000000" } });
-    
-    const parentRes = await supabaseAdmin.from("users").select("id").eq("email", PARENT_EMAIL).single();
-    
-    await page.evaluate(async ({ url, data }) => {
-      await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    }, { url: `${BASE}/api/users/students`, data: { firstName: "Kader", lastName: "Eleve", email: STUDENT_EMAIL, classId: cd.id, parentIds: [parentRes.data!.id], matricule: `MAT-${rand}` } });
+    const parentRes = await page.evaluate(async ({ url, data }) => {
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      return await r.json();
+    }, { url: `${BASE}/api/parents`, data: { first_name: "Amina", last_name: "Parent", email: PARENT_EMAIL, phone: "060000000", password: "password123" } });
+    expect(parentRes.id).toBeDefined();
     
     await page.evaluate(async ({ url, data }) => {
-      await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    }, { url: `${BASE}/api/users/teachers`, data: { firstName: "Jean", lastName: "Professeur", email: TEACHER_EMAIL, phone: "050000000", specialties: ["Mathématiques"] } });
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      if (!r.ok) throw new Error(`student create failed: ${r.status}`);
+    }, { url: `${BASE}/api/students`, data: { first_name: "Kader", last_name: "Eleve", email: STUDENT_EMAIL, class_id: cd.id, matricule: `MAT-${rand}`, password: "password123" } });
+    
+    await page.evaluate(async ({ url, data }) => {
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+      if (!r.ok) throw new Error(`teacher create failed: ${r.status}`);
+    }, { url: `${BASE}/api/teachers`, data: { first_name: "Jean", last_name: "Professeur", email: TEACHER_EMAIL, specialization: "Mathématiques", password: "password123" } });
     
     // Reset passwords to something easy for the script
     await supabaseAdmin.auth.admin.updateUserById((await supabaseAdmin.from("users").select("id").eq("email", TEACHER_EMAIL).single()).data!.id, { password: "password123" });
@@ -85,7 +87,7 @@ test.describe("Marketing Demo Videos", () => {
     await page.waitForTimeout(3000); // Pause pour montrer les stats
 
     // Visiter quelques pages admin
-    await page.click('a[href="/admin/students"]');
+    await page.locator(`a[href="/${SCHOOL}/admin/students"]`).filter({ visible: true }).first().click();
     await page.waitForTimeout(2000);
 
     // Déconnexion Admin

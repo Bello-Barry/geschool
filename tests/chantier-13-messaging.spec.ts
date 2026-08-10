@@ -453,7 +453,7 @@ test.describe("Chantier 13 — Messagerie", () => {
     await page.waitForTimeout(2000);
 
     // Should see the message content
-    await expect(page.locator("text=Test message from admin").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=Test message from admin").last()).toBeVisible({ timeout: 5000 });
     console.log("✅ Message content visible in UI");
 
     // Type and send a new message
@@ -464,7 +464,7 @@ test.describe("Chantier 13 — Messagerie", () => {
     await page.waitForTimeout(2000);
 
     // Should see the new message
-    await expect(page.locator("text=Hello from UI test").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=Hello from UI test").last()).toBeVisible({ timeout: 5000 });
     console.log("✅ New message sent and visible in UI");
   });
 });

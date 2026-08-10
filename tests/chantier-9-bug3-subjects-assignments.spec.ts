@@ -75,7 +75,7 @@ test.describe("Bug 3 — Subjects CRUD + Assignment", () => {
     // Should redirect to subjects list
     await page.waitForTimeout(2000);
     expect(page.url()).toContain("/admin/subjects");
-    await expect(page.locator("text=Mathematiques").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Mathematiques", { exact: true }).filter({ visible: true }).first()).toBeVisible({ timeout: 5000 });
     console.log("OK Subject created and appears in list");
 
     // ---- TEST: Create assignment now ----

@@ -24,36 +24,41 @@ test.describe("Marketing Demo Video - Geschool", () => {
 
     // ===== REGISTER SCHOOL =====
     await page.goto(`${BASE}/register`, { waitUntil: "load" });
+    await expect(page.locator('input[name="firstName"]')).toBeVisible({ timeout: 15000 });
+    
+    // Step 1: Account
+    await page.fill('input[name="firstName"]', "Directeur");
+    await page.fill('input[name="lastName"]', "Principal");
+    await page.fill('input[name="email"]', ADMIN_EMAIL);
+    await page.fill('input[name="password"]', "password123");
+    
+    await page.click('button:has-text("Continuer")');
     await expect(page.locator('input[name="schoolName"]')).toBeVisible({ timeout: 15000 });
     
-    // Fill out the registration form slowly
+    // Step 2: School
     await page.fill('input[name="schoolName"]', "Lycée Excellence (Demo)");
     await page.fill('input[name="subdomain"]', SCHOOL);
-    await page.fill('input[name="adminFirstName"]', "Directeur");
-    await page.fill('input[name="adminLastName"]', "Principal");
-    await page.fill('input[name="adminEmail"]', ADMIN_EMAIL);
-    await page.fill('input[name="adminPassword"]', "password123");
     
     await page.click('button[type="submit"]');
-    await page.waitForURL(`http://${SCHOOL}.localhost:3000/admin`);
+    await page.waitForURL(`${BASE}/${SCHOOL}/admin`);
     
     // We are now logged in as ADMIN
     // Add a quick pause to show the dashboard
     await page.waitForTimeout(2000);
 
     // Naviguer dans les menus admin
-    await page.click('a[href="/admin/classes"]');
+    await page.locator(`a[href="/${SCHOOL}/admin/classes"]`).filter({ visible: true }).first().click();
     await page.waitForTimeout(2000);
 
-    await page.click('a[href="/admin/teachers"]');
+    await page.locator(`a[href="/${SCHOOL}/admin/teachers"]`).filter({ visible: true }).first().click();
     await page.waitForTimeout(2000);
     
-    await page.click('a[href="/admin/students"]');
+    await page.locator(`a[href="/${SCHOOL}/admin/students"]`).filter({ visible: true }).first().click();
     await page.waitForTimeout(2000);
     
     // Logout
     await page.click('button[title="Déconnexion"]');
-    await page.waitForURL(`http://${SCHOOL}.localhost:3000/login`);
+    await page.waitForURL(`${BASE}/${SCHOOL}/login`);
 
     // Note: To fully simulate Teacher/Parent/Student, we need to create them. 
     // For a real marketing video, we would programmatically insert data into Supabase here
