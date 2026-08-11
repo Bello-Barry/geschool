@@ -239,7 +239,7 @@ export default async function ParentPaymentsPage({ params }: { params: Promise<{
                       <div className="font-bold">{formatCurrency(due.amount)}</div>
                       <div className="text-xs text-muted-foreground">
                         {due.status === "paid" ? (
-                          <StatusBadge status="paid" />
+                          <StatusBadge status="paid" label="Payée" />
                         ) : (
                           <StatusBadge status="pending" />
                         )}

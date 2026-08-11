@@ -191,7 +191,7 @@ export default async function AdminPaymentsPage({ params }: { params: Promise<{ 
                     <td className="py-3 px-4 text-right font-semibold">{formatCurrency(due.amount)}</td>
                     <td className="py-3 px-4">
                       {due.status === "paid" ? (
-                        <StatusBadge status="paid" />
+                        <StatusBadge status="paid" label="Payée" />
                       ) : (
                         <StatusBadge status="pending" label="Non réglée" />
                       )}

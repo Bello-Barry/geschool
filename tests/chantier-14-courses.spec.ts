@@ -147,8 +147,13 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Sélectionner une classe');
     await page.click('text=6eme A');
     await page.fill("#key_points", "- Définition d'une fraction\n- Numérateur et dénominateur\n- Fractions équivalentes");
+    // Open the status select (trigger shows current value "Brouillon"), then pick "Publié"
+    // via force click: a plain text= click on the portalled option can be reported
+    // "outside of the viewport" (Radix popper), and keyboard nav is unreliable on touch emulation.
     await page.click('text=Brouillon');
-    await page.click('text=Publié');
+    const publishedOption = page.getByRole('option', { name: 'Publié' });
+    await publishedOption.waitFor({ state: 'attached' });
+    await publishedOption.click({ force: true });
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/courses$`), { timeout: 15000 });
     await expect(page.locator("text=Introduction aux fractions")).toBeVisible();
@@ -229,8 +234,13 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Sélectionner une classe');
     await page.click('text=6eme A');
     await page.fill("#key_points", "- Identifier le sujet\n- Accord sujet-verbe");
+    // Open the status select (trigger shows current value "Brouillon"), then pick "Publié"
+    // via force click: a plain text= click on the portalled option can be reported
+    // "outside of the viewport" (Radix popper), and keyboard nav is unreliable on touch emulation.
     await page.click('text=Brouillon');
-    await page.click('text=Publié');
+    const publishedOption = page.getByRole('option', { name: 'Publié' });
+    await publishedOption.waitFor({ state: 'attached' });
+    await publishedOption.click({ force: true });
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/courses$`), { timeout: 15000 });
 
@@ -298,8 +308,13 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Sélectionner une classe');
     await page.click('text=5eme A');
     await page.fill("#key_points", "- La chlorophylle\n- La lumière solaire\n- Le dioxyde de carbone");
+    // Open the status select (trigger shows current value "Brouillon"), then pick "Publié"
+    // via force click: a plain text= click on the portalled option can be reported
+    // "outside of the viewport" (Radix popper), and keyboard nav is unreliable on touch emulation.
     await page.click('text=Brouillon');
-    await page.click('text=Publié');
+    const publishedOption = page.getByRole('option', { name: 'Publié' });
+    await publishedOption.waitFor({ state: 'attached' });
+    await publishedOption.click({ force: true });
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL}/teacher/courses$`), { timeout: 15000 });
 
@@ -411,8 +426,13 @@ test.describe("Chantier 14 — Cours (contenu pédagogique)", () => {
     await page.click('text=Sélectionner une classe');
     await page.click('text=3eme A');
     await page.fill("#key_points", "- Hello\n- Goodbye");
+    // Open the status select (trigger shows current value "Brouillon"), then pick "Publié"
+    // via force click: a plain text= click on the portalled option can be reported
+    // "outside of the viewport" (Radix popper), and keyboard nav is unreliable on touch emulation.
     await page.click('text=Brouillon');
-    await page.click('text=Publié');
+    const publishedOption = page.getByRole('option', { name: 'Publié' });
+    await publishedOption.waitFor({ state: 'attached' });
+    await publishedOption.click({ force: true });
     await page.click('text=Créer le cours');
     await page.waitForURL(new RegExp(`${SCHOOL_A}/teacher/courses$`), { timeout: 15000 });
 
