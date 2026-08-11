@@ -26,7 +26,8 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Paramètres", href: "/admin/school", icon: "Settings" },
   ],
   super_admin: [
-    { label: "Tableau de bord", href: "/admin", icon: "LayoutDashboard" },
+    { label: "Vue Globale", href: "/super-admin", icon: "Globe" },
+    { label: "Tableau de bord (École)", href: "/admin", icon: "LayoutDashboard" },
     { label: "Élèves", href: "/admin/students", icon: "GraduationCap" },
     { label: "Enseignants", href: "/admin/teachers", icon: "Users" },
     { label: "Parents", href: "/admin/parents", icon: "UserCog" },

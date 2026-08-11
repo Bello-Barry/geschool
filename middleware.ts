@@ -7,7 +7,7 @@ function extractSchoolSlug(pathname: string): string | null {
   const parts = pathname.split('/').filter(Boolean);
   if (parts.length === 0) return null;
   const first = parts[0] as string;
-  const reserved = ['login', 'register', 'reset-password', 'set-password', 'verify-email', 'school-not-found', 'api', '_next'];
+  const reserved = ['login', 'register', 'reset-password', 'set-password', 'verify-email', 'school-not-found', 'api', '_next', 'super-admin'];
   if (reserved.includes(first)) return null;
   if (['admin', 'teacher', 'parent', 'student'].includes(first)) return null;
   return first;
@@ -43,8 +43,6 @@ async function resolveUserSchoolSubdomain(userId: string): Promise<string | null
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const schoolSlug = extractSchoolSlug(pathname);
-
-  console.log(`[Middleware] path="${pathname}" → slug="${schoolSlug}"`);
 
   let supabaseAdmin;
   try {

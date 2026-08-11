@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
+import { OfflineBanner } from "./offline-banner";
 import { navItemsByRole } from "@/lib/navigation";
 import type { NavItem } from "@/lib/navigation";
 
@@ -100,6 +101,9 @@ export function DashboardShell({
           <SidebarNav items={navItems} />
         </div>
       </aside>
+
+      {/* Offline banner */}
+      <OfflineBanner />
 
       {/* Main content */}
       <main className="pt-[calc(3.5rem+env(safe-area-inset-top))] md:pl-64 pb-20 md:pb-8 min-h-screen">

@@ -5,7 +5,8 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, Copy, ExternalLink, UserPlus } from "lucide-react";
+import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, ExternalLink, UserPlus } from "lucide-react";
+import { CopySchoolUrl } from "@/components/dashboard/copy-school-url";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { formatCurrency } from "@/lib/utils/format-currency";
 
@@ -237,9 +238,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
                 {schoolUrl}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 gap-1 text-xs h-9">
-                  <Copy className="h-3 w-3" /> Copier
-                </Button>
+                <CopySchoolUrl url={schoolUrl} />
                 <Button variant="outline" size="sm" className="flex-1 gap-1 text-xs h-9" asChild>
                   <a href={schoolUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3" /> Ouvrir

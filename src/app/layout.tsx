@@ -3,6 +3,7 @@ import { Outfit } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { OfflineProvider } from '@/components/providers/offline-provider';
 import { PwaRegister } from '@/components/pwa-register';
 import 'katex/dist/katex.min.css';
 import './globals.css';
@@ -67,11 +68,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <PwaRegister />
-            <ToastProvider />
-            {children}
-          </AuthProvider>
+          <OfflineProvider>
+            <AuthProvider>
+              <PwaRegister />
+              <ToastProvider />
+              {children}
+            </AuthProvider>
+          </OfflineProvider>
         </ThemeProvider>
       </body>
     </html>

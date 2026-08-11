@@ -1,6 +1,6 @@
-const CACHE_NAME = "geschool-v1";
 const STATIC_CACHE = "geschool-static-v1";
 const DYNAMIC_CACHE = "geschool-dynamic-v1";
+const API_CACHE = "geschool-api-v1";
 
 const PRECACHE_URLS = [
   "/",
@@ -24,7 +24,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
+          .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE && key !== API_CACHE)
           .map((key) => caches.delete(key))
       )
     )
@@ -37,8 +37,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
-  if (url.pathname.startsWith("/api/")) return;
-  if (url.pathname.startsWith("/_next/data/")) return;
+
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(handleApiRequest(request));
+    return;
+  }
 
   if (
     request.destination === "style" ||
@@ -47,28 +50,120 @@ self.addEventListener("fetch", (event) => {
     request.destination === "font" ||
     url.pathname.startsWith("/_next/static/")
   ) {
-    event.respondWith(
-      caches.open(STATIC_CACHE).then((cache) =>
-        cache.match(request).then((cached) => {
-          if (cached) return cached;
-          return fetch(request).then((response) => {
-            if (response.ok) cache.put(request, response.clone());
-            return response;
-          });
-        })
-      )
-    );
+    event.respondWith(handleStaticRequest(request));
     return;
   }
 
-  event.respondWith(
-    caches.open(DYNAMIC_CACHE).then((cache) =>
+  event.respondWith(handleNavigationRequest(request));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === "CACHE_API_RESPONSE") {
+    const { url, response } = event.data;
+    caches.open(API_CACHE).then((cache) => {
+      cache.put(url, response);
+    });
+  }
+});
+
+async function handleStaticRequest(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return cached ?? new Response("Offline", { status: 503 });
+  }
+}
+
+async function handleApiRequest(request) {
+  const cache = await caches.open(API_CACHE);
+  const cached = await cache.match(request);
+
+  if (cached) {
+    const cloned = cached.clone();
+    const age = Date.now() - new Date(cloned.headers.get("x-offline-timestamp") || Date.now()).getTime();
+    const maxAge = 5 * 60 * 1000;
+
+    if (navigator.onLine && age < maxAge) {
       fetch(request)
         .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
+          if (response.ok) {
+            cache.put(request, response.clone());
+          }
         })
-        .catch(() => cache.match(request))
-    )
-  );
+        .catch(() => {});
+    }
+
+    return cached;
+  }
+
+  if (!navigator.onLine) {
+    return new Response(
+      JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const responseToCache = response.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set("x-offline-timestamp", Date.now().toString());
+      const cachedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers,
+      });
+      cache.put(request, cachedResponse);
+    }
+    return response;
+  } catch {
+    return cached ?? new Response(
+      JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+}
+
+async function handleNavigationRequest(request) {
+  const cache = await caches.open(DYNAMIC_CACHE);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    return caches.match("/");
+  }
+}
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "geschool-sync-queue") {
+    event.waitUntil(
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: "SYNC_QUEUE" });
+        });
+      })
+    );
+  }
 });

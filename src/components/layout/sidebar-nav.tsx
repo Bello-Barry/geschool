@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LucideIcon, LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen, Link as LinkIcon, Calendar, CalendarRange, CreditCard, FileText, Settings, ClipboardList, MessageSquare, Bot } from "lucide-react";
+import { LucideIcon, LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen, Link as LinkIcon, Calendar, CalendarRange, CreditCard, FileText, Settings, ClipboardList, MessageSquare, Bot, Globe } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen,
   Link: LinkIcon, Calendar, CalendarRange, CreditCard, FileText,
-  Settings, ClipboardList, MessageSquare, Bot,
+  Settings, ClipboardList, MessageSquare, Bot, Globe
 };
 
 export function SidebarNav({ items, collapsed, onNavClick }: {
@@ -22,7 +22,7 @@ export function SidebarNav({ items, collapsed, onNavClick }: {
   return (
     <nav className="flex-1 space-y-1 px-3 py-4">
       {items.map((item) => {
-        const href = `/${schoolSlug}${item.href}`;
+        const href = item.href === "/super-admin" ? item.href : `/${schoolSlug}${item.href}`;
         const isDashboard = item.href === "/admin" || item.href === "/teacher" || item.href === "/parent" || item.href === "/student";
         const isActive = isDashboard ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
         const Icon = iconMap[item.icon] || LayoutDashboard;
