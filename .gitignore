@@ -1,21 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-Tout est terminé. Récapitulatif du chantier sécurité :
 
-## Résumé
 
-**Faille** : `src/app/api/auth/register/route.ts:86` créait tous les nouveaux comptes avec `role: 'super_admin'` au lieu de `'admin_school'`. Un super_admin bénéficie d'un **bypass RLS total** (`can_access_school`/`is_school_admin`) → lecture + écriture cross-tenant sur users, students, parents, teachers, classes, subjects, academic_years.
-
-**Preuve en prod** : un compte super_admin de `/demo` lisait les emails de tous les comptes et les étudiants d'une autre école (CE-001 à CE-005 de Collège Excellence).
-
-**Corrections appliquées** :
-1. **Code** (déployé) : register → `admin_school` à la ligne 86. Aucune autre route ne créait de super_admin.
-2. **Données** (prod) : **3165 comptes** `super_admin` → `admin_school` (dont les 10 comptes réels validés). Vérifié : `super_admin` restant = 0.
-3. **Compte plateforme** : `platform@geschool.app` créé (super_admin, rattaché à `/demo`). **Mot de passe temporaire : `sfrwhja7Ab1!`** — à changer via `/set-password` ou console Supabase.
-4. **UI** : boutons morts vers `/super-admin/schools` et `/super-admin/users` masqués (pages inexistantes).
-
-**Vérifications finales** : bypass supprimé (compte admin_school ne lit plus les données d'autres écoles), build OK, serveur prod redémarré.
-
-Fichier de migration : `supabase/migrations/20260812000000_demote_super_admins.sql`. Scripts utilitaires dans `scripts/` (cleanup effectué).
 # dependencies
 /node_modules
 /.pnp
