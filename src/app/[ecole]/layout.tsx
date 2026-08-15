@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getSchoolBySubdomain } from "@/lib/utils/school-resolver";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -23,6 +24,9 @@ export default async function SchoolLayout({
     return <>{children}</>;
   }
 
+  const headerList = await headers();
+  const pathname = headerList.get("x-pathname") || "";
+
   return (
     <DashboardShell
       role={auth.role}
@@ -30,6 +34,7 @@ export default async function SchoolLayout({
       schoolSlug={ecole}
       logoUrl={school.logo_url}
       primaryColor={school.primary_color}
+      fullWidth={pathname.endsWith("/messages")}
     >
       {children}
     </DashboardShell>

@@ -22,6 +22,7 @@ export function DashboardShell({
   schoolSlug,
   logoUrl,
   primaryColor,
+  fullWidth = false,
 }: {
   children: React.ReactNode;
   role: string;
@@ -29,6 +30,7 @@ export function DashboardShell({
   schoolSlug: string;
   logoUrl?: string | null;
   primaryColor?: string | null;
+  fullWidth?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
@@ -107,9 +109,13 @@ export function DashboardShell({
 
       {/* Main content */}
       <main className="pt-[calc(3.5rem+env(safe-area-inset-top))] md:pl-64 pb-20 md:pb-8 min-h-screen">
-        <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
+        {fullWidth ? (
           <PageTransition>{children}</PageTransition>
-        </div>
+        ) : (
+          <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
+            <PageTransition>{children}</PageTransition>
+          </div>
+        )}
       </main>
 
       {/* Mobile bottom nav */}

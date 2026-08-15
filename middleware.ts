@@ -82,6 +82,8 @@ export async function middleware(request: NextRequest) {
   const schoolSlug = extractSchoolSlug(pathname);
   const requestHeaders = new Headers(request.headers);
 
+  requestHeaders.set('x-pathname', pathname);
+
   // Résoudre l'école depuis le slug dans le chemin (mis en cache)
   if (schoolSlug) {
     const school = await getCachedSchool(schoolSlug);

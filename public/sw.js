@@ -1,6 +1,6 @@
-const STATIC_CACHE = "geschool-static-v1";
+const STATIC_CACHE = "geschool-static-v2";
 const DYNAMIC_CACHE = "geschool-dynamic-v1";
-const API_CACHE = "geschool-api-v1";
+const API_CACHE = "geschool-api-v2";
 
 const PRECACHE_URLS = [
   "/",
@@ -39,6 +39,13 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   if (url.pathname.startsWith("/api/")) {
+    if (
+      url.pathname.startsWith("/api/conversations") ||
+      url.pathname.startsWith("/api/attachments")
+    ) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(handleApiRequest(request));
     return;
   }
@@ -71,8 +78,6 @@ self.addEventListener("message", (event) => {
 
 async function handleStaticRequest(request) {
   const cache = await caches.open(STATIC_CACHE);
-  const cached = await cache.match(request);
-  if (cached) return cached;
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -80,65 +85,49 @@ async function handleStaticRequest(request) {
     }
     return response;
   } catch {
+    const cached = await cache.match(request);
     return cached ?? new Response("Offline", { status: 503 });
   }
 }
 
 async function handleApiRequest(request) {
   const cache = await caches.open(API_CACHE);
+
+  if (navigator.onLine) {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        const responseToCache = response.clone();
+        const headers = new Headers(responseToCache.headers);
+        headers.set("x-offline-timestamp", Date.now().toString());
+        const cachedResponse = new Response(responseToCache.body, {
+          status: responseToCache.status,
+          statusText: responseToCache.statusText,
+          headers,
+        });
+        cache.put(request, cachedResponse);
+      }
+      return response;
+    } catch {
+      const cached = await cache.match(request);
+      return cached ?? new Response(
+        JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
+
   const cached = await cache.match(request);
-
-  if (cached) {
-    const cloned = cached.clone();
-    const age = Date.now() - new Date(cloned.headers.get("x-offline-timestamp") || Date.now()).getTime();
-    const maxAge = 5 * 60 * 1000;
-
-    if (navigator.onLine && age < maxAge) {
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            cache.put(request, response.clone());
-          }
-        })
-        .catch(() => {});
+  return cached ?? new Response(
+    JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
+    {
+      status: 503,
+      headers: { "Content-Type": "application/json" },
     }
-
-    return cached;
-  }
-
-  if (!navigator.onLine) {
-    return new Response(
-      JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
-      {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const responseToCache = response.clone();
-      const headers = new Headers(responseToCache.headers);
-      headers.set("x-offline-timestamp", Date.now().toString());
-      const cachedResponse = new Response(responseToCache.body, {
-        status: responseToCache.status,
-        statusText: responseToCache.statusText,
-        headers,
-      });
-      cache.put(request, cachedResponse);
-    }
-    return response;
-  } catch {
-    return cached ?? new Response(
-      JSON.stringify({ error: "Hors-ligne", cached: false, offline: true }),
-      {
-        status: 503,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
+  );
 }
 
 async function handleNavigationRequest(request) {
