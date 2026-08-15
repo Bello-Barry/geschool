@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { POST } from '../route';
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),

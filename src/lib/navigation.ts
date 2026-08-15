@@ -5,6 +5,13 @@ export interface NavItem {
 }
 
 export const navItemsByRole: Record<string, NavItem[]> = {
+  super_admin_platform: [
+    { label: "Vue Globale", href: "/super-admin", icon: "Globe" },
+    { label: "Écoles", href: "/super-admin/schools", icon: "School" },
+    { label: "Utilisateurs", href: "/super-admin/users", icon: "Users" },
+    { label: "Revenus", href: "/super-admin/payments", icon: "CreditCard" },
+    { label: "Paramètres", href: "/super-admin/settings", icon: "Settings" },
+  ],
   admin_school: [
     { label: "Tableau de bord", href: "/admin", icon: "LayoutDashboard" },
     { label: "Élèves", href: "/admin/students", icon: "GraduationCap" },

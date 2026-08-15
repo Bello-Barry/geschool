@@ -60,3 +60,16 @@ tests-isolation-*.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# one-off debug artifacts
+purge-backup/
+audit-super-admins-*.txt
+run-suite-*.cmd
+scripts/audit-super-admins.ts
+scripts/check-demo.ts
+scripts/check-lycee-sassou.ts
+scripts/check-platform.ts
+scripts/count-rows.ts
+scripts/debug-school.ts
+scripts/find-schools-with-data.ts
+scripts/measure-volume.ts

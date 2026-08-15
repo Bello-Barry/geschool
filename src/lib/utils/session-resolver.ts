@@ -19,7 +19,7 @@ function base64ToString(b64: string): string {
   }
 }
 
-export function decodeAuthCookie(cookieValue: string): { access_token: string; refresh_token: string; expires_at: number; user: { id: string; email?: string } } | null {
+export function decodeAuthCookie(cookieValue: string): { access_token: string; refresh_token: string; expires_at: number; user: { id: string; email?: string; app_metadata?: { role?: string; school_id?: string; [key: string]: any } } } | null {
   try {
     if (!cookieValue.startsWith('base64-')) return null;
     const b64url = cookieValue.slice(7);

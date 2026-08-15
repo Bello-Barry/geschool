@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  ArrowUpRight,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format-currency";
 
@@ -115,7 +114,7 @@ export default async function SuperAdminDashboard() {
   const onboardingRate = totalSchools > 0 ? Math.round((onboardedSchools / totalSchools) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <div className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
@@ -178,14 +177,11 @@ export default async function SuperAdminDashboard() {
                   <CardTitle className="text-base">Dernières écoles inscrites</CardTitle>
                   <CardDescription>Les 10 plus récentes</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/super-admin/schools">Tout voir</Link>
-                </Button>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y">
                   {recentSchools.map((school) => (
-                    <div key={school.id} className="flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors">
+                    <Link key={school.id} href={`/super-admin/schools/${school.id}`} className="flex items-center justify-between px-6 py-3 hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
@@ -211,13 +207,8 @@ export default async function SuperAdminDashboard() {
                             <XCircle className="h-3 w-3" />Inactive
                           </Badge>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                          <Link href={`/${school.subdomain}/admin`} target="_blank">
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                          </Link>
-                        </Button>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                   {recentSchools.length === 0 && (
                     <div className="px-6 py-8 text-center text-muted-foreground text-sm">
@@ -268,21 +259,9 @@ export default async function SuperAdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button variant="outline" className="w-full justify-start gap-2 h-10" asChild>
-                  <Link href="/register">
+                  <Link href="/super-admin/schools/new">
                     <Building2 className="h-4 w-4" />
                     Créer une nouvelle école
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 h-10" asChild>
-                  <Link href="/super-admin/schools">
-                    <Globe className="h-4 w-4" />
-                    Gérer toutes les écoles
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start gap-2 h-10" asChild>
-                  <Link href="/super-admin/users">
-                    <Users className="h-4 w-4" />
-                    Gérer les utilisateurs
                   </Link>
                 </Button>
               </CardContent>
@@ -316,7 +295,7 @@ export default async function SuperAdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

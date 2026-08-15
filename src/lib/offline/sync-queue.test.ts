@@ -21,12 +21,12 @@ describe("sync-queue (offline)", () => {
 
     const queue = getSyncQueue();
     expect(queue).toHaveLength(1);
-    expect(queue[0].id).toBe(id);
-    expect(queue[0].url).toBe("/api/subjects");
-    expect(queue[0].method).toBe("POST");
-    expect(queue[0].retries).toBe(0);
-    expect(queue[0].maxRetries).toBe(3);
-    expect(queue[0].timestamp).toBeGreaterThan(0);
+    expect(queue[0]?.id).toBe(id);
+    expect(queue[0]?.url).toBe("/api/subjects");
+    expect(queue[0]?.method).toBe("POST");
+    expect(queue[0]?.retries).toBe(0);
+    expect(queue[0]?.maxRetries).toBe(3);
+    expect(queue[0]?.timestamp).toBeGreaterThan(0);
   });
 
   it("persists across getQueueCount", async () => {
@@ -58,7 +58,7 @@ describe("sync-queue (offline)", () => {
     await removeFromQueue(a);
     const queue = getSyncQueue();
     expect(queue).toHaveLength(1);
-    expect(queue[0].url).toBe("/b");
+    expect(queue[0]?.url).toBe("/b");
   });
 
   it("clearSyncQueue empties the queue", async () => {
@@ -84,7 +84,7 @@ describe("sync-queue (offline)", () => {
     expect(result.remaining).toBe(1);
 
     const queue = getSyncQueue();
-    expect(queue[0].retries).toBe(1);
+    expect(queue[0]?.retries).toBe(1);
   });
 
   it("drops entries that exceeded maxRetries", async () => {

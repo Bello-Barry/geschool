@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { decodeAuthCookie, getAuthCookieName } from '@/lib/utils/session-resolver';
 
 function extractSchoolSlug(pathname: string): string | null {
@@ -20,22 +19,60 @@ function getRoleDashboard(role: string): string {
   return '/student';
 }
 
-async function resolveUserSchoolSubdomain(userId: string): Promise<string | null> {
+async function getCachedSchool(subdomain: string) {
   try {
-    const supabaseAdmin = createAdminClient();
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('school_id')
-      .eq('id', userId)
-      .maybeSingle();
-    if (!user?.school_id) return null;
-    const { data: school } = await supabaseAdmin
-      .from('schools')
-      .select('subdomain')
-      .eq('id', user.school_id)
-      .maybeSingle();
-    return school?.subdomain || null;
-  } catch {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return null;
+
+    const url = new URL(`${supabaseUrl}/rest/v1/schools`);
+    url.searchParams.set('subdomain', `eq.${subdomain}`);
+    url.searchParams.set('select', 'id,name,subdomain,primary_color');
+    url.searchParams.set('limit', '1');
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 3600 } // Cache pour 1 heure
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0] || null;
+  } catch (error) {
+    console.error('[Middleware] Failed to fetch school:', error);
+    return null;
+  }
+}
+
+async function getCachedSchoolById(id: string) {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return null;
+
+    const url = new URL(`${supabaseUrl}/rest/v1/schools`);
+    url.searchParams.set('id', `eq.${id}`);
+    url.searchParams.set('select', 'subdomain');
+    url.searchParams.set('limit', '1');
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 3600 }
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0]?.subdomain || null;
+  } catch (error) {
+    console.error('[Middleware] Failed to fetch school by id:', error);
     return null;
   }
 }
@@ -43,25 +80,11 @@ async function resolveUserSchoolSubdomain(userId: string): Promise<string | null
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const schoolSlug = extractSchoolSlug(pathname);
-
-  let supabaseAdmin;
-  try {
-    supabaseAdmin = createAdminClient();
-  } catch (err) {
-    console.error('[Middleware] createAdminClient failed:', err);
-    return NextResponse.next();
-  }
-
   const requestHeaders = new Headers(request.headers);
 
-  // Résoudre l'école depuis le slug dans le chemin
+  // Résoudre l'école depuis le slug dans le chemin (mis en cache)
   if (schoolSlug) {
-    const { data: school } = await supabaseAdmin
-      .from('schools')
-      .select('id, name, subdomain, primary_color')
-      .eq('subdomain', schoolSlug)
-      .maybeSingle();
-
+    const school = await getCachedSchool(schoolSlug);
     if (school) {
       requestHeaders.set('x-school-id', school.id);
       requestHeaders.set('x-school-name', school.name);
@@ -75,34 +98,34 @@ export async function middleware(request: NextRequest) {
   const authCookie = request.cookies.get(authCookieName);
   const session = decodeAuthCookie(authCookie?.value || '');
 
-  if (session) {
-    requestHeaders.set('x-user-id', session.user.id);
+  if (session && session.user.app_metadata) {
+    const userId = session.user.id;
+    const role = session.user.app_metadata.role;
+    const schoolId = session.user.app_metadata.school_id;
 
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('role, school_id')
-      .eq('id', session.user.id)
-      .maybeSingle();
+    requestHeaders.set('x-user-id', userId);
 
-    if (user) {
-      requestHeaders.set('x-user-role', user.role);
+    if (role) {
+      requestHeaders.set('x-user-role', role);
 
       // Pour les routes sans slug (API, etc.), dériver l'école depuis l'utilisateur
-      if (!schoolSlug && user.school_id) {
-        requestHeaders.set('x-school-id', user.school_id);
+      if (!schoolSlug && schoolId) {
+        requestHeaders.set('x-school-id', schoolId);
       }
 
       // Rediriger depuis / et /login vers le dashboard de l'utilisateur
       if (pathname === '/' || pathname === '/login') {
-        const rolePath = getRoleDashboard(user.role);
+        const rolePath = getRoleDashboard(role);
 
         if (schoolSlug) {
           return NextResponse.redirect(new URL(`/${schoolSlug}${rolePath}`, request.url));
         }
 
-        const userSlug = await resolveUserSchoolSubdomain(session.user.id);
-        if (userSlug) {
-          return NextResponse.redirect(new URL(`/${userSlug}${rolePath}`, request.url));
+        if (schoolId) {
+          const userSlug = await getCachedSchoolById(schoolId);
+          if (userSlug) {
+            return NextResponse.redirect(new URL(`/${userSlug}${rolePath}`, request.url));
+          }
         }
       }
     }

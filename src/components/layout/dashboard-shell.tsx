@@ -37,7 +37,7 @@ export function DashboardShell({
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.push(`/${schoolSlug}/login`);
+    router.push(schoolSlug ? `/${schoolSlug}/login` : "/login");
   };
 
   return (
