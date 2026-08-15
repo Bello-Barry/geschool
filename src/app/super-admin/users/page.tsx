@@ -2,16 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Users, ShieldAlert, User, MoreVertical } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Search, Users } from "lucide-react";
+import { UserActions } from "@/components/super-admin/user-actions";
 
 export const metadata = {
   title: "Utilisateurs — Super Admin",
@@ -107,29 +99,7 @@ export default async function UsersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem className="cursor-pointer">
-                            <User className="mr-2 h-4 w-4" /> Profil détaillé
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {user.is_active !== false ? (
-                            <DropdownMenuItem className="text-red-600 cursor-pointer">
-                              <ShieldAlert className="mr-2 h-4 w-4" /> Désactiver le compte
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem className="text-emerald-600 cursor-pointer">
-                              <ShieldAlert className="mr-2 h-4 w-4" /> Réactiver le compte
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <UserActions userId={user.id} isActive={user.is_active !== false} />
                     </td>
                   </tr>
                 ))}
