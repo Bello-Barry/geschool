@@ -1,9 +1,15 @@
 // Générateur du kit commercial GESchool (PDF + DOCX).
-// Exécuter : node scripts/generate-sales-kit.mjs
+// Exécuter : pnpm sales-kit
 // Sortie : public/sales-kit/*.pdf et *.docx
 //
 // PDF  -> @react-pdf/renderer (déjà utilisé par l'app)
 // DOCX -> librairie docx (vrai format Word, éditables)
+//
+// Modèle économique :
+//  - Le parent paie 2 000 F/élève à l'inscription + 1 500 F/élève/mois via la plateforme.
+//  - Répartition inscription : école 1 000 / GESchool 500 / affilié 500.
+//  - Répartition mensuelle : école 750 / GESchool 500 / affilié 250.
+//  - Pas de pilote gratuit : la première année, l'école reçoit sa part dès l'inscription.
 import fs from "node:fs";
 import path from "node:path";
 import React from "react";
@@ -62,7 +68,6 @@ const BODY = "#334155";
 const MUTED = "#64748b";
 const LIGHT = "#fff7ed";
 const LINE = "#e2e8f0";
-const GOOD = "#059669";
 
 const EMAIL = "info@geschool.cd";
 const SITE = "geschool.vercel.app";
@@ -79,17 +84,6 @@ const pdfStyles = StyleSheet.create({
   brandBlock: { marginLeft: 10 },
   brandName: { fontSize: 18, fontWeight: 700, color: DARK, fontFamily: "Helvetica-Bold" },
   brandTag: { fontSize: 9, color: ORANGE, fontFamily: "Helvetica-Bold", letterSpacing: 1 },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: LIGHT,
-    color: ORANGE_DARK,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 99,
-    fontSize: 8.5,
-    marginBottom: 10,
-    fontFamily: "Helvetica-Bold",
-  },
   h1: { fontSize: 22, fontFamily: "Helvetica-Bold", color: DARK, marginBottom: 8, lineHeight: 1.25 },
   h2: { fontSize: 13, fontFamily: "Helvetica-Bold", color: ORANGE, marginTop: 16, marginBottom: 6, textTransform: "uppercase" },
   p: { fontSize: 10, color: BODY, marginBottom: 8 },
@@ -136,7 +130,7 @@ const pdfStyles = StyleSheet.create({
   },
 });
 
-function PdfHeader({ title, badge }) {
+function PdfHeader({ title }) {
   return (
     <PdfView style={pdfStyles.logoRow}>
       <PdfImage src={LOGO_SRC} style={pdfStyles.logoImg} />
@@ -150,13 +144,13 @@ function PdfHeader({ title, badge }) {
   );
 }
 
-function PdfBullets({ items, size = "body" }) {
+function PdfBullets({ items }) {
   return (
     <PdfView>
       {items.map((it, i) => (
         <PdfView key={i} style={pdfStyles.bullet}>
           <PdfView style={pdfStyles.bulletDot} />
-          <PdfText style={size === "small" ? { ...pdfStyles.bulletText, fontSize: 9 } : pdfStyles.bulletText}>{it}</PdfText>
+          <PdfText style={pdfStyles.bulletText}>{it}</PdfText>
         </PdfView>
       ))}
     </PdfView>
@@ -279,13 +273,13 @@ function OnePagerPdf() {
           />
         </PdfSection>
 
-        <PdfSection title="Un coût minime par élève">
+        <PdfSection title="Votre école gagne, elle ne dépense pas">
           <PdfBullets
             items={[
-              `${fmtF(2000)} par élève à l'inscription (une seule fois).`,
-              `${fmtF(1500)} par élève et par mois — motif de lieu, sans engagement caché.`,
-              `Option annuelle tout inclus : ${fmtF(20000)} par élève.`,
-              "Places d'établissements pilotes disponibles à tarif préférentiel.",
+              "C'est le parent qui paie : " + fmtF(2000) + " par élève à l'inscription, puis " + fmtF(1500) + " par élève et par mois, via la plateforme.",
+              "L'école reçoit " + fmtF(1000) + " par élève à l'inscription, puis " + fmtF(750) + " par élève chaque mois : un vrai revenu supplémentaire.",
+              "Vous gagnez deux fois : en productivité (tout est automatisé, plus rapide et efficace) et sur les paiements des parents.",
+              "Votre école garde la majorité : " + fmtF(1000) + " + " + fmtF(750) + " sur chaque " + fmtF(3500) + " versé par un parent.",
             ]}
           />
         </PdfSection>
@@ -306,42 +300,42 @@ function OnePagerPdf() {
 }
 
 function TarifsPdf() {
-  const baseRows = [
-    ["Mise en service de la plateforme", fmtF(2000), "Une seule fois, à l'activation"],
-    ["Abonnement mensuel", fmtF(1500), "Chaque mois"],
-    ["Abonnement trimestriel", fmtF(4500), "Tous les 3 mois"],
-    ["Abonnement annuel (12 mois + inscription)", fmtF(20000), "À la rentrée"],
-  ];
-  const simRows = [
-    ["100 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
-    ["150 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
-    ["200 élèves", fmtF(400000), fmtF(300000), fmtF(4000000)],
-    ["300 élèves", fmtF(600000), fmtF(450000), fmtF(6000000)],
-    ["500 élèves", fmtF(1000000), fmtF(750000), fmtF(10000000)],
-  ];
   return (
     <PdfDocument>
       <Page size="A4" style={pdfStyles.page}>
         <PdfHeader title="Grille tarifaire — Rentrée" />
-        <PdfBadge>Tarifs simples et transparents</PdfBadge>
+        <PdfBadge>L'école gagne, elle ne dépense pas</PdfBadge>
         <PdfText style={pdfStyles.h1}>Grille tarifaire GESchool</PdfText>
         <PdfText style={pdfStyles.p}>
-          Des tarifs calculés par élève, rien d'autre : vous payez en fonction de votre effectif réel. Aucun coût
-          caché, aucune redevance cachée.
+          C'est le parent qui paie via la plateforme. Chaque versement est automatiquement réparti entre l'école,
+          GESchool et l'affilié : votre établissement reçoit la majorité, sans aucune dépense.
         </PdfText>
 
-        <PdfSection title="Tarifs de base">
+        <PdfSection title="Répartition des frais payés par les parents">
           <PdfTable
-            headers={["Élément", "Prix", "Fréquence"]}
-            rows={baseRows}
+            headers={["Frais", "Payé par le parent", "École", "GESchool", "Affilié"]}
+            rows={[
+              ["Inscription (1ère année, une seule fois)", fmtF(2000), fmtF(1000), fmtF(500), fmtF(500)],
+              ["Chaque mois, par élève", fmtF(1500), fmtF(750), fmtF(500), fmtF(250)],
+              ["Sur une année complète", fmtF(20000), fmtF(10000), fmtF(6500), fmtF(3500)],
+            ]}
           />
         </PdfSection>
 
-        <PdfSection title="Simulations selon la taille de l'école">
-          <PdfTable headers={["Effectif", "Mise en service", "Abonnement mensuel", "Année complète"]} rows={simRows} />
+        <PdfSection title="Ce que votre école reçoit (première année)">
+          <PdfTable
+            headers={["Effectif", "Inscription", "Revenu mensuel", "Revenu annuel"]}
+            rows={[
+              ["100 élèves", fmtF(100000), fmtF(75000), fmtF(1000000)],
+              ["150 élèves", fmtF(150000), fmtF(112500), fmtF(1500000)],
+              ["200 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
+              ["300 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
+              ["500 élèves", fmtF(500000), fmtF(375000), fmtF(5000000)],
+            ]}
+          />
         </PdfSection>
 
-        <PdfSection title="Tout inclus dans l'abonnement">
+        <PdfSection title="Tout inclus dans le service">
           <PdfBullets
             items={[
               "Gestion des notes, moyennes et bulletins automatiques.",
@@ -354,19 +348,12 @@ function TarifsPdf() {
           />
         </PdfSection>
 
-        <PdfSection title="Établissements pilotes">
-          <PdfText style={pdfStyles.p}>
-            2 à 3 établissements bénéficient d'une période pilote (1 à 3 mois) avec accès gratuit ou à tarif réduit, en
-            échange de leurs retours d'expérience et d'un témoignage. Les places sont limitées.
-          </PdfText>
-        </PdfSection>
-
         <PdfSection title="Comment ça se passe">
           <PdfBullets
             items={[
               "Réservez une démo de 20 minutes avec notre équipe.",
               "Nous activons votre espace, pré-rempli avec des données d'exemple.",
-              "Vous démarrez à la rentrée, avec la formation offerte.",
+              "Vous démarrez à la rentrée : les parents paient via la plateforme et votre école reçoit sa part.",
             ]}
           />
         </PdfSection>
@@ -392,7 +379,8 @@ function AffiliesPdf() {
         <PdfText style={pdfStyles.h1}>Le programme Partenaires & Affiliés</PdfText>
         <PdfText style={pdfStyles.p}>
           Recommandez GESchool à un établissement et percevez une commission sur chaque élève présenté, chaque mois,
-          tant que l'établissement reste actif.
+          tant que l'établissement reste actif. L'école y gagne aussi : elle reçoit la majorité des paiements des
+          parents.
         </PdfText>
 
         <PdfSection title="Votre commission">
@@ -435,6 +423,7 @@ function AffiliesPdf() {
               "Un simple contrat de partenariat formalise vos droits.",
               "Ouvert aux parents, enseignants, promoteurs, influenceurs et agents de terrain.",
               "Vous pouvez suivre les établissements que vous avez recommandés.",
+              "La part de l'école est prioritaire : votre commission ne réduit jamais le revenu de l'établissement.",
             ]}
           />
         </PdfSection>
@@ -477,21 +466,23 @@ function LoiPdf() {
         <PdfSection title="Article 1 — Objet">
           <PdfText style={pdfStyles.p}>
             L'Établissement s'engage, sous réserve de la mise en service officielle de la plateforme et de l'obtention
-            par l'Éditeur de ses documents légaux, à souscrire à un abonnement GESchool aux tarifs suivants :
+            par l'Éditeur de ses documents légaux, à souscrire à un abonnement GESchool. Le service est financé par les
+            frais payés par les parents via la plateforme, répartis comme suit par élève :
           </PdfText>
           <PdfBullets
             items={[
-              `Frais de mise en service : ${fmtF(2000)} par élève (une seule fois) ;`,
-              `Abonnement mensuel : ${fmtF(1500)} par élève et par mois ;`,
+              `À l'inscription (une seule fois) : ${fmtF(2000)} · école ${fmtF(1000)} · GESchool ${fmtF(500)} · affilié ${fmtF(500)} ;`,
+              `Chaque mois : ${fmtF(1500)} · école ${fmtF(750)} · GESchool ${fmtF(500)} · affilié ${fmtF(250)} ;`,
               "pour un effectif estimé de [____] élèves.",
             ]}
           />
         </PdfSection>
 
-        <PdfSection title="Article 2 — Période pilote">
+        <PdfSection title="Article 2 — Mise en service">
           <PdfText style={pdfStyles.p}>
-            L'Établissement s'engage à participer à une période de test pilote de [1 à 3 mois], durant laquelle il
-            facilitera l'utilisation de la plateforme et partagera ses retours d'expérience avec l'Éditeur.
+            L'Établissement s'engage à mettre la plateforme en service à la rentrée académique [année]. Dès la mise en
+            service, les frais sont perçus auprès des parents via la plateforme, et l'Établissement reçoit sa part sur
+            chaque versement, à partir de la première inscription.
           </PdfText>
         </PdfSection>
 
@@ -544,12 +535,12 @@ function LoiPdf() {
   );
 }
 
-function ConventionPdf() {
+function ConventionAbonnementPdf() {
   return (
     <PdfDocument>
       <Page size="A4" style={pdfStyles.page}>
-        <PdfHeader title="Convention pilote" />
-        <PdfText style={pdfStyles.h1}>Convention d'établissement pilote — GESchool</PdfText>
+        <PdfHeader title="Convention d'abonnement" />
+        <PdfText style={pdfStyles.h1}>Convention d'abonnement — GESchool</PdfText>
         <PdfText style={pdfStyles.p}>
           Entre GESchool, plateforme de gestion scolaire à Brazzaville, République du Congo (ci-après l'« Éditeur »),
           et l'établissement [Raison sociale / Nom de l'école], [Adresse / Ville], représenté(e) par [Nom], [Fonction]
@@ -558,59 +549,65 @@ function ConventionPdf() {
 
         <PdfSection title="Article 1 — Objet">
           <PdfText style={pdfStyles.p}>
-            La présente convention définit les conditions dans lesquelles l'Établissement test la plateforme GESchool
-            en tant qu'établissement pilote, avant une éventuelle souscription définitive.
+            La présente convention fixe les conditions d'utilisation de la plateforme GESchool par l'Établissement.
+            Les frais de service sont payés par les parents à travers la plateforme : l'Établissement en reçoit la
+            majorité.
           </PdfText>
         </PdfSection>
 
-        <PdfSection title="Article 2 — Période pilote">
+        <PdfSection title="Article 2 — Durée">
           <PdfText style={pdfStyles.p}>
-            La période pilote débute le [____/____/20__] pour une durée de [1 à 3 mois], renouvelable par accord écrit
-            des parties.
+            La présente convention est conclue pour l'année académique [____] et se renouvelle par tacite reconduction,
+            sauf dénonciation écrite au plus tard trente (30) jours avant la fin de l'année en cours.
           </PdfText>
         </PdfSection>
 
         <PdfSection title="Article 3 — Prestations de l'Éditeur">
           <PdfBullets
             items={[
-              "Mise à disposition d'un espace GESchool pré-rempli avec des données de démonstration.",
-              "Formation initiale (2 séances minimum) et assistance pendant toute la période pilote.",
-              "Accès gratuit / à tarif préférentiel de [____] pendant la période pilote.",
-              "Aucune facturation pendant la période pilote.",
+              "Mise à disposition de la plateforme : notes, bulletins, présences, paiements, communication parents-enseignants et IA.",
+              "Formation initiale (2 séances minimum) et assistance pendant toute la durée de l'abonnement.",
+              "Sauvegarde et protection des données de l'Établissement.",
             ]}
           />
         </PdfSection>
 
-        <PdfSection title="Article 4 — Engagements de l'Établissement">
+        <PdfSection title="Article 4 — Tarifs et répartition">
+          <PdfText style={pdfStyles.p}>
+            Les frais de service sont payés par les parents via la plateforme : {fmtF(2000)} par élève à l'inscription
+            (une seule fois) et {fmtF(1500)} par élève et par mois. Chaque versement est réparti ainsi, par élève :
+          </PdfText>
+          <PdfBullets
+            items={[
+              `Établissement : ${fmtF(1000)} à l'inscription, puis ${fmtF(750)} par mois.`,
+              `GESchool : ${fmtF(500)} à l'inscription, puis ${fmtF(500)} par mois.`,
+              `Affilié (le cas échéant) : ${fmtF(500)} à l'inscription, puis ${fmtF(250)} par mois.`,
+            ]}
+          />
+        </PdfSection>
+
+        <PdfSection title="Article 5 — Engagements de l'Établissement">
           <PdfBullets
             items={[
               "Désigner un référent qui suivra la formation et interagira avec l'Éditeur.",
-              "Utiliser la plateforme dans un environnement réel ou simulé.",
-              "Partager régulièrement ses retours d'expérience et participer aux points de suivi.",
-              "Fournir un témoignage écrit et/ou vidéo à l'issue de la période pilote.",
-              "Autoriser l'Éditeur à mentionner le nom et le logo de l'Établissement comme référence commerciale.",
+              "Utiliser la plateforme conformément à sa destination et saisir des données exactes.",
               "Ne pas reproduire, modifier ni redistribuer le logiciel.",
+              "Autoriser l'Éditeur à mentionner le nom et le logo de l'Établissement comme référence commerciale.",
             ]}
           />
         </PdfSection>
 
-        <PdfSection title="Article 5 — Données">
+        <PdfSection title="Article 6 — Données">
           <PdfText style={pdfStyles.p}>
-            L'Établissement conserve la propriété de ses données. Pendant la phase pilote, il est recommandé d'utiliser
-            des données fictives ou de démonstration. L'Éditeur s'engage à la confidentialité.
-          </PdfText>
-        </PdfSection>
-
-        <PdfSection title="Article 6 — Après la période pilote">
-          <PdfText style={pdfStyles.p}>
-            À l'issue de la période pilote, l'Établissement peut poursuivre avec un abonnement payant aux tarifs en
-            vigueur (grille tarifaire jointe). Les données saisies pendant le pilote sont conservées.
+            L'Établissement conserve la propriété de ses données. L'Éditeur s'engage à la confidentialité et à la
+            protection des données, conformément à la législation applicable.
           </PdfText>
         </PdfSection>
 
         <PdfSection title="Article 7 — Résiliation">
           <PdfText style={pdfStyles.p}>
-            Chaque partie peut mettre fin à la présente convention par un préavis écrit de quinze (15) jours.
+            En cas de manquement grave et non réparé, chaque partie peut résilier la présente convention par préavis
+            écrit de trente (30) jours.
           </PdfText>
         </PdfSection>
 
@@ -642,7 +639,7 @@ function ConventionPdf() {
         <PdfText style={{ ...pdfStyles.muted, marginTop: 12 }}>
           Fait à : [______] le [____/____/20__] — en deux exemplaires originaux.
         </PdfText>
-        <PdfFooterRight extra="GESchool — Convention pilote" />
+        <PdfFooterRight extra="GESchool — Convention d'abonnement" />
       </Page>
     </PdfDocument>
   );
@@ -656,6 +653,15 @@ function GuidePdf() {
         <PdfBadge>Kit de terrain</PdfBadge>
         <PdfText style={pdfStyles.h1}>Guide de prospection GESchool</PdfText>
 
+        <PdfSection title="Le message à retenir">
+          <PdfBullets
+            items={[
+              "L'école gagne en productivité : bulletins, présences et paiements automatisés, des journées entières gagnées.",
+              "L'école gagne en revenus : c'est le parent qui paie " + fmtF(2000) + " à l'inscription + " + fmtF(1500) + " par élève et par mois ; elle reçoit " + fmtF(1000) + " par élève à l'inscription puis " + fmtF(750) + " par élève chaque mois.",
+            ]}
+          />
+        </PdfSection>
+
         <PdfSection title="1. Qui contacter ?">
           <PdfBullets
             items={[
@@ -668,9 +674,9 @@ function GuidePdf() {
 
         <PdfSection title="2. Accroche de 30 secondes">
           <PdfText style={pdfStyles.p}>
-            « Bonjour, je m'appelle [____]. Je viens présenter GESchool, la plateforme de gestion scolaire qui
-            automatise les bulletins, les présences et le suivi des frais de scolarité. Auriez-vous 20 minutes cette
-            semaine pour une démonstration ? »
+            « Bonjour, je m'appelle [____]. Je viens présenter GESchool, la plateforme qui automatise les bulletins,
+            les présences et le suivi des frais de scolarité — et qui permet à votre école de gagner des revenus
+            supplémentaires. Auriez-vous 20 minutes cette semaine pour une démonstration ? »
           </PdfText>
         </PdfSection>
 
@@ -679,7 +685,7 @@ function GuidePdf() {
             items={[
               "Minutes 0-5 — Questionnez la douleur : « Comment gérez-vous les bulletins aujourd'hui ? », « Combien de temps faut-il pour les générer ? », « Comment suivez-vous les retards de paiement des tranches ? ».",
               "Minutes 5-15 — Montrez précisément comment GESchool résout LA douleur identifiée (base pré-remplie obligatoire).",
-              "Minutes 15-20 — Proposez : période pilote gratuite + signature d'une lettre d'intention, et fixez une date de relance.",
+              "Minutes 15-20 — Présentez le gain financier (" + fmtF(1000) + " + " + fmtF(750) + " par élève) et proposez la signature de la lettre d'intention ; fixez la mise en service à la rentrée.",
             ]}
           />
         </PdfSection>
@@ -687,10 +693,10 @@ function GuidePdf() {
         <PdfSection title="4. Objections — préparez vos réponses">
           <PdfBullets
             items={[
-              "« C'est trop cher » — « Le coût est de " + fmtF(2000) + " par élève + " + fmtF(1500) + " par mois : moins d'1% de la scolarité annuelle. »",
+              "« C'est trop cher » — « Ce n'est pas l'école qui paie : ce sont les parents. Votre école reçoit " + fmtF(1000) + " par élève à l'inscription + " + fmtF(750) + " par élève et par mois. Vous ne dépensez rien, vous gagnez. »",
               "« On utilise déjà Excel » — « Excel ne génère pas les bulletins ni ne suit les impayés en temps réel. GESchool vous fait gagner des jours entiers. »",
               "« Comment c'est sécurisé ? » — « Données hébergées sur un cloud sécurisé et sauvegardé ; l'école garde la main sur ses accès. »",
-              "« Pas le moment » — « Justement : une période pilote gratuite ne vous engage à rien et vous prépare à la rentrée. »",
+              "« Pas le moment » — « Justement : la démo ne vous engage à rien, et commencer à la rentrée vous rendra plus efficace dès le premier trimestre. »",
             ]}
           />
         </PdfSection>
@@ -700,7 +706,7 @@ function GuidePdf() {
             items={[
               "J+1 : merci + envoi de la fiche produit.",
               "J+3 : relance téléphonique.",
-              "J+7 : proposition de signature (lettre d'intention ou convention pilote).",
+              "J+7 : proposition de signature (lettre d'intention ou convention d'abonnement).",
               "Puis relance tous les 15 jours jusqu'à une réponse formelle.",
             ]}
           />
@@ -714,7 +720,7 @@ function GuidePdf() {
               "Fiche produit imprimée (recto/verso)",
               "Grille tarifaire",
               "Lettre d'intention vierge",
-              "Convention pilote vierge",
+              "Convention d'abonnement vierge",
               "Lien de démo + compte test préparé à l'avance",
               "Carnet de prospection (école, contact, statut)",
             ]}
@@ -765,7 +771,7 @@ function docxCell(text, { header = false, width = undefined, bold = false } = {}
 function docxTable(headers, rows) {
   const width = { size: 100, type: WidthType.PERCENTAGE };
   const headerRow = new TableRow({
-    children: headers.map((h, i) => docxCell(h, { header: true, width: { size: 100 / headers.length, type: WidthType.PERCENTAGE } })),
+    children: headers.map((h) => docxCell(h, { header: true, width: { size: 100 / headers.length, type: WidthType.PERCENTAGE } })),
   });
   const bodyRows = rows.map(
     (r) =>
@@ -871,12 +877,12 @@ const DOCX_DOCS = [
         "Intelligence Artificielle : analyse des performances et recommandations personnalisées.",
         "Rapports & Statistiques : tableaux de bord en temps réel, export PDF par classe et par matière.",
       ] },
-      { t: "h2", text: "Un coût minime par élève" },
+      { t: "h2", text: "Votre école gagne, elle ne dépense pas" },
       { t: "bl", items: [
-        `${fmtF(2000)} par élève à l'inscription (une seule fois).`,
-        `${fmtF(1500)} par élève et par mois.`,
-        `Option annuelle tout inclus : ${fmtF(20000)} par élève.`,
-        "Places d'établissements pilotes disponibles à tarif préférentiel.",
+        "C'est le parent qui paie : " + fmtF(2000) + " par élève à l'inscription, puis " + fmtF(1500) + " par élève et par mois, via la plateforme.",
+        "L'école reçoit " + fmtF(1000) + " par élève à l'inscription, puis " + fmtF(750) + " par élève chaque mois : un vrai revenu supplémentaire.",
+        "Vous gagnez deux fois : en productivité (tout est automatisé, plus rapide et efficace) et sur les paiements des parents.",
+        "Votre école garde la majorité : " + fmtF(1000) + " + " + fmtF(750) + " sur chaque " + fmtF(3500) + " versé par un parent.",
       ] },
       { t: "p", text: `Réservez une démo de 20 minutes, gratuite et sans engagement : ${EMAIL} · ${SITE}`, opts: { bold: true } },
     ],
@@ -887,39 +893,36 @@ const DOCX_DOCS = [
     blocks: [
       { t: "logo" },
       { t: "h1", text: "Grille tarifaire GESchool — Rentrée" },
-      { t: "p", text: "Des tarifs calculés par élève, rien d'autre : vous payez selon votre effectif réel. Aucun coût caché." },
-      { t: "h2", text: "Tarifs de base" },
+      { t: "p", text: "C'est le parent qui paie via la plateforme. Chaque versement est automatiquement réparti entre l'école, GESchool et l'affilié : votre établissement reçoit la majorité, sans aucune dépense. Aucun coût caché." },
+      { t: "h2", text: "Répartition des frais payés par les parents" },
       { t: "table",
-        headers: ["Élément", "Prix", "Fréquence"],
+        headers: ["Frais", "Payé par le parent", "École", "GESchool", "Affilié"],
         rows: [
-          ["Mise en service de la plateforme", fmtF(2000), "Une seule fois, à l'activation"],
-          ["Abonnement mensuel", fmtF(1500), "Chaque mois"],
-          ["Abonnement trimestriel", fmtF(4500), "Tous les 3 mois"],
-          ["Abonnement annuel (12 mois + inscription)", fmtF(20000), "À la rentrée"],
+          ["Inscription (1ère année, une seule fois)", fmtF(2000), fmtF(1000), fmtF(500), fmtF(500)],
+          ["Chaque mois, par élève", fmtF(1500), fmtF(750), fmtF(500), fmtF(250)],
+          ["Sur une année complète", fmtF(20000), fmtF(10000), fmtF(6500), fmtF(3500)],
         ] },
-      { t: "h2", text: "Simulations selon la taille de l'école" },
+      { t: "h2", text: "Ce que votre école reçoit (première année)" },
       { t: "table",
-        headers: ["Effectif", "Mise en service", "Abonnement mensuel", "Année complète"],
+        headers: ["Effectif", "Inscription", "Revenu mensuel", "Revenu annuel"],
         rows: [
-          ["100 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
-          ["150 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
-          ["200 élèves", fmtF(400000), fmtF(300000), fmtF(4000000)],
-          ["300 élèves", fmtF(600000), fmtF(450000), fmtF(6000000)],
-          ["500 élèves", fmtF(1000000), fmtF(750000), fmtF(10000000)],
+          ["100 élèves", fmtF(100000), fmtF(75000), fmtF(1000000)],
+          ["150 élèves", fmtF(150000), fmtF(112500), fmtF(1500000)],
+          ["200 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
+          ["300 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
+          ["500 élèves", fmtF(500000), fmtF(375000), fmtF(5000000)],
         ] },
-      { t: "h2", text: "Tout est inclus dans l'abonnement" },
+      { t: "h2", text: "Tout est inclus dans le service" },
       { t: "bl", items: [
         "Notes, moyennes et bulletins automatiques — présences et absentéisme.",
         "Suivi des paiements et des impayés — communication parents-enseignants.",
         "Assistant IA et statistiques — formation initiale et support inclus.",
       ] },
-      { t: "h2", text: "Établissements pilotes" },
-      { t: "p", text: "2 à 3 établissements bénéficient d'une période pilote (1 à 3 mois) gratuite ou à tarif réduit, en échange de leurs retours d'expérience et d'un témoignage. Places limitées." },
       { t: "h2", text: "Comment ça se passe" },
       { t: "num", items: [
         "Réservez une démo de 20 minutes.",
         "Nous activons votre espace, pré-rempli avec des données d'exemple.",
-        "Vous démarrez à la rentrée, avec la formation offerte.",
+        "Vous démarrez à la rentrée : les parents paient via la plateforme et votre école reçoit sa part.",
       ] },
     ],
   },
@@ -929,7 +932,7 @@ const DOCX_DOCS = [
     blocks: [
       { t: "logo" },
       { t: "h1", text: "Le programme Partenaires & Affiliés GESchool" },
-      { t: "p", text: "Recommandez GESchool à un établissement et percevez une commission sur chaque élève présenté, chaque mois, tant que l'établissement reste actif." },
+      { t: "p", text: "Recommandez GESchool à un établissement et percevez une commission sur chaque élève présenté, chaque mois, tant que l'établissement reste actif. L'école y gagne aussi : elle reçoit la majorité des paiements des parents." },
       { t: "h2", text: "Votre commission" },
       { t: "table",
         headers: ["Élément", "Par élève", "Exemple : école de 200 élèves"],
@@ -958,6 +961,7 @@ const DOCX_DOCS = [
         "Paiement mensuel tant que l'établissement reste abonné.",
         "Contrat de partenariat simple pour sécuriser vos droits.",
         "Ouvert aux parents, enseignants, promoteurs, influenceurs et agents de terrain.",
+        "La part de l'école est prioritaire : votre commission ne réduit jamais le revenu de l'établissement.",
       ] },
       { t: "p", text: `Rejoignez le programme : ${EMAIL} · ${SITE}`, opts: { bold: true } },
     ],
@@ -974,14 +978,14 @@ const DOCX_DOCS = [
       { t: "p", text: "L'Établissement : [Raison sociale / Nom de l'école] · [Adresse / Ville] · représenté(e) par [Nom], [Fonction]" },
       { t: "p", text: "L'Établissement s'intéresse à la plateforme GESchool et confirme par la présente son intention d'y souscrire pour la gestion scolaire : notes, bulletins, présences, paiements et communication avec les parents." },
       { t: "h2", text: "Article 1 — Objet" },
-      { t: "p", text: "L'Établissement s'engage, sous réserve de la mise en service officielle de la plateforme et de l'obtention par l'Éditeur de ses documents légaux, à souscrire à un abonnement GESchool aux tarifs suivants :" },
+      { t: "p", text: "L'Établissement s'engage, sous réserve de la mise en service officielle de la plateforme et de l'obtention par l'Éditeur de ses documents légaux, à souscrire à un abonnement GESchool. Le service est financé par les frais payés par les parents via la plateforme, répartis comme suit par élève :" },
       { t: "bl", items: [
-        `Frais de mise en service : ${fmtF(2000)} par élève (une seule fois) ;`,
-        `Abonnement mensuel : ${fmtF(1500)} par élève et par mois ;`,
+        `À l'inscription (une seule fois) : ${fmtF(2000)} · école ${fmtF(1000)} · GESchool ${fmtF(500)} · affilié ${fmtF(500)} ;`,
+        `Chaque mois : ${fmtF(1500)} · école ${fmtF(750)} · GESchool ${fmtF(500)} · affilié ${fmtF(250)} ;`,
         "pour un effectif estimé de [____] élèves.",
       ] },
-      { t: "h2", text: "Article 2 — Période pilote" },
-      { t: "p", text: "L'Établissement s'engage à participer à une période de test pilote de [1 à 3 mois], durant laquelle il facilitera l'utilisation de la plateforme et partagera ses retours d'expérience avec l'Éditeur." },
+      { t: "h2", text: "Article 2 — Mise en service" },
+      { t: "p", text: "L'Établissement s'engage à mettre la plateforme en service à la rentrée académique [année]. Dès la mise en service, les frais sont perçus auprès des parents via la plateforme, et l'Établissement reçoit sa part sur chaque versement, à partir de la première inscription." },
       { t: "h2", text: "Article 3 — Validité" },
       { t: "p", text: "La présente lettre d'intention est valable 90 (quatre-vingt-dix) jours à compter de sa signature. Passé ce délai, elle devient caduque sauf renouvellement écrit des parties." },
       { t: "h2", text: "Article 4 — Nature du document" },
@@ -993,38 +997,40 @@ const DOCX_DOCS = [
     ],
   },
   {
-    file: "05-convention-etablissement-pilote-geschool.docx",
-    title: "Convention pilote",
+    file: "05-convention-abonnement-geschool.docx",
+    title: "Convention d'abonnement",
     blocks: [
       { t: "logo" },
-      { t: "h1", text: "Convention d'établissement pilote — GESchool" },
+      { t: "h1", text: "Convention d'abonnement — GESchool" },
       { t: "p", text: "Entre GESchool, plateforme de gestion scolaire à Brazzaville, République du Congo (ci-après l'« Éditeur »), et l'établissement [Raison sociale / Nom de l'école], [Adresse / Ville], représenté(e) par [Nom], [Fonction] (ci-après l'« Établissement »)." },
       { t: "h2", text: "Article 1 — Objet" },
-      { t: "p", text: "La présente convention définit les conditions dans lesquelles l'Établissement teste la plateforme GESchool en tant qu'établissement pilote, avant une éventuelle souscription définitive." },
-      { t: "h2", text: "Article 2 — Période pilote" },
-      { t: "p", text: "La période pilote débute le [____/____/20__] pour une durée de [1 à 3 mois], renouvelable par accord écrit des parties." },
+      { t: "p", text: "La présente convention fixe les conditions d'utilisation de la plateforme GESchool par l'Établissement. Les frais de service sont payés par les parents à travers la plateforme : l'Établissement en reçoit la majorité." },
+      { t: "h2", text: "Article 2 — Durée" },
+      { t: "p", text: "La présente convention est conclue pour l'année académique [____] et se renouvelle par tacite reconduction, sauf dénonciation écrite au plus tard trente (30) jours avant la fin de l'année en cours." },
       { t: "h2", text: "Article 3 — Prestations de l'Éditeur" },
       { t: "bl", items: [
-        "Mise à disposition d'un espace GESchool pré-rempli avec des données de démonstration.",
-        "Formation initiale (2 séances minimum) et assistance pendant toute la période pilote.",
-        "Accès gratuit / à tarif préférentiel de [____] pendant la période pilote.",
-        "Aucune facturation pendant la période pilote.",
+        "Mise à disposition de la plateforme : notes, bulletins, présences, paiements, communication parents-enseignants et IA.",
+        "Formation initiale (2 séances minimum) et assistance pendant toute la durée de l'abonnement.",
+        "Sauvegarde et protection des données de l'Établissement.",
       ] },
-      { t: "h2", text: "Article 4 — Engagements de l'Établissement" },
+      { t: "h2", text: "Article 4 — Tarifs et répartition" },
+      { t: "p", text: "Les frais de service sont payés par les parents via la plateforme : " + fmtF(2000) + " par élève à l'inscription (une seule fois) et " + fmtF(1500) + " par élève et par mois. Chaque versement est réparti ainsi, par élève :" },
+      { t: "bl", items: [
+        "Établissement : " + fmtF(1000) + " à l'inscription, puis " + fmtF(750) + " par mois.",
+        "GESchool : " + fmtF(500) + " à l'inscription, puis " + fmtF(500) + " par mois.",
+        "Affilié (le cas échéant) : " + fmtF(500) + " à l'inscription, puis " + fmtF(250) + " par mois.",
+      ] },
+      { t: "h2", text: "Article 5 — Engagements de l'Établissement" },
       { t: "bl", items: [
         "Désigner un référent qui suivra la formation et interagira avec l'Éditeur.",
-        "Utiliser la plateforme dans un environnement réel ou simulé.",
-        "Partager régulièrement ses retours d'expérience et participer aux points de suivi.",
-        "Fournir un témoignage écrit et/ou vidéo à l'issue de la période pilote.",
-        "Autoriser l'Éditeur à mentionner le nom et le logo de l'Établissement comme référence commerciale.",
+        "Utiliser la plateforme conformément à sa destination et saisir des données exactes.",
         "Ne pas reproduire, modifier ni redistribuer le logiciel.",
+        "Autoriser l'Éditeur à mentionner le nom et le logo de l'Établissement comme référence commerciale.",
       ] },
-      { t: "h2", text: "Article 5 — Données" },
-      { t: "p", text: "L'Établissement conserve la propriété de ses données. Pendant la phase pilote, il est recommandé d'utiliser des données fictives ou de démonstration. L'Éditeur s'engage à la confidentialité." },
-      { t: "h2", text: "Article 6 — Après la période pilote" },
-      { t: "p", text: "À l'issue de la période pilote, l'Établissement peut poursuivre avec un abonnement payant aux tarifs en vigueur (grille tarifaire jointe). Les données saisies pendant le pilote sont conservées." },
+      { t: "h2", text: "Article 6 — Données" },
+      { t: "p", text: "L'Établissement conserve la propriété de ses données. L'Éditeur s'engage à la confidentialité et à la protection des données, conformément à la législation applicable." },
       { t: "h2", text: "Article 7 — Résiliation" },
-      { t: "p", text: "Chaque partie peut mettre fin à la présente convention par un préavis écrit de quinze (15) jours." },
+      { t: "p", text: "En cas de manquement grave et non réparé, chaque partie peut résilier la présente convention par préavis écrit de trente (30) jours." },
       { t: "h2", text: "Article 8 — Droit applicable" },
       { t: "p", text: "La présente convention est régie par le droit de la République du Congo. Tout litige relève des juridictions compétentes de Brazzaville." },
       { t: "sig" },
@@ -1033,13 +1039,18 @@ const DOCX_DOCS = [
   },
 ];
 
-// ---- Guides DOCX (2) pour le guide de prospection -------------------------------------
+// ---- Guide de prospection (DOCX) ----------------------------------------------------
 const DOCX_GUIDE = {
   file: "06-guide-prospection-geschool.docx",
   title: "Guide de prospection",
   blocks: [
     { t: "logo" },
     { t: "h1", text: "Guide de prospection GESchool" },
+    { t: "h2", text: "Le message à retenir" },
+    { t: "bl", items: [
+      "L'école gagne en productivité : bulletins, présences et paiements automatisés, des journées entières gagnées.",
+      "L'école gagne en revenus : c'est le parent qui paie " + fmtF(2000) + " à l'inscription + " + fmtF(1500) + " par élève et par mois ; elle reçoit " + fmtF(1000) + " par élève à l'inscription puis " + fmtF(750) + " par élève chaque mois.",
+    ] },
     { t: "h2", text: "1. Qui contacter ?" },
     { t: "bl", items: [
       "Cible prioritaire : les écoles privées — circuits de décision courts.",
@@ -1047,25 +1058,25 @@ const DOCX_GUIDE = {
       "Les secrétariats filtrent : utilisez une accroche courte pour décrocher un rendez-vous.",
     ] },
     { t: "h2", text: "2. Accroche de 30 secondes" },
-    { t: "p", text: "« Bonjour, je m'appelle [____]. Je viens présenter GESchool, la plateforme de gestion scolaire qui automatise les bulletins, les présences et le suivi des frais de scolarité. Auriez-vous 20 minutes cette semaine pour une démonstration ? »" },
+    { t: "p", text: "« Bonjour, je m'appelle [____]. Je viens présenter GESchool, la plateforme qui automatise les bulletins, les présences et le suivi des frais de scolarité — et qui permet à votre école de gagner des revenus supplémentaires. Auriez-vous 20 minutes cette semaine pour une démonstration ? »" },
     { t: "h2", text: "3. La démo idéale en 20 minutes" },
     { t: "bl", items: [
       "Minutes 0-5 — Questionnez la douleur : « Comment gérez-vous les bulletins aujourd'hui ? », « Combien de temps pour les générer ? », « Comment suivez-vous les retards de paiement ? ».",
       "Minutes 5-15 — Montrez précisément comment GESchool résout LA douleur identifiée (base pré-remplie obligatoire).",
-      "Minutes 15-20 — Proposez : période pilote gratuite + lettre d'intention, et fixez une date de relance.",
+      "Minutes 15-20 — Présentez le gain financier (" + fmtF(1000) + " + " + fmtF(750) + " par élève) et proposez la signature de la lettre d'intention ; fixez la mise en service à la rentrée.",
     ] },
     { t: "h2", text: "4. Objections — préparez vos réponses" },
     { t: "bl", items: [
-      "« C'est trop cher » — « Le coût est de " + fmtF(2000) + " par élève + " + fmtF(1500) + " par mois : moins d'1% de la scolarité annuelle. »",
+      "« C'est trop cher » — « Ce n'est pas l'école qui paie : ce sont les parents. Votre école reçoit " + fmtF(1000) + " par élève à l'inscription + " + fmtF(750) + " par élève et par mois. Vous ne dépensez rien, vous gagnez. »",
       "« On utilise déjà Excel » — « Excel ne génère pas les bulletins ni ne suit les impayés en temps réel. GESchool vous fait gagner des jours entiers. »",
       "« Comment c'est sécurisé ? » — « Données hébergées sur un cloud sécurisé et sauvegardé ; l'école garde la main sur ses accès. »",
-      "« Pas le moment » — « Justement : une période pilote gratuite ne vous engage à rien et vous prépare à la rentrée. »",
+      "« Pas le moment » — « Justement : la démo ne vous engage à rien, et commencer à la rentrée vous rendra plus efficace dès le premier trimestre. »",
     ] },
     { t: "h2", text: "5. Suivi & relances" },
     { t: "bl", items: [
       "J+1 : merci + envoi de la fiche produit.",
       "J+3 : relance téléphonique.",
-      "J+7 : proposition de signature (lettre d'intention ou convention pilote).",
+      "J+7 : proposition de signature (lettre d'intention ou convention d'abonnement).",
       "Puis relance tous les 15 jours jusqu'à une réponse formelle.",
     ] },
     { t: "h2", text: "6. Kit à emporter (checklist)" },
@@ -1073,7 +1084,7 @@ const DOCX_GUIDE = {
       "Fiche produit imprimée (recto/verso)",
       "Grille tarifaire",
       "Lettre d'intention vierge",
-      "Convention pilote vierge",
+      "Convention d'abonnement vierge",
       "Lien de démo + compte test préparé à l'avance",
       "Carnet de prospection (école, contact, statut)",
     ] },
@@ -1089,7 +1100,7 @@ async function main() {
     ["02-grille-tarifaire-geschool.pdf", TarifsPdf()],
     ["03-programme-affilies-geschool.pdf", AffiliesPdf()],
     ["04-lettre-intention-geschool.pdf", LoiPdf()],
-    ["05-convention-etablissement-pilote-geschool.pdf", ConventionPdf()],
+    ["05-convention-abonnement-geschool.pdf", ConventionAbonnementPdf()],
     ["06-guide-prospection-geschool.pdf", GuidePdf()],
   ];
 
