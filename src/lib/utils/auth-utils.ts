@@ -143,3 +143,48 @@ export async function getSchoolHeaders() {
     schoolColor: headersList.get("x-school-color"),
   };
 }
+
+/**
+ * Vérifie qu'un utilisateur authentifié peut accéder aux données d'un élève :
+ * admin de l'école, super_admin de la même école, l'élève lui-même, ou un parent lié.
+ */
+export async function canAccessStudent(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  auth: { userId: string; schoolId: string; role: string },
+  studentId: string,
+  schoolId: string,
+): Promise<boolean> {
+  if (auth.role === "admin_school" && auth.schoolId === schoolId) return true;
+  if (auth.role === "super_admin" && auth.schoolId === schoolId) return true;
+
+  if (auth.role === "student") {
+    const { data: student } = await supabaseAdmin
+      .from("students")
+      .select("id")
+      .eq("id", studentId)
+      .eq("user_id", auth.userId)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+    return !!student;
+  }
+
+  if (auth.role === "parent") {
+    const { data: parent } = await supabaseAdmin
+      .from("parents")
+      .select("id")
+      .eq("user_id", auth.userId)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+    if (!parent) return false;
+
+    const { data: link } = await supabaseAdmin
+      .from("student_parents")
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("parent_id", parent.id)
+      .maybeSingle();
+    return !!link;
+  }
+
+  return false;
+}

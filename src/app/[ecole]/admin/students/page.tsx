@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StudentsTable } from "@/components/ui/tables";
 import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export default async function StudentsPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
@@ -47,12 +47,6 @@ export default async function StudentsPage({ params }: { params: Promise<{ ecole
         description="Gérez les élèves de votre école"
         actions={
           <>
-            <Link href={`/${slug}/admin/students/import`}>
-              <Button variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Import CSV
-              </Button>
-            </Link>
             <Link href={`/${slug}/admin/students/new`}>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />

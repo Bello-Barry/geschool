@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser, canAccessStudent } from "@/lib/utils/auth-utils";
 
 export async function GET(
   _request: NextRequest,
@@ -9,6 +10,11 @@ export async function GET(
     const { id } = await params;
 
     const supabaseAdmin = createAdminClient();
+    const auth = await getAuthUser();
+
+    if (!auth) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
 
     const { data: report, error: reportErr } = await supabaseAdmin
       .from("report_cards")
@@ -18,6 +24,17 @@ export async function GET(
 
     if (reportErr || !report || !report.pdf_url) {
       return NextResponse.json({ error: "Bulletin introuvable" }, { status: 404 });
+    }
+
+    const allowed = await canAccessStudent(
+      supabaseAdmin,
+      auth,
+      report.student_id,
+      report.school_id,
+    );
+
+    if (!allowed) {
+      return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
     const { data: fileData, error: downloadErr } = await supabaseAdmin.storage

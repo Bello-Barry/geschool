@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyParentsOfGrade } from "@/lib/notifications/create";
 
 const batchGradeSchema = z.object({
   student_id: z.string().uuid(),
@@ -38,6 +39,20 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createAdminClient();
 
+    // Le teacher doit être affecté à la classe/matière via teacher_subjects
+    if (user.role === "teacher") {
+      const allowed = await teacherCanGrade(
+        supabaseAdmin,
+        session.user.id,
+        schoolId,
+        validated.student_id,
+        validated.subject_id,
+      );
+      if (!allowed) {
+        return NextResponse.json({ error: "Vous n'êtes pas affecté à cette classe/matière" }, { status: 403 });
+      }
+    }
+
     // Remove existing grades for this student/subject/term to replace
     await supabaseAdmin
       .from("grades")
@@ -68,6 +83,24 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    const { data: subject } = await supabaseAdmin
+      .from("subjects")
+      .select("name")
+      .eq("id", validated.subject_id)
+      .single();
+
+    const mainScore = validated.grades.find((g) => g.grade_type === "exam")
+      ?.score ?? validated.grades[0]?.score;
+
+    if (mainScore != null && data && data.length > 0) {
+      notifyParentsOfGrade(
+        validated.student_id,
+        schoolId,
+        subject?.name || "Matière inconnue",
+        mainScore,
+      ).catch((err) => console.error("Batch grade notification error:", err));
+    }
+
     return NextResponse.json({ success: true, count: data?.length ?? 0 }, { status: 201 });
   } catch (error) {
     console.error("Batch grade error:", error);
@@ -78,4 +111,39 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ error: "Failed to save grades" }, { status: 500 });
   }
+}
+
+async function teacherCanGrade(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  schoolId: string,
+  studentId: string,
+  subjectId: string,
+): Promise<boolean> {
+  const { data: teacher } = await supabaseAdmin
+    .from("teachers")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("school_id", schoolId)
+    .maybeSingle();
+  if (!teacher) return false;
+
+  const { data: student } = await supabaseAdmin
+    .from("students")
+    .select("class_id")
+    .eq("id", studentId)
+    .eq("school_id", schoolId)
+    .maybeSingle();
+  if (!student?.class_id) return false;
+
+  const { data: assignment } = await supabaseAdmin
+    .from("teacher_subjects")
+    .select("id")
+    .eq("teacher_id", teacher.id)
+    .eq("subject_id", subjectId)
+    .eq("class_id", student.class_id)
+    .eq("school_id", schoolId)
+    .maybeSingle();
+
+  return !!assignment;
 }

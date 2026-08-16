@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthUser, canAccessStudent } from "@/lib/utils/auth-utils";
 
 export async function GET(
   _request: NextRequest,
@@ -7,6 +8,11 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabaseAdmin = createAdminClient();
+
+  const auth = await getAuthUser();
+  if (!auth) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
 
   const { data: payment, error: payErr } = await supabaseAdmin
     .from("payments")
@@ -16,6 +22,17 @@ export async function GET(
 
   if (payErr || !payment) {
     return NextResponse.json({ error: "Paiement introuvable" }, { status: 404 });
+  }
+
+  const allowed = await canAccessStudent(
+    supabaseAdmin,
+    auth,
+    payment.student_id,
+    payment.school_id,
+  );
+
+  if (!allowed) {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
   }
 
   if (payment.status !== "confirmed" || !payment.receipt_pdf_url) {

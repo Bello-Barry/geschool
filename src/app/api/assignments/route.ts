@@ -7,7 +7,7 @@ const createSchema = z.object({
   subject_id: z.string().uuid(),
   class_id: z.string().uuid(),
   term_id: z.string().uuid().optional().nullable(),
-  type: z.enum(["devoir_maison"]),
+  type: z.enum(["devoir_maison", "td", "tp"]),
   title: z.string().min(1, "Titre requis"),
   description: z.string().optional().default(""),
   due_date: z.string().min(1, "Date d'échéance requise"),
