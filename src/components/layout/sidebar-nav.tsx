@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LucideIcon, LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen, Link as LinkIcon, Calendar, CalendarRange, CreditCard, FileText, Settings, ClipboardList, MessageSquare, Bot, Globe } from "lucide-react";
+import { LucideIcon, LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen, Link as LinkIcon, Calendar, CalendarRange, CreditCard, FileText, Settings, ClipboardList, MessageSquare, Bot, Globe, Megaphone } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, GraduationCap, Users, UserCog, School, BookOpen,
   Link: LinkIcon, Calendar, CalendarRange, CreditCard, FileText,
-  Settings, ClipboardList, MessageSquare, Bot, Globe
+  Settings, ClipboardList, MessageSquare, Bot, Globe, Megaphone
 };
 
 export function SidebarNav({ items, collapsed, onNavClick }: {

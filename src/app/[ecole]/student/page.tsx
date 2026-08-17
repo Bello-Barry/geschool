@@ -1,25 +1,29 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Clock, NotebookPen, CalendarCheck2 } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 
 export default async function StudentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
   if (!auth || auth.role !== "student") redirect(`/${slug}/login`);
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: student } = await supabase
     .from("students")
     .select(`
       id,
       matricule,
+      class_id,
       user:user_id(first_name, last_name, email),
       class:class_id(name, level)
     `)
@@ -57,6 +61,41 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
   const average = allScores.length > 0
     ? (allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(2)
     : null;
+
+  // ─── Aujourd'hui ────────────────────────────────────────────────
+  const todayISO = new Date().toISOString().split("T")[0];
+  const isoWeekday = new Date().getDay() === 0 ? 7 : new Date().getDay(); // 1-7, ISO
+
+  const [attendanceToday, assignmentsToday, todaySlots] = await Promise.all([
+    supabase
+      .from("attendance")
+      .select("status")
+      .eq("student_id", student.id)
+      .eq("school_id", auth.schoolId)
+      .eq("date", todayISO)
+      .is("schedule_slot_id", null)
+      .maybeSingle(),
+    supabase
+      .from("assignments")
+      .select("id", { count: "exact" })
+      .eq("class_id", student.class_id)
+      .eq("school_id", auth.schoolId)
+      .eq("status", "published")
+      .eq("due_date", todayISO),
+    student.class_id
+      ? supabase
+          .from("schedule_slots")
+          .select("id, start_time, end_time, room_number, teacher_subject:teacher_subject_id(subject:subject_id(name))")
+          .eq("school_id", auth.schoolId)
+          .eq("class_id", student.class_id)
+          .eq("day_of_week", isoWeekday)
+          .order("start_time")
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const slotsToday = todaySlots.data || [];
+  const nextSlot = slotsToday.find((s: any) => s.start_time >= new Date().toTimeString().slice(0, 5)) || slotsToday[0];
+  const attendanceStatus = (attendanceToday as any)?.data?.status ?? (attendanceToday as any)?.status;
 
   const gradeTypeLabel = (t: string) => {
     const map: Record<string, string> = { homework: "Devoir", test: "Interro", exam: "Composition" };
@@ -101,6 +140,61 @@ export default async function StudentDashboard({ params }: { params: Promise<{ e
             <p className="text-[11px] text-muted-foreground">Enregistrées</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Aujourd'hui — KPIs temps réel */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+          <Clock className="h-4 w-4" /> Aujourd'hui
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Proch. cours</CardTitle>
+              <Clock className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent className="px-3 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">
+                {nextSlot ? nextSlot.start_time : "—"}
+              </div>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {(nextSlot as any)?.teacher_subject?.subject?.name ?? "pas de cours"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Devoirs</CardTitle>
+              <NotebookPen className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent className="px-3 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">{assignmentsToday.count || 0}</div>
+              <p className="text-[11px] text-muted-foreground">à rendre aujourd'hui</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Présence</CardTitle>
+              <CalendarCheck2 className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent className="px-3 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">
+                {attendanceStatus === "present" ? "Présent" : attendanceStatus === "absent" ? "Absent" : attendanceStatus === "late" ? "En retard" : attendanceStatus === "excused" ? "Excusé" : "—"}
+              </div>
+              <p className="text-[11px] text-muted-foreground">statut du jour</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Cours du jour</CardTitle>
+              <Clock className="h-4 w-4 text-emerald-600" />
+            </CardHeader>
+            <CardContent className="px-3 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">{slotsToday.length}</div>
+              <p className="text-[11px] text-muted-foreground">au programme</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="flex gap-3">

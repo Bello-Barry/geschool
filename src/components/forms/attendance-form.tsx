@@ -27,6 +27,8 @@ interface AttendanceFormProps {
   date: Date;
   students: Student[];
   existingRecords: ExistingRecord[];
+  scheduleSlotId?: string;
+  title?: string;
 }
 
 const STATUS_ICONS: Record<Status, typeof Check> = {
@@ -57,7 +59,7 @@ const STATUS_OUTLINES: Record<Status, string> = {
   excused: "text-blue-600 border-blue-200 hover:bg-blue-50",
 };
 
-export function AttendanceForm({ classId, date, students, existingRecords }: AttendanceFormProps) {
+export function AttendanceForm({ classId, date, students, existingRecords, scheduleSlotId, title }: AttendanceFormProps) {
   const dateStr = date.toISOString().split("T")[0];
   const [saving, setSaving] = useState(false);
 
@@ -103,7 +105,7 @@ export function AttendanceForm({ classId, date, students, existingRecords }: Att
       const res = await fetch("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ class_id: classId, date: dateStr, records }),
+        body: JSON.stringify({ class_id: classId, date: dateStr, schedule_slot_id: scheduleSlotId, records }),
       });
 
       if (!res.ok) {
@@ -117,7 +119,7 @@ export function AttendanceForm({ classId, date, students, existingRecords }: Att
     } finally {
       setSaving(false);
     }
-  }, [classId, dateStr, students, statuses, reasons, toast]);
+  }, [classId, dateStr, students, statuses, reasons, toast, scheduleSlotId]);
 
   const statusButtons = (studentId: string) => {
     const current = statuses[studentId];
@@ -149,8 +151,8 @@ export function AttendanceForm({ classId, date, students, existingRecords }: Att
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Registre de présence</CardTitle>
-          <CardDescription>Cochez le statut de chaque élève pour aujourd'hui.</CardDescription>
+          <CardTitle>{title || "Registre de présence"}</CardTitle>
+          <CardDescription>Cochez le statut de chaque élève pour l&apos;appel concerné.</CardDescription>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={markAllPresent} type="button">Cocher tous présents</Button>

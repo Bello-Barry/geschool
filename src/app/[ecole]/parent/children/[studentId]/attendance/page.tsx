@@ -46,18 +46,19 @@ export default async function StudentAttendancePage({
 
   const { data: attendanceRecords } = await supabaseAdmin
     .from("attendance")
-    .select("id, date, status, reason")
+    .select("id, date, status, reason, schedule_slot_id, schedule_slot:schedule_slot_id(start_time, end_time, teacher_subject:teacher_subject_id(subject:subject_id(name)))")
     .eq("student_id", studentId)
     .order("date", { ascending: false });
 
   const userInfo = unwrapJoin(student.user) as { first_name: string; last_name: string } | null;
   const classInfo = unwrapJoin(student.class) as { name: string } | null;
 
-  const totalRecords = attendanceRecords?.length || 0;
-  const absences = attendanceRecords?.filter(r => r.status === "absent").length || 0;
-  const lates = attendanceRecords?.filter(r => r.status === "late").length || 0;
-  const presents = attendanceRecords?.filter(r => r.status === "present").length || 0;
-  const excused = attendanceRecords?.filter(r => r.status === "excused").length || 0;
+  const dailyRecords = (attendanceRecords || []).filter((r: any) => !r.schedule_slot_id);
+  const totalRecords = dailyRecords.length;
+  const absences = dailyRecords.filter((r: any) => r.status === "absent").length;
+  const lates = dailyRecords.filter((r: any) => r.status === "late").length;
+  const presents = dailyRecords.filter((r: any) => r.status === "present").length;
+  const excused = dailyRecords.filter((r: any) => r.status === "excused").length;
 
   return (
     <div className="space-y-6">
@@ -134,6 +135,17 @@ export default async function StudentAttendancePage({
                     <span className="font-medium text-sm">{formatDate(rec.date)}</span>
                   </div>
                   <div className="flex items-center gap-3">
+                    {rec.schedule_slot && (
+                      <span className="text-xs text-neutral-500">
+                        {(() => {
+                          const slot = rec.schedule_slot as { start_time?: string; end_time?: string; teacher_subject?: { subject?: { name?: string } } } | null;
+                          if (!slot) return "";
+                          const subject = slot.teacher_subject?.subject?.name ?? "Cours";
+                          const time = `${slot.start_time?.slice(0, 5) ?? ""}–${slot.end_time?.slice(0, 5) ?? ""}`;
+                          return `${subject} · ${time}`;
+                        })()}
+                      </span>
+                    )}
                     {rec.reason && (
                       <span className="text-sm text-neutral-600 italic">{rec.reason}</span>
                     )}

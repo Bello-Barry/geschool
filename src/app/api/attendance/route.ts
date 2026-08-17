@@ -14,6 +14,7 @@ const attendanceRecordSchema = z.object({
 const postSchema = z.object({
   class_id: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  schedule_slot_id: z.string().uuid().optional(),
   records: z.array(attendanceRecordSchema).min(1),
 });
 
@@ -27,17 +28,22 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const classId = searchParams.get("classId");
   const date = searchParams.get("date");
+  const scheduleSlotId = searchParams.get("scheduleSlotId");
 
   if (!classId || !date) {
     return NextResponse.json({ error: "classId and date are required" }, { status: 400 });
   }
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("attendance")
       .select("*")
       .eq("class_id", classId)
       .eq("date", date);
+
+    if (scheduleSlotId) query = query.eq("schedule_slot_id", scheduleSlotId);
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -94,13 +100,17 @@ export async function POST(request: NextRequest) {
       class_id: validated.class_id,
       school_id: profile.school_id,
       date: validated.date,
+      schedule_slot_id: validated.schedule_slot_id || null,
       status: r.status,
       reason: r.reason || null,
     }));
 
     const { data, error } = await supabase
       .from("attendance")
-      .upsert(records, { onConflict: "student_id, date", ignoreDuplicates: false })
+      .upsert(records, {
+        onConflict: validated.schedule_slot_id ? "student_id, date, schedule_slot_id" : "student_id, date",
+        ignoreDuplicates: false,
+      })
       .select();
 
     if (error) throw error;

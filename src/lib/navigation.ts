@@ -20,6 +20,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Classes", href: "/admin/classes", icon: "School" },
     { label: "Matières", href: "/admin/subjects", icon: "BookOpen" },
     { label: "Affectations", href: "/admin/assignments", icon: "Link" },
+    { label: "Annonces", href: "/admin/announcements", icon: "Megaphone" },
     { label: "Devoirs", href: "/admin/devoirs", icon: "ClipboardCheck" },
     { label: "TD/TP", href: "/admin/td", icon: "CalendarCheck" },
     { label: "Cours", href: "/admin/courses", icon: "BookOpen" },
@@ -41,6 +42,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Classes", href: "/admin/classes", icon: "School" },
     { label: "Matières", href: "/admin/subjects", icon: "BookOpen" },
     { label: "Affectations", href: "/admin/assignments", icon: "Link" },
+    { label: "Annonces", href: "/admin/announcements", icon: "Megaphone" },
     { label: "Devoirs", href: "/admin/devoirs", icon: "ClipboardCheck" },
     { label: "TD/TP", href: "/admin/td", icon: "CalendarCheck" },
     { label: "Cours", href: "/admin/courses", icon: "BookOpen" },
@@ -55,6 +57,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
   ],
   teacher: [
     { label: "Tableau de bord", href: "/teacher", icon: "LayoutDashboard" },
+    { label: "Annonces", href: "/teacher/announcements", icon: "Megaphone" },
     { label: "Notes", href: "/teacher/grades", icon: "ClipboardList" },
     { label: "Présences", href: "/teacher/attendance", icon: "Calendar" },
     { label: "Mes classes", href: "/teacher/classes", icon: "School" },
@@ -67,6 +70,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
   ],
   parent: [
     { label: "Tableau de bord", href: "/parent", icon: "LayoutDashboard" },
+    { label: "Annonces", href: "/parent/announcements", icon: "Megaphone" },
     { label: "Mes enfants", href: "/parent/children", icon: "Users" },
     { label: "Paiements", href: "/parent/payments", icon: "CreditCard" },
     { label: "Messages", href: "/parent/messages", icon: "MessageSquare" },
@@ -77,6 +81,7 @@ export const navItemsByRole: Record<string, NavItem[]> = {
   ],
   student: [
     { label: "Tableau de bord", href: "/student", icon: "LayoutDashboard" },
+    { label: "Annonces", href: "/student/announcements", icon: "Megaphone" },
     { label: "Mes notes", href: "/student/grades", icon: "ClipboardList" },
     { label: "Programme", href: "/student/programme", icon: "BookOpen" },
     { label: "Devoirs", href: "/student/assignments", icon: "ClipboardCheck" },

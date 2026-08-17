@@ -762,6 +762,41 @@ export type Database = {
           created_at?: string;
         };
       };
+      announcements: {
+        Row: {
+          id: string;
+          school_id: string;
+          title: string;
+          content: string;
+          audience: 'all' | 'teachers' | 'parents' | 'students';
+          status: 'draft' | 'published';
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          title: string;
+          content: string;
+          audience?: 'all' | 'teachers' | 'parents' | 'students';
+          status?: 'draft' | 'published';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          title?: string;
+          content?: string;
+          audience?: 'all' | 'teachers' | 'parents' | 'students';
+          status?: 'draft' | 'published';
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     Views: {
       [_ in never]: never;
     };

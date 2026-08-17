@@ -1,30 +1,32 @@
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart3, FileText, MessageSquare, DollarSign, GraduationCap } from "lucide-react";
+import { BarChart3, FileText, MessageSquare, DollarSign, GraduationCap, CalendarCheck2, NotebookPen } from "lucide-react";
 
 export default async function ParentDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
   if (!auth || auth.role !== "parent") redirect(`/${slug}/login`);
   const schoolId = auth.schoolId;
-  const supabase = await createClient();
+  const supabaseAdmin = createAdminClient();
 
-  const { data: parentRow } = await supabase
+  const { data: parentRow } = await (await createClient())
     .from("parents")
     .select("id")
     .eq("user_id", auth.userId)
     .eq("school_id", schoolId)
     .single();
 
-  const { data: children } = await supabase
+  const { data: children } = await (await createClient())
     .from("student_parents")
     .select(`
       student:student_id(
         id,
+        class_id,
         user:user_id(
           first_name,
           last_name
@@ -33,6 +35,32 @@ export default async function ParentDashboard({ params }: { params: Promise<{ ec
       )
     `)
     .eq("parent_id", parentRow?.id);
+
+  const studentIds = (children || []).map((c: any) => c.student?.id).filter(Boolean);
+  const studentClassIds = (children || []).map((c: any) => c.student?.class_id).filter(Boolean);
+
+  // ─── Aujourd'hui ────────────────────────────────────────────────
+  const todayISO = new Date().toISOString().split("T")[0];
+
+  const [absentToday, duesToday, assignmentsToday, recentGrades] = await Promise.all([
+    studentIds.length > 0
+      ? supabaseAdmin.from("attendance").select("id, student:student_id(user:user_id(first_name, last_name))", { count: "exact" })
+          .in("student_id", studentIds).eq("school_id", schoolId).eq("date", todayISO).is("schedule_slot_id", null).eq("status", "absent")
+      : Promise.resolve({ count: 0, data: [] }),
+    studentIds.length > 0
+      ? supabaseAdmin.from("monthly_dues").select("id", { count: "exact" })
+          .in("student_id", studentIds).eq("school_id", schoolId).lte("due_date", todayISO).neq("status", "paid")
+      : Promise.resolve({ count: 0 }),
+    studentClassIds.length > 0
+      ? supabaseAdmin.from("assignments").select("id", { count: "exact" })
+          .in("class_id", studentClassIds).eq("school_id", schoolId).eq("status", "published").eq("due_date", todayISO)
+      : Promise.resolve({ count: 0 }),
+    studentIds.length > 0
+      ? supabaseAdmin.from("grades")
+          .select("score, max_score, subject:subject_id(name), student:student_id(user:user_id(first_name, last_name))")
+          .in("student_id", studentIds).eq("school_id", schoolId).limit(3).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -108,6 +136,63 @@ export default async function ParentDashboard({ params }: { params: Promise<{ ec
           )}
         </CardContent>
       </Card>
+
+      {/* Aujourd'hui — KPIs temps réel */}
+      {studentIds.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+            <CalendarCheck2 className="h-4 w-4" /> Aujourd'hui
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Absences</CardTitle>
+                <CalendarCheck2 className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{absentToday.count || 0}</div>
+                <p className="text-[11px] text-muted-foreground">aujourd'hui</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Devoirs</CardTitle>
+                <NotebookPen className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{assignmentsToday.count || 0}</div>
+                <p className="text-[11px] text-muted-foreground">échéance aujourd'hui</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Échéances</CardTitle>
+                <DollarSign className="h-4 w-4 text-red-600" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{duesToday.count || 0}</div>
+                <p className="text-[11px] text-muted-foreground">impayées</p>
+              </CardContent>
+            </Card>
+            <Link href={`/${slug}/parent/children`} className="block">
+              <Card className="hover:bg-muted/50 transition-colors h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                  <CardTitle className="text-xs md:text-sm font-medium">Note récente</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-emerald-600" />
+                </CardHeader>
+                <CardContent className="px-3 md:px-6">
+                  <div className="text-xl md:text-2xl font-bold">
+                    {recentGrades.data?.[0] ? `${recentGrades.data[0].score}/${recentGrades.data[0].max_score}` : "—"}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {(recentGrades.data as any)?.[0]?.subject?.name ?? "aucune note"}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Alertes */}
       <Card className="border-yellow-200 bg-yellow-50">

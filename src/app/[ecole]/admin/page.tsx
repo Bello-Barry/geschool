@@ -5,7 +5,7 @@ import { getAuthUser } from "@/lib/utils/auth-utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, ExternalLink, UserPlus } from "lucide-react";
+import { Users, BookOpen, DollarSign, AlertCircle, TrendingUp, Share2, ExternalLink, UserPlus, CalendarCheck2, AlarmClock, NotebookPen } from "lucide-react";
 import { CopySchoolUrl } from "@/components/dashboard/copy-school-url";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { formatCurrency } from "@/lib/utils/format-currency";
@@ -34,12 +34,46 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
     supabaseAdmin.from("students").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("teachers").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("classes").select("id", { count: "exact" }).eq("school_id", schoolId),
-    supabaseAdmin.from("payments").select("amount").eq("school_id", schoolId),
+    supabaseAdmin.from("payments").select("amount, status, payment_date").eq("school_id", schoolId),
     supabaseAdmin.from("academic_years").select("id", { count: "exact" }).eq("school_id", schoolId),
     supabaseAdmin.from("subjects").select("id", { count: "exact" }).eq("school_id", schoolId),
   ]);
 
   const totalRevenue = (payments.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  // ─── Aujourd'hui (KPI temps réel) ───────────────────────────────
+  const todayISO = new Date().toISOString().split("T")[0];
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+  const [absentToday, duesToday, assignmentsToday, monthPayments] = await Promise.all([
+    supabaseAdmin
+      .from("attendance")
+      .select("id", { count: "exact" })
+      .eq("school_id", schoolId)
+      .eq("date", todayISO)
+      .is("schedule_slot_id", null)
+      .in("status", ["absent"]),
+    supabaseAdmin
+      .from("monthly_dues")
+      .select("id", { count: "exact" })
+      .eq("school_id", schoolId)
+      .eq("status", "unpaid")
+      .lte("due_date", todayISO),
+    supabaseAdmin
+      .from("assignments")
+      .select("id", { count: "exact" })
+      .eq("school_id", schoolId)
+      .eq("status", "published")
+      .lte("due_date", todayISO),
+    supabaseAdmin
+      .from("payments")
+      .select("amount, status")
+      .eq("school_id", schoolId)
+      .gte("payment_date", monthStart)
+      .eq("status", "confirmed"),
+  ]);
+
+  const monthRevenue = (monthPayments.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
   const hasAcademicYear = (academicYears.count || 0) > 0;
   const hasClasses = (classes.count || 0) > 0;
   const hasSubjects = (subjects.count || 0) > 0;
@@ -106,6 +140,61 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
             <p className="text-[11px] text-muted-foreground">Total</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Aujourd'hui — KPIs temps réel */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" /> Aujourd'hui
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+          <Link href={`/${slug}/admin/attendance`} className="block">
+            <Card className="hover:bg-muted/50 transition-colors h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Absents</CardTitle>
+                <CalendarCheck2 className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{absentToday.count || 0}</div>
+                <p className="text-[11px] text-muted-foreground">aujourd'hui</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href={`/${slug}/admin/payments`} className="block">
+            <Card className="hover:bg-muted/50 transition-colors h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Revenus du mois</CardTitle>
+                <DollarSign className="h-4 w-4 text-emerald-600" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{formatCurrency(monthRevenue)}</div>
+                <p className="text-[11px] text-muted-foreground">confirmés</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Échéances impayées</CardTitle>
+              <AlarmClock className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent className="px-3 md:px-6">
+              <div className="text-xl md:text-2xl font-bold">{duesToday.count || 0}</div>
+              <p className="text-[11px] text-muted-foreground">à date</p>
+            </CardContent>
+          </Card>
+          <Link href={`/${slug}/admin/devoirs`} className="block">
+            <Card className="hover:bg-muted/50 transition-colors h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 md:px-6">
+                <CardTitle className="text-xs md:text-sm font-medium">Devoirs échus</CardTitle>
+                <NotebookPen className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent className="px-3 md:px-6">
+                <div className="text-xl md:text-2xl font-bold">{assignmentsToday.count || 0}</div>
+                <p className="text-[11px] text-muted-foreground">échéance passée</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
 
       {/* Onboarding checklist */}
