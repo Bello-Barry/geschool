@@ -7,16 +7,6 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { AnnouncementsTableClient } from "@/components/announcements/announcements-table-client";
 
-function audienceLabel(audience: string): string {
-  const map: Record<string, string> = {
-    all: "Tout le monde",
-    teachers: "Enseignants",
-    parents: "Parents",
-    students: "Élèves",
-  };
-  return map[audience] || audience;
-}
-
 export default async function AnnouncementsPage({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
@@ -62,7 +52,6 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
           <AnnouncementsTableClient
             slug={slug}
             announcements={announcements || []}
-            audienceLabel={audienceLabel}
           />
         </CardContent>
       </Card>

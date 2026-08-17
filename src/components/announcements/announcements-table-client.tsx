@@ -22,10 +22,16 @@ interface Announcement {
 interface AnnouncementsTableClientProps {
   slug: string;
   announcements: Announcement[];
-  audienceLabel: (audience: string) => string;
 }
 
-export function AnnouncementsTableClient({ slug, announcements, audienceLabel }: AnnouncementsTableClientProps) {
+const AUDIENCE_LABELS: Record<string, string> = {
+  all: "Tout le monde",
+  teachers: "Enseignants",
+  parents: "Parents",
+  students: "Élèves",
+};
+
+export function AnnouncementsTableClient({ slug, announcements }: AnnouncementsTableClientProps) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -84,7 +90,7 @@ export function AnnouncementsTableClient({ slug, announcements, audienceLabel }:
               <Badge variant={a.status === "published" ? "default" : "outline"} className="text-xs">
                 {a.status === "published" ? "Publiée" : "Brouillon"}
               </Badge>
-              <Badge variant="secondary" className="text-xs">{audienceLabel(a.audience)}</Badge>
+              <Badge variant="secondary" className="text-xs">{AUDIENCE_LABELS[a.audience] || a.audience}</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1 truncate">{a.content}</p>
             <p className="text-[11px] text-muted-foreground mt-1">
