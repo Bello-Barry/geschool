@@ -23,15 +23,25 @@ export async function GET() {
     // Récupérer les moyennes par classe
     const { data: gradesData, error } = await supabase
       .from('grades')
-      .select('score, student_id, classes(name)')
+      .select('score, student_id')
       .eq('school_id', schoolId);
 
     if (error) throw error;
 
+    const { data: studentsMeta } = await supabase
+      .from('students')
+      .select('id, class:class_id(name)')
+      .eq('school_id', schoolId);
+
+    const classOf: Record<string, string> = {};
+    (studentsMeta ?? []).forEach((s: any) => {
+      classOf[s.id] = (s.class as any)?.name ?? 'Inconnue';
+    });
+
     // Calculer la moyenne par classe (simplifié pour la démo)
     const classStats: Record<string, { total: number, count: number }> = {};
     gradesData?.forEach(g => {
-      const className = (g.classes as any)?.name || 'Inconnue';
+      const className = classOf[g.student_id] || 'Inconnue';
       if (!classStats[className]) classStats[className] = { total: 0, count: 0 };
       classStats[className].total += g.score || 0;
       classStats[className].count += 1;
@@ -51,19 +61,24 @@ export async function GET() {
     // Détection d'élèves à risque
     const { data: atRiskData } = await supabase
       .from('students')
-      .select('first_name, last_name, attendance(status)')
+      .select('id, user:user_id(first_name, last_name)')
       .eq('school_id', schoolId);
 
-    // Simplification pour la démo: on récupère les élèves avec beaucoup d'absences
-    const studentStats = atRiskData?.map(s => ({
-      name: `${s.first_name} ${s.last_name}`,
-      average: 12, // mock car on n'a pas joint les notes ici
-      absent_days: (s.attendance as any[])?.filter((a: any) => a.status === 'absent').length || 0
-    })) || [];
+    const { data: attendanceData } = await supabase
+      .from('attendance')
+      .select('student_id, status')
+      .eq('school_id', schoolId);
+
+    const absentByStudent: Record<string, number> = {};
+    (attendanceData ?? []).forEach((a: any) => {
+      if (a.status === 'absent') absentByStudent[a.student_id] = (absentByStudent[a.student_id] ?? 0) + 1;
+    });
+
+    const atRiskCount = (atRiskData ?? []).filter((s: any) => (absentByStudent[s.id] ?? 0) > 5).length;
 
     return NextResponse.json({
       analysis,
-      atRiskCount: studentStats.filter(s => s.absent_days > 5).length
+      atRiskCount,
     });
 
   } catch (error) {
