@@ -40,7 +40,14 @@ export function SchoolDetectionForm() {
         throw new Error(data.error || 'École non trouvée');
       }
 
-      if (data.subdomain) {
+      if (data.platform) {
+        toast.success('Compte plateforme', {
+          description: 'Redirection vers la console GESchool...',
+        });
+        setTimeout(() => {
+          window.location.href = `/login?email=${encodeURIComponent(values.email)}`;
+        }, 1500);
+      } else if (data.subdomain) {
         toast.success('École trouvée !', {
           description: `Redirection vers ${data.schoolName}...`,
         });

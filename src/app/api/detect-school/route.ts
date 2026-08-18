@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Rechercher l'utilisateur par email
     const { data: users, error } = await supabaseAdmin
       .from('users')
-      .select('school_id, schools(subdomain, name)')
+      .select('role, school_id, schools(subdomain, name)')
       .ilike('email', email);
 
     if (error || !users || users.length === 0) {
@@ -36,7 +36,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = users[0] as unknown as { schools: { subdomain: string; name: string } };
+    const user = users[0] as unknown as {
+      role: string;
+      schools: { subdomain: string; name: string } | null;
+    };
+
+    // Compte plateforme (super_admin sans école) → login racine /super-admin
+    if (user.role === 'super_admin' || !user.schools) {
+      return NextResponse.json({
+        platform: true,
+        email,
+      });
+    }
 
     const school = user.schools;
 
