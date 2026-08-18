@@ -25,17 +25,21 @@ export default async function LoginPage({
       .select("role, school_id")
       .eq("id", session.user.id)
       .single();
-    if (user) {
-      const { data: school } = await adminClient
-        .from("schools")
-        .select("subdomain")
-        .eq("id", user.school_id)
-        .single();
-      if (school) {
-        const rolePath = user.role === "super_admin" || user.role === "admin_school" ? "/admin" : `/${user.role}`;
-        redirect(`/${school.subdomain}${rolePath}`);
+if (user) {
+        // Super-admin : console plateforme racine, sans dépendance à l'école
+        if (user.role === "super_admin") {
+          redirect("/super-admin");
+        }
+        const { data: school } = await adminClient
+          .from("schools")
+          .select("subdomain")
+          .eq("id", user.school_id)
+          .single();
+        if (school) {
+          const rolePath = user.role === "admin_school" ? "/admin" : `/${user.role}`;
+          redirect(`/${school.subdomain}${rolePath}`);
+        }
       }
-    }
   }
 
   return (

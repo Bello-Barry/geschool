@@ -13,7 +13,8 @@ function extractSchoolSlug(pathname: string): string | null {
 }
 
 function getRoleDashboard(role: string): string {
-  if (role === 'super_admin' || role === 'admin_school') return '/admin';
+  if (role === 'super_admin') return '/super-admin';
+  if (role === 'admin_school') return '/admin';
   if (role === 'teacher') return '/teacher';
   if (role === 'parent') return '/parent';
   return '/student';
@@ -118,6 +119,11 @@ export async function middleware(request: NextRequest) {
       // Rediriger depuis / et /login vers le dashboard de l'utilisateur
       if (pathname === '/' || pathname === '/login') {
         const rolePath = getRoleDashboard(role);
+
+        // Super-admin : console plateforme racine, sans slug d'école
+        if (role === 'super_admin') {
+          return NextResponse.redirect(new URL('/super-admin', request.url));
+        }
 
         if (schoolSlug) {
           return NextResponse.redirect(new URL(`/${schoolSlug}${rolePath}`, request.url));

@@ -38,7 +38,11 @@ export default async function SchoolLoginPage({
       .single();
 
     if (user && user.school_id === school.id) {
-      const rolePath = user.role === 'super_admin' || user.role === 'admin_school' ? '/admin' : `/${user.role}`;
+      // Super-admin : console plateforme racine, sans dépendance à l'école
+      if (user.role === 'super_admin') {
+        redirect('/super-admin');
+      }
+      const rolePath = user.role === 'admin_school' ? '/admin' : `/${user.role}`;
       redirect(`/${ecole}${rolePath}`);
     }
     // Sinon (école différente) → laisser le formulaire s'afficher

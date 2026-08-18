@@ -28,7 +28,7 @@ export type Database = {
         Row: {
           id: string;
           email: string;
-          school_id: string;
+          school_id: string | null;
           role: 'admin' | 'teacher' | 'parent' | 'student';
           created_at: string;
         };

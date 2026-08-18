@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Users, GraduationCap, CreditCard, CalendarRange, Globe, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Building2, Users, GraduationCap, UserCog, CreditCard, CalendarRange, Globe, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,8 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
     { count: totalUsers },
     { count: totalStudents },
     { count: totalTeachers },
+    { count: totalParents },
+    { count: totalClasses },
     { data: payments },
     { data: adminUser },
   ] = await Promise.all([
@@ -45,6 +47,8 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
     supabaseAdmin.from("users").select("*", { count: "exact", head: true }).eq("school_id", id),
     supabaseAdmin.from("users").select("*", { count: "exact", head: true }).eq("school_id", id).eq("role", "student"),
     supabaseAdmin.from("users").select("*", { count: "exact", head: true }).eq("school_id", id).eq("role", "teacher"),
+    supabaseAdmin.from("users").select("*", { count: "exact", head: true }).eq("school_id", id).eq("role", "parent"),
+    supabaseAdmin.from("classes").select("*", { count: "exact", head: true }).eq("school_id", id),
     supabaseAdmin
       .from("payments")
       .select("amount, status, created_at")
@@ -64,6 +68,24 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
 
   const totalRevenue = (payments ?? []).reduce((sum, p) => sum + (p.amount ?? 0), 0);
   const formatCurrency = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "XAF", maximumFractionDigits: 0 });
+
+  // Étapes d'onboarding franchies
+  const onboardingSteps = [
+    { label: "Compte école créé", done: true },
+    { label: "Directeur / admin rattaché", done: !!adminUser },
+    { label: "Année scolaire configurée", done: null as boolean | null },
+    { label: "Classes créées", done: (totalClasses ?? 0) > 0 },
+    { label: "Élèves inscrits", done: (totalStudents ?? 0) > 0 },
+    { label: "Premier paiement", done: (payments ?? []).length > 0 },
+  ];
+  // Contrôler la présence d'au moins une année scolaire
+  const { count: totalYears } = await supabaseAdmin
+    .from("academic_years")
+    .select("*", { count: "exact", head: true })
+    .eq("school_id", id);
+  onboardingSteps[2]!.done = (totalYears ?? 0) > 0;
+  const onboardingDone = onboardingSteps.filter((s) => s.done).length;
+  const onboardingRate = Math.round((onboardingDone / onboardingSteps.length) * 100);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -120,6 +142,8 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
         <KpiCard title="Utilisateurs" value={totalUsers ?? 0} icon={<Users className="h-5 w-5 text-blue-600" />} color="bg-blue-50" />
         <KpiCard title="Élèves" value={totalStudents ?? 0} icon={<GraduationCap className="h-5 w-5 text-indigo-600" />} color="bg-indigo-50" />
         <KpiCard title="Enseignants" value={totalTeachers ?? 0} icon={<Users className="h-5 w-5 text-purple-600" />} color="bg-purple-50" />
+        <KpiCard title="Parents" value={totalParents ?? 0} icon={<UserCog className="h-5 w-5 text-amber-600" />} color="bg-amber-50" />
+        <KpiCard title="Classes" value={totalClasses ?? 0} icon={<Users className="h-5 w-5 text-teal-600" />} color="bg-teal-50" />
         <KpiCard title="Revenus confirmés" value={formatCurrency(totalRevenue)} icon={<CreditCard className="h-5 w-5 text-emerald-600" />} color="bg-emerald-50" />
       </div>
 
@@ -214,6 +238,44 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
           </CardContent>
         </Card>
       </div>
+
+      {/* Statut d'onboarding */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarRange className="h-4 w-4 text-primary" />
+            Statut d'onboarding
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all"
+                style={{ width: `${onboardingRate}%` }}
+              />
+            </div>
+            <span className="text-sm font-semibold whitespace-nowrap">{onboardingRate}%</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {onboardingSteps.map((step) => (
+              <div
+                key={step.label}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  step.done ? "bg-emerald-50 text-emerald-800" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {step.done ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                ) : (
+                  <Clock className="h-4 w-4 shrink-0" />
+                )}
+                <span className="truncate">{step.label}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

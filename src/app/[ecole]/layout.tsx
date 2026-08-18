@@ -24,6 +24,11 @@ export default async function SchoolLayout({
     return <>{children}</>;
   }
 
+  // Super-admin : console plateforme racine, indépendante de toute école
+  if (auth.role === "super_admin") {
+    redirect("/super-admin");
+  }
+
   const headerList = await headers();
   const pathname = headerList.get("x-pathname") || "";
 

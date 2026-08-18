@@ -6,6 +6,7 @@ import Link from "next/link";
 import { TrendingUp, Wallet, Clock, XCircle, CheckCircle2 } from "lucide-react";
 import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { formatCurrency } from "@/lib/utils/format-currency";
+import { PaymentsExport, type PaymentExportRow } from "@/components/super-admin/payments-export";
 
 export const dynamic = "force-dynamic";
 
@@ -71,14 +72,36 @@ export default async function SuperAdminPaymentsPage() {
     check: "Chèque",
   };
 
+  const exportRows: PaymentExportRow[] = all.map((p: any) => {
+    const schoolInfo = unwrapJoin(p.school) as { name: string } | null;
+    const studentInfo = unwrapJoin(p.student) as {
+      matricule: string;
+      user: { first_name: string; last_name: string } | null;
+    } | null;
+    return {
+      schoolName: schoolInfo?.name ?? null,
+      studentName: studentInfo?.user
+        ? `${studentInfo.user.last_name} ${studentInfo.user.first_name}`
+        : null,
+      matricule: studentInfo?.matricule ?? null,
+      amount: p.amount ?? null,
+      paymentMethod: p.payment_method ?? null,
+      status: p.status ?? "unknown",
+      createdAt: p.created_at ?? null,
+    };
+  });
+
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Wallet className="h-6 w-6 text-indigo-600" />
-          Revenus — Toutes les écoles
-        </h1>
-        <p className="text-muted-foreground mt-1">Vue consolidée des paiements de la plateforme</p>
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Wallet className="h-6 w-6 text-indigo-600" />
+            Revenus — Toutes les écoles
+          </h1>
+          <p className="text-muted-foreground mt-1">Vue consolidée des paiements de la plateforme</p>
+        </div>
+        <PaymentsExport rows={exportRows} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -166,6 +189,22 @@ export default async function SuperAdminPaymentsPage() {
           </Card>
         )}
       </div>
+
+      {/* Commission Geschool — à brancher */}
+      <Card className="border-dashed">
+        <CardContent className="py-4 flex items-center gap-3 text-sm text-muted-foreground">
+          <span
+            className="inline-flex p-2 rounded-lg bg-indigo-50 text-indigo-600 shrink-0"
+            aria-hidden="true"
+          >
+            <Wallet className="h-4 w-4" />
+          </span>
+          <div>
+            <span className="font-medium text-foreground">Commission Geschool par école affiliée</span>
+            <span> — espace réservé pour le calcul de la part plateforme sur chaque encaissement (à brancher).</span>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

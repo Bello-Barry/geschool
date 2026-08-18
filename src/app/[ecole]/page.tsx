@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function rolePath(role: string): string {
-  return role === "super_admin" || role === "admin_school"
+  return role === "admin_school"
     ? "/admin"
     : `/${role}`;
 }
@@ -51,9 +51,12 @@ export default async function SchoolHomePage({
 
     if (urlSchool && urlSchool.id !== auth.schoolId) {
       const resolved = await resolveUser(auth.userId);
-      if (resolved) redirect(`/${resolved.slug}${rolePath(resolved.role)}`);
+      if (resolved && resolved.role !== "super_admin") redirect(`/${resolved.slug}${rolePath(resolved.role)}`);
+      if (resolved?.role === "super_admin") redirect("/super-admin");
       redirect(`/login?school=${ecole}`);
     }
+
+    if (auth.role === "super_admin") redirect("/super-admin");
 
     redirect(`/${ecole}${rolePath(auth.role)}`);
   }
@@ -63,6 +66,7 @@ export default async function SchoolHomePage({
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user?.id) {
     const resolved = await resolveUser(session.user.id);
+    if (resolved?.role === "super_admin") redirect("/super-admin");
     if (resolved) redirect(`/${resolved.slug}${rolePath(resolved.role)}`);
   }
 
