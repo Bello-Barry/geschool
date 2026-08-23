@@ -70,7 +70,7 @@ const MUTED = "#64748b";
 const LIGHT = "#fff7ed";
 const LINE = "#e2e8f0";
 
-const EMAIL = "info@geschool.cd";
+const EMAIL = "+242 06 476 7604 (WhatsApp)";
 const SITE = "geschool.vercel.app";
 const TAGLINE = "Gérer. Apprendre. Réussir.";
 
@@ -295,6 +295,94 @@ function OnePagerPdf() {
           </PdfText>
         </PdfView>
         <PdfFooterRight extra="GESchool — Fiche produit" />
+      </Page>
+    </PdfDocument>
+  );
+}
+
+function ArgumentairePdf() {
+  return (
+    <PdfDocument>
+      <Page size="A4" style={pdfStyles.page}>
+        <PdfHeader title="Argumentaire commercial" />
+        <PdfBadge>Document à déposer auprès des établissements</PdfBadge>
+        <PdfText style={pdfStyles.h1}>Pourquoi équiper votre établissement avec GESchool dès cette rentrée</PdfText>
+        <PdfText style={pdfStyles.p}>
+          La scolarité change. Les familles attendent transparence et suivi ; les écoles qui
+          digitalisent leur gestion gagnent en efficacité, en image et en revenus. GESchool
+          est la plateforme tout-en-un conçue pour les établissements congolais.
+        </PdfText>
+
+        <PdfSection title="Les problèmes de la scolarité actuelle">
+          <PdfBullets
+            items={[
+              "Notes et bulletins calculés à la main ou sous Excel : erreurs, moyennes fausses, remise en retard.",
+              "Suivi des paiements défaillant : impayés non détectés, trésorerie imprévisible, relances au cas par cas.",
+              "Communication rompue avec les parents : informations perdues dans les cahiers, méfiance et conflits.",
+              "Absentéisme ignoré : aucun suivi fiable, décrochage repéré trop tard.",
+              "Concurrence accrue : les écoles qui digitalisent attirent les meilleurs élèves et rassurent les familles.",
+            ]}
+          />
+        </PdfSection>
+
+        <PdfSection title="L'avantage de la plateforme GESchool">
+          <PdfView style={pdfStyles.grid}>
+            {[
+              ["Tout en un", "Notes, bulletins, présences, paiements et communication réunis dans une seule plateforme."],
+              ["Automatique", "Moyennes et bulletins générés en quelques clics, conformes au système congolais."],
+              ["Paiements en ligne", "Les parents paient via la plateforme, suivi des impayés en temps réel, reçus automatiques."],
+              ["Communication", "Messagerie intégrée parents, enseignants et administration."],
+              ["Assistant IA", "Analyse des résultats et recommandations personnalisées pour chaque élève."],
+              ["Partout", "Accessible sur mobile et web, en temps réel, sans compétence technique."],
+            ].map(([t, d], i) => (
+              <PdfView key={i} style={pdfStyles.card}>
+                <PdfView style={pdfStyles.cardTop}>
+                  <PdfText style={{ fontSize: 10, color: ORANGE, fontFamily: "Helvetica-Bold" }}>{i + 1}</PdfText>
+                </PdfView>
+                <PdfText style={pdfStyles.cardTitle}>{t}</PdfText>
+                <PdfText style={pdfStyles.cardText}>{d}</PdfText>
+              </PdfView>
+            ))}
+          </PdfView>
+        </PdfSection>
+
+        <PdfView style={pdfStyles.divider} />
+
+        <PdfSection title="Un revenu supplémentaire pour votre école">
+          <PdfText style={pdfStyles.p}>
+            C'est le parent qui paie : {fmtF(2000)} par élève à l'inscription, puis {fmtF(1500)} par
+            élève et par mois, via la plateforme. Votre établissement reçoit la part du lion —
+            sans aucune dépense de sa poche.
+          </PdfText>
+          <PdfTable
+            headers={["Effectif", "À l'inscription (école)", "Revenu mensuel (école)", "Revenu annuel (école)"]}
+            rows={[
+              ["100 élèves", fmtF(100000), fmtF(75000), fmtF(1000000)],
+              ["150 élèves", fmtF(150000), fmtF(112500), fmtF(1500000)],
+              ["200 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
+              ["300 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
+              ["500 élèves", fmtF(500000), fmtF(375000), fmtF(5000000)],
+            ]}
+          />
+          <PdfBullets
+            items={[
+              "L'école reçoit " + fmtF(1000) + " par élève à l'inscription, puis " + fmtF(750) + " par élève chaque mois.",
+              "Vous gagnez deux fois : en productivité (tout est automatisé) et sur les paiements des parents.",
+              "Votre école garde la majorité : " + fmtF(1000) + " + " + fmtF(750) + " sur chaque " + fmtF(3500) + " versé par un parent.",
+            ]}
+          />
+        </PdfSection>
+
+        <PdfView style={pdfStyles.ctaBox}>
+          <PdfText style={pdfStyles.ctaTitle}>Réservez une démo de 20 minutes</PdfText>
+          <PdfText style={{ fontSize: 9, color: "#fde68a", marginBottom: 4 }}>
+            Démonstration gratuite, sans engagement, directement dans votre école.
+          </PdfText>
+          <PdfText style={{ fontSize: 9, color: "#ffffff" }}>
+            {EMAIL} · {SITE}
+          </PdfText>
+        </PdfView>
+        <PdfFooterRight extra="GESchool — Argumentaire commercial" />
       </Page>
     </PdfDocument>
   );
@@ -1309,6 +1397,49 @@ const DOCX_DOCS = [
     ],
   },
   {
+    file: "13-argumentaire-prospect-geschool.docx",
+    title: "Argumentaire commercial",
+    blocks: [
+      { t: "logo" },
+      { t: "h1", text: "Pourquoi équiper votre établissement avec GESchool dès cette rentrée" },
+      { t: "p", text: "La scolarité change. Les familles attendent transparence et suivi ; les écoles qui digitalisent leur gestion gagnent en efficacité, en image et en revenus. GESchool est la plateforme tout-en-un conçue pour les établissements congolais." },
+      { t: "h2", text: "Les problèmes de la scolarité actuelle" },
+      { t: "bl", items: [
+        "Notes et bulletins calculés à la main ou sous Excel : erreurs, moyennes fausses, remise en retard.",
+        "Suivi des paiements défaillant : impayés non détectés, trésorerie imprévisible, relances au cas par cas.",
+        "Communication rompue avec les parents : informations perdues dans les cahiers, méfiance et conflits.",
+        "Absentéisme ignoré : aucun suivi fiable, décrochage repéré trop tard.",
+        "Concurrence accrue : les écoles qui digitalisent attirent les meilleurs élèves et rassurent les familles.",
+      ] },
+      { t: "h2", text: "L'avantage de la plateforme GESchool" },
+      { t: "bl", items: [
+        "Tout en un : notes, bulletins, présences, paiements et communication réunis dans une seule plateforme.",
+        "Automatique : moyennes et bulletins générés en quelques clics, conformes au système congolais.",
+        "Paiements en ligne : les parents paient via la plateforme, suivi des impayés en temps réel, reçus automatiques.",
+        "Communication : messagerie intégrée parents, enseignants et administration.",
+        "Assistant IA : analyse des résultats et recommandations personnalisées pour chaque élève.",
+        "Partout : accessible sur mobile et web, en temps réel, sans compétence technique.",
+      ] },
+      { t: "h2", text: "Un revenu supplémentaire pour votre école" },
+      { t: "p", text: "C'est le parent qui paie : " + fmtF(2000) + " par élève à l'inscription, puis " + fmtF(1500) + " par élève et par mois, via la plateforme. Votre établissement reçoit la part du lion — sans aucune dépense de sa poche." },
+      { t: "table",
+        headers: ["Effectif", "À l'inscription (école)", "Revenu mensuel (école)", "Revenu annuel (école)"],
+        rows: [
+          ["100 élèves", fmtF(100000), fmtF(75000), fmtF(1000000)],
+          ["150 élèves", fmtF(150000), fmtF(112500), fmtF(1500000)],
+          ["200 élèves", fmtF(200000), fmtF(150000), fmtF(2000000)],
+          ["300 élèves", fmtF(300000), fmtF(225000), fmtF(3000000)],
+          ["500 élèves", fmtF(500000), fmtF(375000), fmtF(5000000)],
+        ] },
+      { t: "bl", items: [
+        "L'école reçoit " + fmtF(1000) + " par élève à l'inscription, puis " + fmtF(750) + " par élève chaque mois.",
+        "Vous gagnez deux fois : en productivité (tout est automatisé) et sur les paiements des parents.",
+        "Votre école garde la majorité : " + fmtF(1000) + " + " + fmtF(750) + " sur chaque " + fmtF(3500) + " versé par un parent.",
+      ] },
+      { t: "p", text: `Réservez une démo de 20 minutes, gratuite et sans engagement : ${EMAIL} · ${SITE}`, opts: { bold: true } },
+    ],
+  },
+  {
     file: "02-grille-tarifaire-geschool.docx",
     title: "Grille tarifaire",
     blocks: [
@@ -1813,6 +1944,7 @@ async function main() {
     ["09-fiche-rdv-demo-geschool.pdf", RdvPdf()],
     ["10-modele-temoignage-geschool.pdf", TemoignagePdf()],
     ["12-modeles-relance-geschool.pdf", RelancePdf()],
+    ["13-argumentaire-prospect-geschool.pdf", ArgumentairePdf()],
   ];
 
   for (const [file, element] of pdfs) {
