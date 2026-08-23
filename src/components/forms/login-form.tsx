@@ -62,7 +62,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
       if (data.user) {
         const { data: userData } = await supabase
           .from("users")
-          .select("is_active")
+          .select("is_active, role")
           .eq("id", data.user.id)
           .single();
 
@@ -81,7 +81,21 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
         });
         
         setTimeout(() => {
-          window.location.href = returnUrl || '/';
+          const role = (userData?.role ?? data.user.app_metadata?.role) as string | undefined;
+          let destination = returnUrl || "/";
+
+          if (role === "super_admin") {
+            destination = "/super-admin";
+          } else if (role && school?.subdomain) {
+            const rolePath = role === "admin_school" ? "/admin" : `/${role}`;
+            destination = returnUrl || `/${school.subdomain}${rolePath}`;
+          } else if (role) {
+            destination = `/${role}`;
+          } else {
+            destination = "/login";
+          }
+
+          window.location.href = destination;
         }, 1000);
       }
     } catch (error) {

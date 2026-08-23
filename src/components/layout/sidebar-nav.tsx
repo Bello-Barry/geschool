@@ -23,7 +23,7 @@ export function SidebarNav({ items, collapsed, onNavClick }: {
     <nav className="flex-1 space-y-1 px-3 py-4">
       {items.map((item) => {
         const href = item.href.startsWith("/super-admin") ? item.href : `/${schoolSlug}${item.href}`;
-        const isDashboard = item.href === "/admin" || item.href === "/teacher" || item.href === "/parent" || item.href === "/student";
+        const isDashboard = item.href === "/admin" || item.href === "/teacher" || item.href === "/parent" || item.href === "/student" || item.href === "/accountant";
         const isActive = isDashboard ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
         const Icon = iconMap[item.icon] || LayoutDashboard;
         return (

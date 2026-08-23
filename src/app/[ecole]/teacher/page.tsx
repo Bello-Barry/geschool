@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function TeacherDashboard({ params }: { params: Promise<{ ecole: string }> }) {
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
-  if (!auth || auth.role !== "teacher") redirect(`/${slug}/login`);
+  if (!auth || auth.role !== "teacher") redirect(`/${slug}/login?blocked=1`);
   const schoolId = auth.schoolId;
 
   const supabase = createAdminClient();

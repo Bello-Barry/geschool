@@ -15,7 +15,11 @@ export default async function AdminDashboard({ params }: { params: Promise<{ eco
   const slug = (await params).ecole;
   const auth = await getAuthUser(slug);
   if (!auth || (auth.role !== "admin_school" && auth.role !== "super_admin")) {
-    redirect(auth ? `/${slug}/teacher` : `/${slug}/login`);
+    // Un admin peut accéder à /admin, un teacher est renvoyé vers son dashboard.
+    // Un comptable / parent / student a accès restreint → renvoi vers login
+    // (avec ?blocked=1 pour éviter la redirection auto de /login → son dashboard).
+    if (auth && auth.role === "teacher") redirect(`/${slug}/teacher`);
+    redirect(`/${slug}/login?blocked=1`);
   }
 
   const schoolId = auth.schoolId;

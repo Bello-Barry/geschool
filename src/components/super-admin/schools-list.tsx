@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, CheckCircle2, XCircle } from "lucide-react";
+import { Search, CheckCircle2, XCircle, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { SchoolActions } from "@/components/super-admin/school-actions";
 
@@ -15,6 +15,7 @@ interface SchoolRow {
   is_active: boolean;
   created_at: string | null;
   primary_color: string | null;
+  has_director?: boolean;
 }
 
 const PAGE_SIZE = 10;
@@ -110,6 +111,11 @@ export function SchoolsList({ schools }: { schools: SchoolRow[] }) {
                     <h3 className="font-semibold text-base truncate group-hover:underline">
                       {school.name}
                     </h3>
+                    {school.has_director === false && (
+                      <Badge variant="outline" className="gap-1 text-amber-700 bg-amber-50 border-amber-200 shrink-0">
+                        <UserPlus className="h-3 w-3" />Directeur à attacher
+                      </Badge>
+                    )}
                     {school.is_active ? (
                       <Badge className="gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-50 border-emerald-200 shrink-0">
                         <CheckCircle2 className="h-3 w-3" />Active
@@ -140,6 +146,7 @@ export function SchoolsList({ schools }: { schools: SchoolRow[] }) {
                 schoolId={school.id}
                 schoolName={school.name}
                 isActive={school.is_active ?? false}
+                hasDirector={school.has_director}
               />
             </div>
           );

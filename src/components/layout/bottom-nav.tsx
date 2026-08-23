@@ -22,7 +22,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
       <div className="flex items-center justify-around h-16">
         {primaryItems.map((item) => {
           const href = item.href.startsWith("/super-admin") ? item.href : `/${schoolSlug}${item.href}`;
-          const isDashboard = item.href === "/admin" || item.href === "/teacher" || item.href === "/parent" || item.href === "/student";
+          const isDashboard = item.href === "/admin" || item.href === "/teacher" || item.href === "/parent" || item.href === "/student" || item.href === "/accountant";
           const isActive = isDashboard ? pathname === href : (pathname === href || pathname.startsWith(href + "/"));
           const Icon = iconMap[item.icon] || LayoutDashboard;
           return (

@@ -105,15 +105,46 @@ export async function POST(request: NextRequest) {
       reason: r.reason || null,
     }));
 
-    const { data, error } = await supabase
+    // Les index partiels (attendance_student_date_default / _slot) ne sont pas
+    // matchables par ON CONFLICT de PostgREST → upsert explicite en deux temps.
+    let existingQuery = supabase
       .from("attendance")
-      .upsert(records, {
-        onConflict: validated.schedule_slot_id ? "student_id, date, schedule_slot_id" : "student_id, date",
-        ignoreDuplicates: false,
-      })
-      .select();
+      .select("id, student_id")
+      .eq("class_id", validated.class_id)
+      .eq("date", validated.date);
+    if (validated.schedule_slot_id) {
+      existingQuery = existingQuery.eq("schedule_slot_id", validated.schedule_slot_id);
+    } else {
+      existingQuery = existingQuery.is("schedule_slot_id", null);
+    }
+    const { data: existing, error: existingError } = await existingQuery;
+    if (existingError) throw existingError;
 
-    if (error) throw error;
+    const existingByStudent = new Map((existing || []).map((e) => [e.student_id, e.id]));
+    const toInsert = records.filter((r) => !existingByStudent.has(r.student_id));
+    const toUpdate = records.filter((r) => existingByStudent.has(r.student_id));
+
+    let data: Array<Record<string, unknown>> = [];
+
+    if (toInsert.length > 0) {
+      const { data: inserted, error: insertError } = await supabase
+        .from("attendance")
+        .insert(toInsert)
+        .select();
+      if (insertError) throw insertError;
+      data = data.concat(inserted || []);
+    }
+
+    for (const rec of toUpdate) {
+      const id = existingByStudent.get(rec.student_id);
+      const { data: updated, error: updateError } = await supabase
+        .from("attendance")
+        .update(rec)
+        .eq("id", id)
+        .select();
+      if (updateError) throw updateError;
+      data = data.concat(updated || []);
+    }
 
     const supabaseAdmin = createAdminClient();
 

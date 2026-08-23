@@ -44,7 +44,7 @@ export default async function TeacherAttendancePage({ params, searchParams }: Pa
       id,
       matricule,
       user:user_id(first_name, last_name)
-    `).eq("class_id", classId).eq("school_id", auth.schoolId).order("last_name"),
+    `).eq("class_id", classId).eq("school_id", auth.schoolId).order("last_name", { referencedTable: "user" }),
   ]);
 
   if (!classResult.data) redirect(`/${slug}/teacher`);

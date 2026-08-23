@@ -75,4 +75,8 @@ export const navItemsByRole: Record<string, NavItem[]> = {
     { label: "Cours", href: "/student/courses", icon: "BookOpen" },
     { label: "Messages", href: "/student/messages", icon: "MessageSquare" },
   ],
+  accountant: [
+    { label: "Tableau de bord", href: "/accountant", icon: "LayoutDashboard" },
+    { label: "Paiements", href: "/accountant/payments", icon: "CreditCard" },
+  ],
 };

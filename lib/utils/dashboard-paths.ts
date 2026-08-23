@@ -7,6 +7,8 @@ export const getDashboardPath = (role: string) => {
       return '/teacher';
     case 'parent':
       return '/parent';
+    case 'accountant':
+      return '/accountant';
     default:
       return '/login';
   }

@@ -70,7 +70,16 @@ export async function POST(request: NextRequest) {
   const schoolId = user.school_id;
 
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    if (!rawBody || !rawBody.trim()) {
+      return NextResponse.json({ error: "Request body is empty" }, { status: 400 });
+    }
+    let body: unknown;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
     const validated = teacherSchema.parse(body);
 
     const adminClient = createAdminClient();

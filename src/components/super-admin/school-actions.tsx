@@ -16,14 +16,16 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { PowerOff, Power, Trash2, Loader2 } from 'lucide-react';
+import { AttachDirectorDialog } from '@/components/super-admin/attach-director-dialog';
 
 interface SchoolActionsProps {
   schoolId: string;
   schoolName: string;
   isActive: boolean;
+  hasDirector?: boolean;
 }
 
-export function SchoolActions({ schoolId, schoolName, isActive }: SchoolActionsProps) {
+export function SchoolActions({ schoolId, schoolName, isActive, hasDirector }: SchoolActionsProps) {
   const [loading, setLoading] = useState<'toggle' | 'delete' | null>(null);
   const router = useRouter();
 
@@ -72,6 +74,11 @@ export function SchoolActions({ schoolId, schoolName, isActive }: SchoolActionsP
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {/* Attacher un directeur si l'école n'en a pas */}
+      {hasDirector === false && (
+        <AttachDirectorDialog schoolId={schoolId} schoolName={schoolName} />
+      )}
+
       {/* Toggle Active / Inactive */}
       <Button
         variant={isActive ? 'outline' : 'default'}

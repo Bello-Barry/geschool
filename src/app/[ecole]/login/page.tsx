@@ -10,7 +10,7 @@ export default async function SchoolLoginPage({
   searchParams,
 }: {
   params: Promise<{ ecole: string }>;
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; blocked?: string }>;
 }) {
   const { ecole } = await params;
   const sp = await searchParams;
@@ -30,7 +30,7 @@ export default async function SchoolLoginPage({
   const { data: { session } } = await supabase.auth.getSession();
 
   // Si l'utilisateur est déjà connecté et appartient à CETTE école → rediriger
-  if (session?.user?.id) {
+  if (!sp.blocked && session?.user?.id) {
     const { data: user } = await adminClient
       .from('users')
       .select('role, school_id')
@@ -38,16 +38,15 @@ export default async function SchoolLoginPage({
       .single();
 
     if (user && user.school_id === school.id) {
-      // Super-admin : console plateforme racine, sans dépendance à l'école
       if (user.role === 'super_admin') {
         redirect('/super-admin');
       }
       const rolePath = user.role === 'admin_school' ? '/admin' : `/${user.role}`;
       redirect(`/${ecole}${rolePath}`);
     }
-    // Sinon (école différente) → laisser le formulaire s'afficher
-    // pour permettre à l'utilisateur de se connecter avec un autre compte
   }
+  // Sinon (école différente) → laisser le formulaire s'afficher
+  // pour permettre à l'utilisateur de se connecter avec un autre compte
 
   return (
     <div className="min-h-screen flex flex-col">

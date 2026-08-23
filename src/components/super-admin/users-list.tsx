@@ -26,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
   teacher: "Enseignant",
   parent: "Parent",
   student: "Élève",
+  accountant: "Comptable",
 };
 
 export function UsersList({ users }: { users: UserRow[] }) {

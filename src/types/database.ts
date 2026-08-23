@@ -29,21 +29,21 @@ export type Database = {
           id: string;
           email: string;
           school_id: string | null;
-          role: 'admin' | 'teacher' | 'parent' | 'student';
+          role: 'super_admin' | 'admin_school' | 'teacher' | 'parent' | 'student' | 'accountant';
           created_at: string;
         };
         Insert: {
           id?: string;
           email: string;
-          school_id: string;
-          role?: 'admin' | 'teacher' | 'parent' | 'student';
+          school_id: string | null;
+          role?: 'super_admin' | 'admin_school' | 'teacher' | 'parent' | 'student' | 'accountant';
           created_at?: string;
         };
         Update: {
           id?: string;
           email?: string;
-          school_id?: string;
-          role?: 'admin' | 'teacher' | 'parent' | 'student';
+          school_id?: string | null;
+          role?: 'super_admin' | 'admin_school' | 'teacher' | 'parent' | 'student' | 'accountant';
           created_at?: string;
         };
       };
