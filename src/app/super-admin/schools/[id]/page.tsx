@@ -1,11 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Users, GraduationCap, UserCog, CreditCard, CalendarRange, Globe, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Building2, Users, GraduationCap, UserCog, CreditCard, CalendarRange, Globe, CheckCircle2, XCircle, Clock, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SchoolActions } from "@/components/super-admin/school-actions";
+import { AttachDirectorDialog } from "@/components/super-admin/attach-director-dialog";
+import { CreateAccountantDialog } from "@/components/super-admin/create-accountant-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,7 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
     { count: totalClasses },
     { data: payments },
     { data: adminUser },
+    { data: accountants },
   ] = await Promise.all([
     supabaseAdmin
       .from("schools")
@@ -62,6 +65,12 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
       .eq("school_id", id)
       .eq("role", "admin_school")
       .maybeSingle(),
+    supabaseAdmin
+      .from("users")
+      .select("first_name, last_name, email, created_at")
+      .eq("school_id", id)
+      .eq("role", "accountant")
+      .order("created_at", { ascending: false }),
   ]);
 
   if (!school) notFound();
@@ -173,7 +182,40 @@ export default async function SchoolDetailPage({ params }: { params: Promise<{ i
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">Aucun administrateur trouvé.</p>
+              <div className="space-y-3">
+                <p className="text-muted-foreground text-sm">Aucun directeur rattaché à cette école.</p>
+                <AttachDirectorDialog schoolId={id} schoolName={school.name} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Accountants */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-teal-600" />
+              Comptables
+            </CardTitle>
+            <CreateAccountantDialog schoolId={id} schoolName={school.name} />
+          </CardHeader>
+          <CardContent>
+            {(accountants ?? []).length > 0 ? (
+              <div className="space-y-3">
+                {(accountants ?? []).map((acct, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-teal-50 flex items-center justify-center text-teal-700 font-bold">
+                      {acct.first_name?.charAt(0) ?? "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{acct.first_name} {acct.last_name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{acct.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Aucun comptable rattaché à cette école.</p>
             )}
           </CardContent>
         </Card>

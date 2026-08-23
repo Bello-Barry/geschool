@@ -14,10 +14,19 @@ export const dynamic = "force-dynamic";
 export default async function SchoolsPage() {
   const supabaseAdmin = createAdminClient();
 
-  const { data: schools } = await supabaseAdmin
-    .from("schools")
-    .select("id, name, subdomain, is_active, created_at, primary_color")
-    .order("created_at", { ascending: false });
+  const [schoolsRes, directorsRes] = await Promise.all([
+    supabaseAdmin
+      .from("schools")
+      .select("id, name, subdomain, is_active, created_at, primary_color")
+      .order("created_at", { ascending: false }),
+    supabaseAdmin
+      .from("users")
+      .select("school_id")
+      .eq("role", "admin_school"),
+  ]);
+
+  const directorSet = new Set((directorsRes.data ?? []).map((u) => u.school_id));
+  const schools = schoolsRes.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -41,13 +50,14 @@ export default async function SchoolsPage() {
 
       <Card className="border-none shadow-none">
         <CardContent className="p-0">
-          <SchoolsList schools={(schools ?? []).map((s) => ({
+          <SchoolsList schools={schools.map((s) => ({
             id: s.id,
             name: s.name,
             subdomain: s.subdomain ?? "",
             is_active: s.is_active ?? false,
             created_at: s.created_at ?? null,
             primary_color: s.primary_color ?? null,
+            has_director: directorSet.has(s.id),
           }))} />
         </CardContent>
       </Card>

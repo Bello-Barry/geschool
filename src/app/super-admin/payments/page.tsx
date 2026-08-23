@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { TrendingUp, Wallet, Clock, XCircle, CheckCircle2 } from "lucide-react";
 import { unwrapJoin } from "@/lib/utils/supabase-join";
 import { formatCurrency } from "@/lib/utils/format-currency";
 import { PaymentsExport, type PaymentExportRow } from "@/components/super-admin/payments-export";
+import { PaymentsHistory, type PaymentHistoryRow } from "@/components/super-admin/payments-history";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +79,26 @@ export default async function SuperAdminPaymentsPage() {
       user: { first_name: string; last_name: string } | null;
     } | null;
     return {
+      schoolName: schoolInfo?.name ?? null,
+      studentName: studentInfo?.user
+        ? `${studentInfo.user.last_name} ${studentInfo.user.first_name}`
+        : null,
+      matricule: studentInfo?.matricule ?? null,
+      amount: p.amount ?? null,
+      paymentMethod: p.payment_method ?? null,
+      status: p.status ?? "unknown",
+      createdAt: p.created_at ?? null,
+    };
+  });
+
+  const historyRows: PaymentHistoryRow[] = all.map((p: any) => {
+    const schoolInfo = unwrapJoin(p.school) as { name: string } | null;
+    const studentInfo = unwrapJoin(p.student) as {
+      matricule: string;
+      user: { first_name: string; last_name: string } | null;
+    } | null;
+    return {
+      id: p.id,
       schoolName: schoolInfo?.name ?? null,
       studentName: studentInfo?.user
         ? `${studentInfo.user.last_name} ${studentInfo.user.first_name}`
@@ -209,68 +229,12 @@ export default async function SuperAdminPaymentsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Historique des paiements</CardTitle>
-          <CardDescription>Dernières déclarations à travers toutes les écoles</CardDescription>
+          <CardDescription>
+            Toutes les déclarations à travers les écoles — recherche, filtres et pagination.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold">École</th>
-                  <th className="text-left py-3 px-4 font-semibold">Élève</th>
-                  <th className="text-left py-3 px-4 font-semibold">Montant</th>
-                  <th className="text-left py-3 px-4 font-semibold">Méthode</th>
-                  <th className="text-left py-3 px-4 font-semibold">Statut</th>
-                  <th className="text-left py-3 px-4 font-semibold">Déclaré le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {all.slice(0, 50).map((p: any) => {
-                  const schoolInfo = unwrapJoin(p.school) as { name: string } | null;
-                  const studentInfo = unwrapJoin(p.student) as {
-                    matricule: string;
-                    user: { first_name: string; last_name: string } | null;
-                  } | null;
-                  return (
-                    <tr key={p.id} className="border-b hover:bg-muted/50">
-                      <td className="py-3 px-4">{schoolInfo?.name ?? "-"}</td>
-                      <td className="py-3 px-4">
-                        {studentInfo?.user?.last_name} {studentInfo?.user?.first_name}
-                        <span className="text-xs text-muted-foreground ml-2">{studentInfo?.matricule}</span>
-                      </td>
-                      <td className="py-3 px-4 font-medium">{formatCurrency(p.amount)}</td>
-                      <td className="py-3 px-4">{p.payment_method ? (methodLabel[p.payment_method] ?? p.payment_method) : "-"}</td>
-                      <td className="py-3 px-4">
-                        {p.status === "confirmed" ? (
-                          <Badge variant="secondary" className="gap-1 text-emerald-700 bg-emerald-50">
-                            <CheckCircle2 className="h-3 w-3" />Confirmé
-                          </Badge>
-                        ) : p.status === "pending" ? (
-                          <Badge variant="secondary" className="gap-1 text-amber-700 bg-amber-50">
-                            <Clock className="h-3 w-3" />En attente
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="gap-1 text-red-600 bg-red-50">
-                            <XCircle className="h-3 w-3" />Rejeté
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        {p.created_at ? new Date(p.created_at).toLocaleDateString("fr-FR") : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {all.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-10 text-center text-muted-foreground">
-                      Aucun paiement déclaré pour le moment
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <CardContent className="p-4">
+          <PaymentsHistory rows={historyRows} />
         </CardContent>
       </Card>
     </div>

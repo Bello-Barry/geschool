@@ -22,7 +22,8 @@ export function DashboardShell({
   schoolSlug,
   logoUrl,
   primaryColor,
-  fullWidth = false,
+  fullWidth,
+  topBarExtra,
 }: {
   children: React.ReactNode;
   role: string;
@@ -31,6 +32,7 @@ export function DashboardShell({
   logoUrl?: string | null;
   primaryColor?: string | null;
   fullWidth?: boolean;
+  topBarExtra?: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
@@ -85,6 +87,7 @@ export function DashboardShell({
               </div>
             )}
             <h1 className="text-base font-bold truncate max-w-[180px] sm:max-w-none">{schoolName}</h1>
+            {topBarExtra}
           </div>
 
           <div className="flex items-center gap-1">
