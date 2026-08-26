@@ -5,7 +5,7 @@ config({ path: resolve(__dirname, "..", ".env.local") });
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE = "http://localhost:3000";
+const BASE = process.env.TEST_BASE || "http://localhost:3000";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
