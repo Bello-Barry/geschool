@@ -8,8 +8,12 @@ import { HeroBackground } from '@/components/layout/hero-background';
 import { SectionDivider } from '@/components/layout/section-divider';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { redirectToDashboard } from '@/lib/utils/auth-utils';
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Redirige un utilisateur déjà authentifié vers son espace
+  await redirectToDashboard();
+
   return (
     <div className="min-h-screen flex flex-col">
       <PageTransition>

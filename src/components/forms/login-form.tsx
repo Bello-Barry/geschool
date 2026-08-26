@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -34,6 +34,27 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [existingSession, setExistingSession] = useState<{ email: string | null } | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  // Détecte une session déjà active (sans court-circuiter le formulaire).
+  // Le formulaire reste utilisable pour changer de compte : la soumission
+  // vérifie TOUJOURS les identifiants saisis, jamais la session existante.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        setExistingSession({ email: session.user.email ?? null });
+      }
+    });
+  }, []);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   const form = useForm<z.infer<typeof loginSchema>>({
     mode: "onTouched",
@@ -81,7 +102,7 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
         });
         
         setTimeout(() => {
-          const role = (userData?.role ?? data.user.app_metadata?.role) as string | undefined;
+          const role = (userData?.role ?? data.user.user_metadata?.role ?? data.user.app_metadata?.role) as string | undefined;
           let destination = returnUrl || "/";
 
           if (role === "super_admin") {
@@ -111,6 +132,23 @@ export function LoginForm({ school, prefilledEmail, returnUrl }: LoginFormProps)
   return (
     <Card className="shadow-elevated">
       <CardContent className="pt-6">
+        {existingSession && (
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="font-medium">Vous êtes déjà connecté{existingSession.email ? ` en tant que ${existingSession.email}` : ""}.</p>
+            <p className="mt-1 text-amber-800">
+              Pour changer de compte, connectez-vous ci-dessous avec un autre identifiant, ou&nbsp;
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="font-semibold underline underline-offset-2 disabled:opacity-60"
+              >
+                {signingOut ? "Déconnexion…" : "se déconnecter"}
+              </button>
+              .
+            </p>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
             <FormField

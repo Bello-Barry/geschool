@@ -1,7 +1,5 @@
 import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/forms/login-form';
-import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 
 export default async function LoginPage({
   searchParams,
@@ -15,32 +13,9 @@ export default async function LoginPage({
     redirect(`/${params.school}/login${params.email ? `?email=${encodeURIComponent(params.email)}` : ''}`);
   }
 
-  // Rediriger si déjà connecté
-  const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.user?.id) {
-    const adminClient = createAdminClient();
-    const { data: user } = await adminClient
-      .from("users")
-      .select("role, school_id")
-      .eq("id", session.user.id)
-      .single();
-if (user) {
-        // Super-admin : console plateforme racine, sans dépendance à l'école
-        if (user.role === "super_admin") {
-          redirect("/super-admin");
-        }
-        const { data: school } = await adminClient
-          .from("schools")
-          .select("subdomain")
-          .eq("id", user.school_id)
-          .single();
-        if (school) {
-          const rolePath = user.role === "admin_school" ? "/admin" : `/${user.role}`;
-          redirect(`/${school.subdomain}${rolePath}`);
-        }
-      }
-  }
+  // NB : on ne redirige PAS automatiquement si une session existe déjà.
+  // Le formulaire reste actif pour permettre le changement de compte
+  // (voir login-form.tsx : la soumission vérifie TOUJOURS les identifiants saisis).
 
   return (
     <div className="text-center">

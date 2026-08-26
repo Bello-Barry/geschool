@@ -82,6 +82,39 @@ export async function getAuthUser(slug?: string) {
   return { userId, schoolId: schoolId || user.school_id, role: user.role };
 }
 
+/**
+ * Redirige l'utilisateur authentifié vers son dashboard selon son rôle.
+ * Retourne false si aucune session valide n'existe (ne redirige pas).
+ * `redirect()` interrompt le rendu si une session est trouvée.
+ */
+export async function redirectToDashboard(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) return false;
+
+  const adminClient = createAdminClient();
+  const { data: user } = await adminClient
+    .from("users")
+    .select("role, school_id")
+    .eq("id", session.user.id)
+    .single();
+  if (!user) return false;
+
+  if (user.role === "super_admin") {
+    redirect("/super-admin");
+  }
+  const { data: school } = await adminClient
+    .from("schools")
+    .select("subdomain")
+    .eq("id", user.school_id)
+    .single();
+  if (school) {
+    const rolePath = user.role === "admin_school" ? "/admin" : `/${user.role}`;
+    redirect(`/${school.subdomain}${rolePath}`);
+  }
+  return true;
+}
+
 export function requireRole(allowedRoles: string[]) {
   return async function checkRole() {
     const auth = await getAuthUser();
