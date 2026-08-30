@@ -12,8 +12,11 @@ const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 const SUPER_EMAIL = "sa-phase0@test.com";
 const SUPER_PW = "SuperPass123!";
-const SCHOOL = "attdir";
-const SCHOOL_NAME = "Attach Director";
+// Subdomain unique par run pour éviter les doublons d'écoles (pollution
+// des runs précédents dont le cleanup a été interrompu par le réseau).
+const RUN_ID = (process.env.TEST_RUN_ID || Date.now().toString(36));
+const SCHOOL = `attdir-${RUN_ID}`;
+const SCHOOL_NAME = `Attach Director ${RUN_ID}`;
 
 async function purgeTestData() {
   // Supprime toutes les données de test (idempotent entre les runs)
@@ -163,7 +166,8 @@ test.describe("Phase 0 — Attacher un directeur depuis le super-admin", () => {
     await page.waitForTimeout(300);
     await page.evaluate(() => { localStorage.clear(); });
     await page.context().clearCookies();
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "networkidle" });
+    await page.waitForSelector('button[type="submit"]', { state: "attached" });
     await page.fill('input[type="email"]', dirs![0].email);
     await page.fill('input[type="password"]', tempPassword);
     await page.click('button[type="submit"]');

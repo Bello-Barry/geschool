@@ -187,7 +187,8 @@ test.describe("Phase 1 — Rôle Comptable (accès strict)", () => {
     await page.waitForTimeout(300);
     await page.evaluate(() => { localStorage.clear(); });
     await page.context().clearCookies();
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "networkidle" });
+    await page.waitForSelector('button[type="submit"]', { state: "attached" });
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', tempPassword);
     await page.click('button[type="submit"]');
@@ -217,7 +218,8 @@ test.describe("Phase 1 — Rôle Comptable (accès strict)", () => {
     await page.waitForTimeout(300);
     await page.evaluate(() => { localStorage.clear(); });
     await page.context().clearCookies();
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "networkidle" });
+    await page.waitForSelector('button[type="submit"]', { state: "attached" });
     await page.fill('input[type="email"]', acct!.email);
     await page.fill('input[type="password"]', tempPassword);
     await page.click('button[type="submit"]');
@@ -244,7 +246,8 @@ test.describe("Phase 1 — Rôle Comptable (accès strict)", () => {
     await page.waitForTimeout(300);
     await page.evaluate(() => { localStorage.clear(); });
     await page.context().clearCookies();
-    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE}/${SCHOOL}/login`, { waitUntil: "networkidle" });
+    await page.waitForSelector('button[type="submit"]', { state: "attached" });
     await page.fill('input[type="email"]', acct!.email);
     await page.fill('input[type="password"]', tempPassword);
     await page.click('button[type="submit"]');

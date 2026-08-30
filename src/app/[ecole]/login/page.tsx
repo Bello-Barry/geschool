@@ -78,7 +78,6 @@ export default async function SchoolLoginPage({
           <LoginForm
             school={school}
             prefilledEmail={sp.email}
-            returnUrl={`/${ecole}`}
           />
         </div>
       </main>
